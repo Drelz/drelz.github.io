@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MTG Shadowboxing v14</title>
+  <title>MTG Shadowboxing</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -33,12 +33,52 @@
       --zone-l-bg:    rgba(50, 32, 14, 0.45);
       --zone-h-bg:    rgba(13, 15, 36, 0.85);
 
+      /* Zone text tints (graveyard / exile labels) */
+      --gy-text:       #b7a4d6;
+      --gy-muted:      #8c7ea8;
+      --exile-muted:   #728ec4;
+      --mb-hint:       #fde68a;
+      --donut-empty-bg: rgba(255, 255, 255, 0.06);
+
       /* Card sizes */
       --card-w-board: 116px;
       --card-h-board: 162px;
       --card-w-hand:  154px;
       --card-h-hand:  215px;
       --radius:       9px;
+    }
+
+    body.light {
+      --bg:            #eceef4;
+      --sidebar-bg:    #e2e5ef;
+      --surface:       #ffffff;
+      --surface2:      #f1f3f9;
+      --border:        #c8cede;
+      --accent:        #a8760e;
+      --accent2:       #8a6410;
+      --accent-glow:   rgba(168, 118, 14, 0.22);
+      --compare:       #0284c7;
+      --compare2:      #0369a1;
+      --compare-glow:  rgba(2, 132, 199, 0.22);
+      --text:          #232734;
+      --muted:         #5d6273;
+
+      /* Right zones */
+      --gy-bg:         #ece6f6;
+      --gy-bdr:        #c7b4e5;
+      --exile-bg:      #e3ebf9;
+      --exile-bdr:     #a5c2ea;
+      --exile-accent:  #1d4ed8;
+
+      --zone-c-bg:     rgba(38, 84, 46, 0.07);
+      --zone-l-bg:     rgba(122, 86, 32, 0.08);
+      --zone-h-bg:     rgba(247, 248, 252, 0.92);
+
+      --gy-text:       #7a55b8;
+      --gy-muted:      #6f5c97;
+      --exile-muted:   #5d7bb5;
+      --mb-hint:       #8a5d00;
+      --donut-empty-bg: rgba(0, 0, 0, 0.06);
     }
 
     body {
@@ -177,6 +217,24 @@
     }
     .shortcuts-box strong { color: var(--accent); font-size: 0.68rem; display: block; margin-bottom: 4px; }
     .shortcut-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+
+    .compare-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px 0 4px;
+      border-top: 1px solid var(--border);
+    }
+    .compare-panel .compare-header-box  { padding-bottom: 8px; }
+    .compare-panel .compare-header-title { font-size: 0.7rem; }
+    .compare-panel .compare-legend      { padding: 6px 8px; font-size: 0.6rem; }
+    .compare-panel textarea             { font-size: 0.62rem; min-height: 80px; }
+    .compare-panel .btn-group           { gap: 4px; }
+    .compare-panel .btn-compare,
+    .compare-panel .btn-secondary,
+    .compare-panel .btn-ghost           { font-size: 0.6rem; padding: 4px 6px; }
+
+    body.light .compare-panel .compare-legend { background: rgba(0,0,0,0.04); }
 
     /* ── MAIN WORKSPACE ───────────────────────────────────────── */
     .workspace {
@@ -756,19 +814,6 @@
       min-width: 0;
     }
 
-    /* Comparison Deck Right Sidebar */
-    .stats-compare-sidebar {
-      width: 290px;
-      flex-shrink: 0;
-      background: var(--sidebar-bg);
-      border-left: 1px solid var(--border);
-      padding: 20px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      overflow-y: auto;
-    }
-
     .compare-header-box {
       display: flex;
       flex-direction: column;
@@ -892,8 +937,6 @@
       gap: 20px;
     }
     @media (max-width: 1060px) {
-      .stats-main-layout { flex-direction: column; }
-      .stats-compare-sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border); }
       .stats-two-col { grid-template-columns: 1fr; }
     }
 
@@ -1189,6 +1232,18 @@
     .group-card-left { display: flex; gap: 8px; align-items: center; }
     .group-card-qty  { font-weight: 700; color: var(--muted); min-width: 1.5ch; }
 
+    .group-card-item.expandable-row { cursor: pointer; }
+    .chevron { display: inline-block; font-size: 0.6rem; color: var(--muted); transition: transform 0.15s; }
+    .expandable-row.open .chevron { transform: rotate(90deg); }
+    .collapse-target { display: none; }
+    .collapse-target.open { display: block; }
+    .sub-card-list {
+      margin: 2px 0 4px 10px;
+      padding-left: 10px;
+      border-left: 2px solid var(--border);
+    }
+    .sub-card-list .group-card-qty { min-width: auto; }
+
     /* ── TOOLTIP ──────────────────────────────────────────────── */
     .tooltip {
       position: fixed;
@@ -1229,6 +1284,54 @@
       pointer-events: none;
     }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* ── LIGHT THEME OVERRIDES ───────────────────────────────────────── */
+    body.light .btn-secondary:hover:not(:disabled) { background: #d9deec; }
+    body.light .kbd-badge             { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.18); color: var(--accent2); }
+    body.light .shortcuts-box         { background: rgba(0,0,0,0.05); }
+
+    body.light .gy-header-bg    { background: rgba(233, 226, 246, 0.95); }
+    body.light .exile-header-bg { background: rgba(224, 236, 250, 0.95); }
+
+    body.light .gy-name-color   { color: var(--gy-text); }
+    body.light .gy-badge-color  { background: #efe8fb; color: var(--gy-text); border-color: #cdbbeb; }
+    body.light .gy-hint-color   { color: var(--gy-muted); }
+
+    body.light .exile-name-color  { color: var(--exile-accent); }
+    body.light .exile-badge-color { background: #e5f0fe; color: var(--exile-accent); border-color: #b1cdf0; }
+    body.light .exile-hint-color  { color: var(--exile-muted); }
+
+    body.light .gy-empty-color    { color: var(--gy-muted); }
+    body.light .exile-empty-color { color: var(--exile-muted); }
+
+    body.light .gy-card-item         { background: #f5f1fb; border-color: #d6c7ea; }
+    body.light .gy-card-item:hover   { background: #ebe1f6; border-color: #9b74d4; }
+    body.light .exile-card-item      { background: #eef4fd; border-color: #bdd2ef; }
+    body.light .exile-card-item:hover{ background: #e3edfb; }
+
+    body.light .side-card-img { background: #e4e6ec; }
+
+    body.light .gy-card-item .side-card-name        { color: #332a49; }
+    body.light .gy-card-item .side-card-type        { color: var(--gy-muted); }
+    body.light .gy-card-item .side-card-action-hint { color: #8a5cd6; }
+    body.light .exile-card-item .side-card-name       { color: #1e3a63; }
+    body.light .exile-card-item .side-card-type       { color: var(--exile-muted); }
+    body.light .exile-card-item .side-card-action-hint{ color: #3b82f6; }
+
+    body.light .mulligan-banner {
+      color: #7a5200;
+      background: linear-gradient(90deg, rgba(200, 155, 60, 0.14), rgba(180, 83, 9, 0.16));
+    }
+
+    body.light .cf-header { background: #dde5f1; }
+    body.light .cf-art    { background: linear-gradient(135deg, #e8edf6 0%, #d8dde3 60%, #e3e0e9 100%); }
+
+    body.light .group-card-item { border-bottom-color: rgba(0,0,0,0.06); }
+    body.light .bar-track       { background: rgba(0,0,0,0.1); }
+    body.light .comp-bar-track  { background: rgba(0,0,0,0.09); }
+    body.light .donut-chart     { box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+    body.light .donut-hole      { box-shadow: inset 0 2px 6px rgba(0,0,0,0.08); }
+    body.light .hand-cards::-webkit-scrollbar-track { background: rgba(0,0,0,0.07); }
   </style>
 </head>
 <body>
@@ -1238,7 +1341,7 @@
 
   <div class="app-title">
     <h1>MTG<br>Shadowboxing</h1>
-    <p>v14 · Solo Goldfish & Deck Testing</p>
+    <p>v20 · Solo Goldfish & Deck Testing</p>
   </div>
 
   <div class="s-section">
@@ -1259,23 +1362,59 @@
       <div class="stat-box"><span class="stat-val" id="stat-hand">0</span><span class="stat-lbl">In Hand</span></div>
       <div class="stat-box"><span class="stat-val" id="stat-board">0</span><span class="stat-lbl">On Board</span></div>
       <div class="stat-box" style="border-color: var(--gy-bdr); background: var(--gy-bg);">
-        <span class="stat-val" id="stat-gy" style="color: #b7a4d6;">0</span>
-        <span class="stat-lbl" style="color: #8c7ea8;">Graveyard</span>
+        <span class="stat-val" id="stat-gy" style="color: var(--gy-text);">0</span>
+        <span class="stat-lbl" style="color: var(--gy-muted);">Graveyard</span>
       </div>
       <div class="stat-box" style="border-color: var(--exile-bdr); background: var(--exile-bg);">
         <span class="stat-val" id="stat-exile" style="color: var(--exile-accent);">0</span>
-        <span class="stat-lbl" style="color: #728ec4;">Exile</span>
+        <span class="stat-lbl" style="color: var(--exile-muted);">Exile</span>
       </div>
     </div>
   </div>
 
-  <div class="shortcuts-box">
+  <div class="compare-panel" id="compare-section" style="display:none">
+    <div class="compare-header-box">
+      <div class="compare-header-title">
+        <span>⚖️ Deck Comparison</span>
+      </div>
+      <p class="compare-header-desc">
+        Load another decklist to compare KPIs, card types, and mana curves side-by-side.
+      </p>
+    </div>
+
+    <div class="compare-legend">
+      <div class="legend-item"><span class="legend-dot dot-primary"></span> Primary</div>
+      <div class="legend-item"><span class="legend-dot dot-compare"></span> Compare</div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-label">Comparison Decklist</div>
+      <textarea id="compare-decklist" placeholder="4 Delver of Secrets&#10;4 Murktide Regent&#10;4 Lightning Bolt&#10;4 Counterspell&#10;4 Brainstorm&#10;18 Island&#10;&#10;Paste standard MTG format."></textarea>
+      <div class="btn-group">
+        <button class="btn-compare" id="btn-load-compare">Load Comparison</button>
+        <button class="btn-secondary" id="btn-sample-compare">Sample UR Murktide</button>
+        <button class="btn-ghost" id="btn-clear-compare" disabled>Clear Comparison</button>
+      </div>
+    </div>
+
+    <div id="compare-status-container">
+      <div class="compare-status-badge inactive" id="compare-badge">
+        <span>⚪ No comparison deck loaded</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="shortcuts-box" id="shortcuts-box">
     <strong>Keyboard Commands:</strong>
     <div class="shortcut-row"><span>Draw (Auto-Untap)</span><span class="kbd-badge">D</span></div>
     <div class="shortcut-row"><span id="lbl-mulligan-shortcut">London Mulligan</span><span class="kbd-badge">M</span></div>
     <div class="shortcut-row"><span>Untap All Board</span><span class="kbd-badge">U</span></div>
     <div class="shortcut-row"><span>Deck Stats Page</span><span class="kbd-badge">S</span></div>
     <div class="shortcut-row"><span>New Game</span><span class="kbd-badge">N</span></div>
+  </div>
+
+  <div style="margin-top:auto;">
+    <button class="btn-ghost" id="btn-theme" style="width:100%;">☀️ Light Mode</button>
   </div>
 
 </aside>
@@ -1375,7 +1514,7 @@
         <span class="mb-count" id="mulligan-cards-needed">1</span>
         <span>card(s) to put on the bottom of your library before play can begin.</span>
       </div>
-      <span style="font-size:0.65rem; color:#fde68a;">Click any card in your hand to return it</span>
+      <span style="font-size:0.65rem; color:var(--mb-hint);">Click any card in your hand to return it</span>
     </div>
 
     <div class="hand-cards" id="hand-cards">
@@ -1519,40 +1658,32 @@
           <div class="deck-groups-grid" id="sp-deck-groups"></div>
         </div>
 
+        <!-- Creature Types + Card Roles side by side -->
+        <div class="stats-two-col">
+
+          <div class="stats-section-box">
+            <div class="ss-title-row">
+              <div class="ss-title-col">
+                <div class="ss-title">Creature Types</div>
+                <div class="ss-desc">Every creature subtype in the deck. A creature with multiple types (e.g. 'Creature — Human Wall') counts once for each type.</div>
+              </div>
+            </div>
+            <div id="sp-creature-types"></div>
+          </div>
+
+          <div class="stats-section-box">
+            <div class="ss-title-row">
+              <div class="ss-title-col">
+                <div class="ss-title">Card Roles</div>
+                <div class="ss-desc">How each spell functions in the deck. Hover a role for what it catches plus example cards.</div>
+              </div>
+            </div>
+            <div id="sp-card-roles"></div>
+          </div>
+
+        </div>
+
       </div>
-
-      <!-- Right Side: Comparison Deck Input & Controls -->
-      <aside class="stats-compare-sidebar">
-        <div class="compare-header-box">
-          <div class="compare-header-title">
-            <span>⚖️ Deck Comparison</span>
-          </div>
-          <p class="compare-header-desc">
-            Load another decklist to compare KPIs, card types breakdown, and mana curves side-by-side.
-          </p>
-        </div>
-
-        <div class="compare-legend">
-          <div class="legend-item"><span class="legend-dot dot-primary"></span> Primary Deck</div>
-          <div class="legend-item"><span class="legend-dot dot-compare"></span> Comparison Deck</div>
-        </div>
-
-        <div class="s-section">
-          <div class="s-label">Comparison Decklist</div>
-          <textarea id="compare-decklist" placeholder="4 Delver of Secrets&#10;4 Murktide Regent&#10;4 Lightning Bolt&#10;4 Counterspell&#10;4 Brainstorm&#10;18 Island&#10;&#10;Paste standard MTG format."></textarea>
-          <div class="btn-group">
-            <button class="btn-compare" id="btn-load-compare">Load Comparison Deck</button>
-            <button class="btn-secondary" id="btn-sample-compare">Load Sample UR Murktide</button>
-            <button class="btn-ghost" id="btn-clear-compare" disabled>Clear Comparison</button>
-          </div>
-        </div>
-
-        <div id="compare-status-container">
-          <div class="compare-status-badge inactive" id="compare-badge">
-            <span>⚪ No comparison deck loaded</span>
-          </div>
-        </div>
-      </aside>
 
     </div>
   </section>
@@ -1705,6 +1836,7 @@ let graveyard         = [];       // { name }
 let exile             = [];       // { name }
 let cardCache         = { ...CARD_PRESETS };
 let turn              = 0;
+let landsPlayedThisTurn = 0;
 let totalCards        = 0;
 let gameStarted       = false;
 let pendingIdx        = null;
@@ -1806,6 +1938,8 @@ const spColorBars            = $('sp-color-bars');
 const spLandBars             = $('sp-land-bars');
 const spManaCurve            = $('sp-mana-curve');
 const spDeckGroups           = $('sp-deck-groups');
+const spCreatureTypes        = $('sp-creature-types');
+const spCardRoles            = $('sp-card-roles');
 
 // Comparison Controls
 const compareDecklistEl      = $('compare-decklist');
@@ -1813,6 +1947,8 @@ const btnLoadCompare         = $('btn-load-compare');
 const btnSampleCompare       = $('btn-sample-compare');
 const btnClearCompare        = $('btn-clear-compare');
 const compareBadge           = $('compare-badge');
+const compareSection         = $('compare-section');
+const shortcutsBox           = $('shortcuts-box');
 
 const tooltipEl              = $('tooltip');
 const toastEl                = $('toast');
@@ -2003,6 +2139,7 @@ function executeInitialHand() {
   turn           = 1;
   gameStarted    = true;
 
+  landsPlayedThisTurn = 0;
   turnNum.textContent = turn;
 
   for (let i = 0; i < 7; i++) {
@@ -2037,6 +2174,7 @@ function handleMulligan() {
   turn           = 1;
   gameStarted    = true;
 
+  landsPlayedThisTurn = 0;
   turnNum.textContent = turn;
 
   for (let i = 0; i < 7; i++) {
@@ -2113,6 +2251,7 @@ function drawOneCard() {
 
   turn++;
   turnNum.textContent = turn;
+  landsPlayedThisTurn = 0;
   btnDrawOne.disabled = library.length === 0;
 
   updateStats();
@@ -2163,6 +2302,11 @@ function playCard(idx, e) {
 }
 
 function doPlay(idx, zone) {
+  if (zone === 'land' && landsPlayedThisTurn >= 1) {
+    showToast('Only 1 land per turn.');
+    return;
+  }
+
   const [card] = hand.splice(idx, 1);
   if (!card) return;
 
@@ -2173,6 +2317,7 @@ function doPlay(idx, zone) {
     renderGraveyard();
   } else if (zone === 'land') {
     boardLands.push({ name: card.name, tapped: false });
+    landsPlayedThisTurn++;
     renderBoard();
   } else {
     boardCreatures.push({ name: card.name, tapped: false });
@@ -2442,10 +2587,18 @@ function openStatsPage() {
   }
   buildAndRenderStats();
   statsPage.classList.add('active');
+  syncSidebarForStats(true);
 }
 
 function closeStatsPage() {
   statsPage.classList.remove('active');
+  syncSidebarForStats(false);
+}
+
+function syncSidebarForStats(statsOpen) {
+  compareSection.style.display  = statsOpen ? 'flex' : 'none';
+  shortcutsBox.style.display    = statsOpen ? 'none' : '';
+  statsSection.style.display    = statsOpen ? 'none' : (fullDeck.length ? '' : 'none');
 }
 
 btnStats.addEventListener('click', openStatsPage);
@@ -2490,7 +2643,7 @@ function renderManaSymbolsHTML(manaCost, cmc) {
 function createDonutChart(items, totalCount, label) {
   if (!totalCount || !items.length) {
     return `
-      <div class="donut-chart" style="background: rgba(255,255,255,0.06);">
+      <div class="donut-chart" style="background: var(--donut-empty-bg);">
         <div class="donut-hole">
           <span class="donut-total-val">0</span>
           <span class="donut-total-lbl">${label}</span>
@@ -2521,6 +2674,115 @@ function createDonutChart(items, totalCount, label) {
   `;
 }
 
+// ── CREATURE SUBTYPES ────────────────────────────────────────────────────
+function addCreatureSubtypes(typeLine, acc, qty, cards, name) {
+  const CARD_TYPES = new Set([
+    'basic', 'legendary', 'snow', 'elite', 'world', 'ongoing', 'token', 'host', 'augment',
+    'creature', 'artifact', 'enchantment', 'planeswalker', 'land', 'instant', 'sorcery',
+    'tribal', 'dungeon', 'battle'
+  ]);
+  const parts = (typeLine || '').split(/—|–|-/);
+  if (parts.length < 2) return;
+  const subtypePart = parts.slice(1).join(' ').trim();
+  if (!subtypePart) return;
+  subtypePart.split(/\s+/).forEach(word => {
+    if (!word) return;
+    const clean = word.replace(/\/\/|,/g, '').trim();
+    if (!clean || CARD_TYPES.has(clean.toLowerCase())) return;
+    acc[clean] = (acc[clean] || 0) + qty;
+    if (cards) {
+      if (!cards[clean]) cards[clean] = [];
+      if (!cards[clean].some(c => c.name === name)) cards[clean].push({ name, qty });
+    }
+  });
+}
+
+// ── CARD ROLE CLASSIFIER ────────────────────────────────────────────────
+const CARD_ROLE_DEFS = [
+  { key: 'removal',    name: '🎯 Targeted Removal',
+    desc: 'Kills or exiles a single target — creatures, planeswalkers, artifacts, enchantments, or lands. Includes damage-to-target and fight effects.',
+    examples: 'Swords to Plowshares, Doom Blade, Lightning Bolt, Abrupt Decay, Diabolic Edict' },
+  { key: 'wipe',       name: '💥 Board Wipes',
+    desc: 'Clears many or all permanents at once — mass destroy/exile, "damage to all", or mass bounce/bypass effects.',
+    examples: 'Wrath of God, Damnation, Blasphemous Act, Supreme Verdict, Toxic Deluge' },
+  { key: 'ramp',       name: '🌱 Ramp',
+    desc: 'Gets you ahead on mana — extra lands from the library, mana dorks, mana rocks, or rituals.',
+    examples: 'Rampant Growth, Nature\'s Lore, Birds of Paradise, Sol Ring, Dark Ritual' },
+  { key: 'draw',       name: '📖 Card Draw',
+    desc: 'Adds cards to your hand — cantrips, repeatable draw triggers, or big draw spells, including looters.',
+    examples: 'Opt, Brainstorm, Ancestral Recall, Ponder, Faithless Looting, Skullclamp' },
+  { key: 'counter',    name: '⛔ Counterspells',
+    desc: 'Stops spells before they resolve — unconditional counters or type-specific ones (noncreature, instant, etc.).',
+    examples: 'Counterspell, Mana Drain, Force of Will, Negate, Dovin\'s Veto' },
+  { key: 'tutor',      name: '🔍 Tutors',
+    desc: 'Searches the library for a card into hand, top, or battlefield — restricted by type or completely open.',
+    examples: 'Demonic Tutor, Vampiric Tutor, Enlightened Tutor, Green Sun\'s Zenith, Worldly Tutor' },
+  { key: 'burn',       name: '🔥 Burn',
+    desc: 'Direct damage aimed at a player or planeswalker — reach to close games or face-damage spells.',
+    examples: 'Lightning Bolt, Lava Spike, Chain Lightning, Fireblast, Skewer the Critics' },
+  { key: 'disruption', name: '🃏 Disruption',
+    desc: 'Hand attacks (discard) and graveyard hate — strips the opponent\'s resources or exiles their graveyard.',
+    examples: 'Thoughtseize, Inquisition of Kozilek, Duress, Surgical Extraction, Rest in Peace' },
+  { key: 'protection', name: '🛡️ Protection',
+    desc: 'Hexproof, indestructible, shroud, ward, or damage prevention — shields your board or your life from harm.',
+    examples: 'Heroic Intervention, Lightning Greaves, Mother of Runes, Teferi\'s Protection' },
+  { key: 'tokens',     name: '🪙 Token Generation',
+    desc: 'Creates token creatures or non-creature tokens (treasure, clues) as go-wide threats, blockers, or mana.',
+    examples: 'Young Pyromancer, Lingering Souls, Secure the Wastes, Hordeling Outburst, Smothering Tithe' }
+];
+
+function detectCardRoles(cached) {
+  const o = ((cached?.oracleText || '') + ' ' + (cached?.typeLine || '')).toLowerCase();
+  const roles = [];
+
+  if (!o.includes('from a graveyard') && !o.includes('from graveyards') &&
+      (/(destroy|exile) .*?target .{0,30}?(creature|artifact|enchantment|permanent|land|planeswalker)s?\b/.test(o) ||
+       /deals? \d+ damage to (any target|target (creature|noncreature|planeswalker))/.test(o) ||
+       /fight target/.test(o) ||
+       /target creature.*(gets -\d+\s*\/\s*-?\d+|\bsacrifice it\b)/.test(o) ||
+       /target player(s?) (sacrifice|sacrifices) a (creature|permanent|artifact)/.test(o))) {
+    roles.push('removal');
+  }
+
+  if (/(destroy|exile) (all|each) (creatures|permanents)|deals? \d+ damage to (all|each) (creatures|nontoken)|each (creature|permanent) gets -\d+\s*\/\s*-?\d+/.test(o)) {
+    roles.push('wipe');
+  }
+
+  if (/search your library for (a|up to \d+) (basic )?land|search your library for (a|up to \d+) (plains|island|swamp|mountain|forest)|put (a|up to \d+) land (card )?(from your library )?onto the battlefield|add (\d+|one|two|three|four)? ?mana|add \{|: add|for each land you control, add/.test(o)) {
+    roles.push('ramp');
+  }
+
+  if (/draw (a|an|\d+|two|three|four|five|six|seven|x|up to \d+) cards?/.test(o)) {
+    roles.push('draw');
+  }
+
+  if (/counter (target (noncreature |nonland |creature |instant |sorcery |artifact |enchantment )*spell|any number of target spells|all spells|that spell)/.test(o)) {
+    roles.push('counter');
+  }
+
+  if (/search your library for (a|an|one|any number of|up to \d+) (card|artifact|enchantment|creature|instant|sorcery|planeswalker|permanent|dragon|spell)s?/.test(o)) {
+    roles.push('tutor');
+  }
+
+  if (/deals? \d+ damage to (any target|target (player|opponent|planeswalker)|each opponent|each player)/.test(o)) {
+    roles.push('burn');
+  }
+
+  if (/discard|exile [^.]*graveyard|remove [^.]*graveyard/.test(o)) {
+    roles.push('disruption');
+  }
+
+  if (/hexproof|indestructible|shroud|protection from|ward \{|prevent (all|\d+) damage/.test(o)) {
+    roles.push('protection');
+  }
+
+  if (/creates? (a|an|\d+|two|three|four|five|six|x|up to \d+) [\w\s/]*?token|puts? (a|an|one|two|three|four) .{0,45}?token/.test(o)) {
+    roles.push('tokens');
+  }
+
+  return roles;
+}
+
 // ── ANALYZE DECK HELPER ──────────────────────────────────────────────────
 function analyzeDeck(cardList) {
   const counts = {};
@@ -2545,6 +2807,14 @@ function analyzeDeck(cardList) {
 
   const landColorSources = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
   let totalLandSources   = 0;
+
+  const creatureTypes = {};
+
+  const creatureTypeCards = {};
+
+  const cardRoles = {};
+
+  const cardRoleCards = {};
 
   const groups = {
     'Creatures': [],
@@ -2580,6 +2850,12 @@ function analyzeDeck(cardList) {
       const bucket = Math.min(6, Math.max(0, Math.floor(cmc)));
       curveCounts[bucket] += qty;
 
+      detectCardRoles(cached).forEach(r => {
+        cardRoles[r] = (cardRoles[r] || 0) + qty;
+        if (!cardRoleCards[r]) cardRoleCards[r] = [];
+        if (!cardRoleCards[r].some(c => c.name === name)) cardRoleCards[r].push({ name, qty });
+      });
+
       if (manaCost) {
         const symbols = manaCost.match(/\{([^}]+)\}/g) || [];
         symbols.forEach(sym => {
@@ -2596,6 +2872,7 @@ function analyzeDeck(cardList) {
       let assignedGroup = 'Other';
       if (type.includes('creature')) {
         creatureCount += qty;
+        addCreatureSubtypes(cached.typeLine || '', creatureTypes, qty, creatureTypeCards, name);
         assignedGroup = 'Creatures';
       } else if (type.includes('instant')) {
         instantCount += qty;
@@ -2640,6 +2917,10 @@ function analyzeDeck(cardList) {
     totalSpellPips,
     landColorSources,
     totalLandSources,
+    creatureTypes,
+    creatureTypeCards,
+    cardRoles,
+    cardRoleCards,
     groups
   };
 }
@@ -2896,6 +3177,219 @@ function buildAndRenderStats() {
 
     spDeckGroups.appendChild(box);
   });
+
+  // ── 7. Creature Subtype Breakdown
+  renderCreatureTypes(spCreatureTypes, mainStats.creatureTypes, mainStats.creatureTypeCards);
+
+  // ── 8. Card Role Breakdown
+  renderCardRoles(spCardRoles, mainStats.cardRoles, mainStats.cardRoleCards);
+}
+
+// ── RENDER CREATURE SUBTYPE BREAKDOWN ────────────────────────────────────
+let creatureTypesSortMode = 'alpha';
+const expandedCreatureTypes = new Set();
+
+function renderCreatureTypes(container, subtypes, cards) {
+  container.innerHTML = '';
+  const names = Object.keys(subtypes);
+
+  if (!names.length) {
+    container.innerHTML = '<div class="deck-group-box"><div style="color:var(--muted); font-size:0.75rem; font-style:italic;">No creatures found in this deck.</div></div>';
+    return;
+  }
+
+  const total = names.reduce((acc, n) => acc + subtypes[n], 0);
+
+  const box = document.createElement('div');
+  box.className = 'deck-group-box';
+
+  const header = document.createElement('div');
+  header.className = 'group-header';
+
+  const hLeft = document.createElement('span');
+  hLeft.textContent = 'All Creature Subtypes';
+
+  const hRight = document.createElement('span');
+  hRight.style.cssText = 'display:flex; align-items:center; gap:8px;';
+
+  const countLabel = document.createElement('span');
+  countLabel.textContent = `${total} across ${names.length} types`;
+  hRight.appendChild(countLabel);
+
+  const sortBtn = document.createElement('button');
+  sortBtn.className = 'btn-ghost';
+  sortBtn.style.cssText = 'font-size:0.56rem; padding:2px 7px; min-width:0; letter-spacing:0.3px;';
+  sortBtn.title = 'Toggle sort';
+  sortBtn.textContent = creatureTypesSortMode === 'alpha' ? 'A–Z' : '# ↓';
+  sortBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    creatureTypesSortMode = creatureTypesSortMode === 'alpha' ? 'count' : 'alpha';
+    renderCreatureTypes(container, subtypes, cards);
+  });
+  hRight.appendChild(sortBtn);
+
+  header.append(hLeft, hRight);
+  box.appendChild(header);
+
+  if (creatureTypesSortMode === 'alpha') {
+    names.sort((a, b) => a.localeCompare(b));
+  } else {
+    names.sort((a, b) => (subtypes[b] - subtypes[a]) || a.localeCompare(b));
+  }
+
+  names.forEach(name => {
+    const listEl = document.createElement('div');
+    listEl.className = 'collapse-target sub-card-list';
+
+    (cards?.[name] || []).forEach(c => {
+      const cRow = document.createElement('div');
+      cRow.className = 'group-card-item';
+      cRow.innerHTML = `
+        <div class="group-card-left">
+          <span class="group-card-qty">${c.qty}</span>
+          <span class="group-card-title">${c.name}</span>
+        </div>
+      `;
+      cRow.addEventListener('mouseenter', ev => showTooltip(c.name, ev));
+      cRow.addEventListener('mousemove',  moveTooltip);
+      cRow.addEventListener('mouseleave', hideTooltip);
+      listEl.appendChild(cRow);
+    });
+
+    const row = document.createElement('div');
+    row.className = 'group-card-item expandable-row';
+
+    const left = document.createElement('div');
+    left.className = 'group-card-left';
+    const chev = document.createElement('span');
+    chev.className = 'chevron';
+    chev.textContent = '▸';
+    left.appendChild(chev);
+    const title = document.createElement('span');
+    title.className = 'group-card-title';
+    title.textContent = name;
+    left.appendChild(title);
+
+    const right = document.createElement('span');
+    right.className = 'group-card-qty';
+    right.textContent = subtypes[name];
+
+    row.append(left, right);
+    row.addEventListener('click', () => {
+      const open = listEl.classList.toggle('open');
+      row.classList.toggle('open', open);
+      if (open) expandedCreatureTypes.add(name);
+      else expandedCreatureTypes.delete(name);
+    });
+    box.appendChild(row);
+
+    if (expandedCreatureTypes.has(name)) {
+      row.classList.add('open');
+      listEl.classList.add('open');
+    }
+    box.appendChild(listEl);
+  });
+
+  container.appendChild(box);
+}
+
+// ── RENDER CARD ROLES ───────────────────────────────────────────────────
+const expandedRoles = new Set();
+
+function renderCardRoles(container, roles, cards) {
+  container.innerHTML = '';
+  const present = CARD_ROLE_DEFS.filter(d => roles[d.key]);
+
+  if (!present.length) {
+    container.innerHTML = '<div class="deck-group-box"><div style="color:var(--muted); font-size:0.75rem; font-style:italic;">No role classifications found. Card data loads from Scryfall.</div></div>';
+    return;
+  }
+
+  const total = present.reduce((a, d) => a + roles[d.key], 0);
+
+  const box = document.createElement('div');
+  box.className = 'deck-group-box';
+
+  const header = document.createElement('div');
+  header.className = 'group-header';
+  header.innerHTML = `<span>All Card Roles</span><span>${total} total across ${present.length} roles</span>`;
+  box.appendChild(header);
+
+  present.sort((a, b) => roles[b.key] - roles[a.key] || a.name.localeCompare(b.name));
+
+  present.forEach(d => {
+    const listEl = document.createElement('div');
+    listEl.className = 'collapse-target sub-card-list';
+
+    (cards?.[d.key] || []).forEach(c => {
+      const cRow = document.createElement('div');
+      cRow.className = 'group-card-item';
+      cRow.innerHTML = `
+        <div class="group-card-left">
+          <span class="group-card-qty">${c.qty}</span>
+          <span class="group-card-title">${c.name}</span>
+        </div>
+      `;
+      cRow.addEventListener('mouseenter', ev => showTooltip(c.name, ev));
+      cRow.addEventListener('mousemove',  moveTooltip);
+      cRow.addEventListener('mouseleave', hideTooltip);
+      listEl.appendChild(cRow);
+    });
+
+    const row = document.createElement('div');
+    row.className = 'group-card-item expandable-row';
+
+    const left = document.createElement('div');
+    left.className = 'group-card-left';
+    const chev = document.createElement('span');
+    chev.className = 'chevron';
+    chev.textContent = '▸';
+    left.appendChild(chev);
+    const title = document.createElement('span');
+    title.className = 'group-card-title';
+    title.textContent = d.name;
+    left.appendChild(title);
+
+    const right = document.createElement('span');
+    right.className = 'group-card-qty';
+    right.textContent = roles[d.key];
+
+    row.append(left, right);
+    row.addEventListener('mouseenter', ev => showRoleTooltip(d, ev));
+    row.addEventListener('mouseleave', hideTooltip);
+    row.addEventListener('click', () => {
+      const open = listEl.classList.toggle('open');
+      row.classList.toggle('open', open);
+      if (open) expandedRoles.add(d.key);
+      else expandedRoles.delete(d.key);
+    });
+    box.appendChild(row);
+
+    if (expandedRoles.has(d.key)) {
+      row.classList.add('open');
+      listEl.classList.add('open');
+    }
+    box.appendChild(listEl);
+  });
+
+  container.appendChild(box);
+}
+
+// ── ROLE HOVER TOOLTIP ──────────────────────────────────────────────────
+function showRoleTooltip(def, e) {
+  tooltipEl.innerHTML =
+    `<div class="tooltip-text" style="max-width:300px; line-height:1.5;">
+       <strong style="color:var(--accent); font-size:0.78rem;">${def.name}</strong>
+       <div style="color:var(--muted); font-size:0.65rem; margin-top:4px;">${def.desc}</div>
+       <div style="color:var(--text); font-size:0.65rem; margin-top:6px;">e.g. <span style="color:var(--muted);">${def.examples}</span></div>
+     </div>`;
+  tooltipEl.classList.add('visible');
+  const pad = 14, tw = 310;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + tw > window.innerWidth)  x = e.clientX - tw - pad;
+  if (y + 240 > window.innerHeight) y = e.clientY - 240 - pad;
+  tooltipEl.style.left = x + 'px';
+  tooltipEl.style.top  = y + 'px';
 }
 
 // ── KEYBOARD SHORTCUTS ───────────────────────────────────────────────────
@@ -3280,7 +3774,7 @@ function clearAll() {
   fullDeck = []; library = []; hand = [];
   boardCreatures = []; boardLands = []; graveyard = []; exile = [];
   cardCache = { ...CARD_PRESETS };
-  turn = 0; totalCards = 0; gameStarted = false;
+  turn = 0; totalCards = 0; landsPlayedThisTurn = 0; gameStarted = false;
   resetMulliganState();
 
   statsSection.style.display = 'none';
@@ -3327,6 +3821,23 @@ compareDecklistEl.addEventListener('keydown', e => {
     loadComparisonDeck();
   }
 });
+
+// ── THEME TOGGLE (DARK / LIGHT) ──────────────────────────────────────────
+const btnTheme = $('btn-theme');
+
+function applyTheme(light) {
+  document.body.classList.toggle('light', light);
+  btnTheme.innerHTML = light ? '🌙 Dark Mode' : '☀️ Light Mode';
+  localStorage.setItem('mtg-theme', light ? 'light' : 'dark');
+}
+
+btnTheme.addEventListener('click', () => {
+  applyTheme(!document.body.classList.contains('light'));
+});
+
+if (localStorage.getItem('mtg-theme') === 'light') {
+  applyTheme(true);
+}
 </script>
 </body>
 </html>
