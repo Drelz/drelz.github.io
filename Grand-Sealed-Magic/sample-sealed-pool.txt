@@ -1,0 +1,33 @@
+2 Plains
+2 Island
+2 Swamp
+2 Mountain
+2 Forest
+1 Authority of the Consuls
+2 Doomed Traveler
+1 Serra Angel
+1 Knight of the White Orchid
+1 Warleader’s Call
+1 Cloudfin Raptor
+1 Counterspell
+2 Essence Scatter
+1 Mulldrifter
+1 Negate
+1 Preordain
+1 Curator of Mysteries
+1 Festering Goblin
+1 Duress
+1 Murder
+1 Phyrexian Rager
+1 Dragon’s Rage Channeler
+1 Lightning Bolt
+1 Lava Coil
+1 Shock
+1 Viashino Pyromancer
+1 Llanowar Elves
+1 Wood Elves
+1 Giant Growth
+1 Rampant Growth
+1 Ambush Viper
+1 Grizzly Bears
+1 Gaea’s Skyfolk

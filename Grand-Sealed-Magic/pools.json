@@ -1,0 +1,12 @@
+{
+  "pools": [
+    {
+      "name": "Sample sealed pool",
+      "file": "sample-sealed-pool.txt"
+    },
+    {
+      "name": "Example CSV pool",
+      "file": "example-csv-pool.csv"
+    }
+  ]
+}

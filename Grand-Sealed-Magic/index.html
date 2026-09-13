@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grand Sealed Magic</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%94%AE%3C/text%3E%3C/svg%3E">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0c0e17;
+      --sidebar-bg:   #10121d;
+      --surface:      #181b2c;
+      --surface2:     #21253c;
+      --border:       #272c4e;
+      --accent:       #c89b3c;
+      --accent2:      #8b6914;
+      --accent-glow:  rgba(200, 155, 60, 0.25);
+      --compare:      #38bdf8;
+      --compare-glow: rgba(56, 189, 248, 0.25);
+      --text:         #e8e0d0;
+      --muted:        #6b7092;
+      --danger:       #e0533f;
+      --ok:           #6fae5a;
+      --radius:       10px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--surface2); }
+
+    button { font-family: inherit; cursor: pointer; }
+    input, textarea { font-family: inherit; }
+
+    /* ── SIDEBAR ─────────────────────────────────────────────── */
+
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 18px 14px 20px;
+      gap: 16px;
+    }
+
+    .app-title h1 {
+      font-size: 1.12rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-shadow: 0 0 16px var(--accent-glow);
+      line-height: 1.2;
+    }
+    .app-title p {
+      color: var(--muted);
+      font-size: 0.65rem;
+      margin-top: 3px;
+      letter-spacing: 0.5px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+
+    .panel h2 {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .panel h2 .hint {
+      margin-left: auto;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--muted);
+      font-size: 0.62rem;
+    }
+
+    #poolText {
+      width: 100%;
+      height: 128px;
+      resize: vertical;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    #poolText:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-glow);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 9px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #0c0e17;
+      background: linear-gradient(180deg, #d9ac52, var(--accent) 60%, var(--accent2));
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px var(--accent-glow);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(200, 155, 60, 0.4); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn.full { width: 100%; }
+
+    .btn.ghost {
+      color: var(--compare);
+      background: transparent;
+      border: 1px solid var(--border);
+      box-shadow: none;
+      font-size: 0.68rem;
+      padding: 7px 10px;
+    }
+    .btn.ghost:hover { border-color: var(--compare); box-shadow: 0 0 0 1px var(--compare-glow); }
+
+    .loader-row { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    .bar {
+      height: 6px;
+      border-radius: 4px;
+      background: var(--surface2);
+      overflow: hidden;
+    }
+    .bar > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      border-radius: 4px;
+      transition: width 0.25s;
+    }
+    .loader-label {
+      font-size: 0.62rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .loader-label .spin {
+      color: var(--accent);
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hint-text { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+    .hint-text code {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0 4px;
+      color: var(--compare);
+      font-size: 0.6rem;
+    }
+
+    .divider { height: 1px; background: var(--border); }
+
+    .field label {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.8rem;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field input:focus { border-color: var(--compare); box-shadow: 0 0 0 1px var(--compare-glow); }
+
+    .panel select {
+      width: 100%;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.8rem;
+      padding: 8px 10px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .panel select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-glow);
+    }
+
+    .group-list { display: flex; flex-direction: column; gap: 5px; }
+    .group-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.78rem;
+      text-align: left;
+      transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+    }
+    .group-btn:hover { border-color: var(--border); background: var(--surface2); }
+    .group-btn.active {
+      border-color: var(--accent);
+      background: var(--surface2);
+      box-shadow: 0 0 0 1px var(--accent-glow);
+    }
+    .group-btn .ico {
+      width: 22px;
+      text-align: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .group-btn .count {
+      margin-left: auto;
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .group-btn.active .count { color: var(--accent); }
+
+    .stats { display: flex; flex-direction: column; gap: 7px; }
+    .stat-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--muted); }
+    .stat-row strong { color: var(--text); font-weight: 700; margin-left: auto; }
+    .pips { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pip {
+      width: 20px; height: 20px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.62rem; font-weight: 800;
+      color: #0c0e17;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .pip.multi { background: conic-gradient(#f8f4e0 0 20%, #7aa8e6 0 40%, #8d8da0 0 60%, #e0533f 0 80%, #6fae5a 0 100%); }
+    .pip.extra { width: auto; padding: 0 5px; background: var(--surface2); color: var(--muted); }
+
+    .land-tabs { display: flex; gap: 5px; margin-bottom: 10px; }
+    .land-tabs button {
+      flex: 1;
+      padding: 6px 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--muted);
+      font-size: 0.68rem;
+      transition: color 0.12s, border-color 0.12s, background 0.12s;
+    }
+    .land-tabs button.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--surface2);
+    }
+    .land-tabs button span { color: var(--muted); font-size: 0.6rem; }
+    .land-tabs button.active span { color: var(--accent); }
+
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      font-size: 0.78rem;
+      padding: 10px 16px;
+      border-radius: 8px;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 1000;
+      max-width: 80vw;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── MAIN AREA ───────────────────────────────────────────── */
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .main::before {
+      content: "";
+      position: fixed;
+      width: 460px; height: 460px;
+      top: -180px; right: -160px;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      filter: blur(90px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .main-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 28px 60px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .topbar h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .topbar h2 span {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .topbar .spacer { flex: 1; }
+    .topbar select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.72rem;
+      padding: 7px 10px;
+      outline: none;
+    }
+    .chip-summary {
+      font-size: 0.7rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chip-summary b { color: var(--text); }
+
+    .banner {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--danger);
+      border-left: 3px solid var(--danger);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+    }
+    .banner-title { font-size: 0.76rem; font-weight: 700; color: var(--danger); text-transform: uppercase; letter-spacing: 1px; }
+    .banner-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .banner-chips .chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.68rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    .banner-chips .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+      padding: 90px 20px;
+    }
+    .empty .rocket { font-size: 3rem; }
+    .empty h3 { font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; color: var(--text); }
+    .empty p { font-size: 0.78rem; color: var(--muted); max-width: 420px; line-height: 1.6; }
+
+    .groups { display: flex; flex-direction: column; gap: 30px; }
+
+    .group {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 16px 18px;
+      border-top: 3px solid var(--accent);
+      animation: rise 0.25s ease both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .group-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .group-head .gbar {
+      width: 6px;
+      align-self: stretch;
+      border-radius: 3px;
+      background: var(--accent);
+    }
+    .group-head .seticon { height: 22px; width: 22px; flex-shrink: 0; }
+    .group-head h3 {
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .group-head h3 small { display: block; font-size: 0.62rem; font-weight: 500; letter-spacing: 0.5px; color: var(--muted); text-transform: none; }
+    .group-head .gcount {
+      margin-left: auto;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+
+    .tcard {
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.12s;
+    }
+    .tcard:hover { transform: translateY(-3px); }
+    .tcard .frame {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+      aspect-ratio: 5 / 7;
+    }
+    .tcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .tcard .qty {
+      position: absolute;
+      top: 6px; left: 6px;
+      background: linear-gradient(180deg, #d9ac52, var(--accent));
+      color: #0c0e17;
+      font-size: 0.7rem;
+      font-weight: 800;
+      min-width: 20px;
+      text-align: center;
+      padding: 1px 5px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      z-index: 2;
+    }
+    .tcard .frame::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      pointer-events: none;
+    }
+    .tcard figcaption {
+      margin-top: 5px;
+      font-size: 0.66rem;
+      line-height: 1.25;
+      color: var(--muted);
+      text-align: center;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .tcard figcaption.warn {
+      color: #e8a86a;
+      text-decoration: underline dotted;
+      text-underline-offset: 2px;
+    }
+    .tcard .placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px;
+      font-size: 0.62rem;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    /* ── MODAL ───────────────────────────────────────────────── */
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 7, 12, 0.78);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      padding: 24px;
+    }
+    .overlay.open { display: flex; animation: fade 0.18s ease; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal {
+      display: flex;
+      gap: 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      max-width: 780px;
+      width: 100%;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
+    }
+    .modal .art {
+      width: 240px;
+      flex-shrink: 0;
+      align-self: flex-start;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .modal .art img { width: 100%; display: block; }
+    .modal .info { flex: 1; min-width: 0; }
+
+    .m-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .m-title .m-name {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: 0.5px;
+    }
+    .m-title .m-cost {
+      font-size: 1.2rem;
+      color: var(--accent);
+      font-weight: 700;
+      margin-left: auto;
+    }
+    .m-type { margin-top: 4px; font-size: 0.76rem; color: var(--compare); letter-spacing: 0.4px; }
+    .m-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .m-meta .seticon { height: 18px; width: 18px; }
+    .m-rarity { font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+
+    .m-oracle {
+      margin-top: 14px;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre-line;
+    }
+    .m-oracle .face { display: block; }
+    .m-oracle .face + .face {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+    .m-oracle .face b {
+      display: block;
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--compare);
+      margin-bottom: 4px;
+    }
+
+    .m-extras { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .m-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 9px;
+      font-size: 0.64rem;
+      color: var(--muted);
+    }
+    .m-tag b { color: var(--text); font-weight: 600; }
+
+    .modal .close {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 30px; height: 30px;
+      color: var(--text);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    .modal .close:hover { border-color: var(--accent); color: var(--accent); }
+    .modal-wrap { position: relative; width: 100%; }
+
+    .flash {
+      animation: flash 1.4s ease-out;
+    }
+    @keyframes flash {
+      0% { box-shadow: 0 0 0 0 rgba(200, 155, 60, 0); }
+      15% { box-shadow: 0 0 0 2px var(--accent), 0 0 30px var(--accent-glow); }
+      100% { box-shadow: 0 0 0 0 rgba(200, 155, 60, 0); }
+    }
+
+    @media (max-width: 900px) {
+      body { flex-direction: column; overflow: auto; }
+      .sidebar { width: 100%; max-height: none; border-right: none; border-bottom: 1px solid var(--border); }
+      .main { overflow: visible; }
+      .modal { flex-direction: column; }
+      .modal .art { width: 100%; max-width: 280px; margin: 0 auto; }
+      .m-title .m-cost { margin-left: 8px; }
+    }
+    @media (max-width: 480px) {
+      .card-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+      .topbar h2 span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="app-title">
+      <h1>Grand Sealed<br>Magic</h1>
+      <p>Visualize a limited pool · grouped by color, cost, set &amp; more</p>
+    </div>
+
+    <div class="panel">
+      <h2>Pool List <span class="hint">1 per line</span></h2>
+      <textarea id="poolText" spellcheck="false" placeholder="2 Plains&#10;1 Lightning Bolt&#10;1 Doom Blade&#10;1 Llanowar Elves"></textarea>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn full" id="loadBtn">Load Pool</button>
+      </div>
+      <button class="btn ghost full" id="sampleBtn" style="margin-top:8px;">Use sample pool</button>
+      <div class="loader-row" id="loader" style="display:none;">
+        <div class="bar"><i id="barFill"></i></div>
+        <div class="loader-label">
+          <span><span class="spin">◌</span> <span id="loaderText">Fetching cards…</span></span>
+          <span id="loaderN">0 / 0</span>
+        </div>
+      </div>
+      <p class="hint-text">
+        Accepts <code>2x Serra Angel</code>, <code>2,Serra Angel</code> or plain names. Lines starting with <code>#</code> are ignored.
+        Card data &amp; art load live from Scryfall.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>Saved Pools <span class="hint">.txt / .csv</span></h2>
+      <select id="poolFileSel"></select>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn full" id="loadFileBtn">Load Pool File</button>
+      </div>
+      <button class="btn ghost full" id="browseBtn" style="margin-top:8px;">Browse local file…</button>
+      <input type="file" id="filePicker" accept=".txt,.csv,text/plain,text/csv" style="display:none;">
+      <p class="hint-text">
+        Place .txt/.csv pools next to <code>index.html</code> and list them in <code>pools.json</code> to load them from the dropdown.
+      </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label for="searchBox">Search pool</label>
+      <input type="text" id="searchBox" placeholder="Name, type, ability…" autocomplete="off">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="panel">
+      <h2>Group By</h2>
+      <div class="group-list" id="groupList">
+        <button class="group-btn active" data-group="color"><span class="ico">🎨</span>Color<span class="count" id="cColor"></span></button>
+        <button class="group-btn" data-group="cmc"><span class="ico">🔢</span>Mana Value<span class="count" id="cCmc"></span></button>
+        <button class="group-btn" data-group="type"><span class="ico">🃏</span>Card Type<span class="count" id="cType"></span></button>
+        <button class="group-btn" data-group="set"><span class="ico">📦</span>Set<span class="count" id="cSet"></span></button>
+        <button class="group-btn" data-group="rarity"><span class="ico">💎</span>Rarity<span class="count" id="cRarity"></span></button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Pool Stats</h2>
+      <div class="stats" id="statsBox">
+        <div class="stat-row">Cards <strong id="stTotal">—</strong></div>
+        <div class="stat-row">Unique <strong id="stUnique">—</strong></div>
+        <div class="stat-row">Avg. Mana Value <strong id="stCmc">—</strong></div>
+        <div class="stat-row" style="margin-top:4px;">Color need</div>
+        <div class="pips" id="stPips"></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="main-inner">
+      <div class="topbar">
+        <h2><span id="topTitle">Pool</span> <span id="topSub"></span></h2>
+        <div class="spacer"></div>
+        <div class="chip-summary" id="summary"></div>
+        <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Sort</label>
+        <select id="sortSel">
+          <option value="cmc">Mana Value</option>
+          <option value="name">Name</option>
+          <option value="rarity">Rarity</option>
+          <option value="color">Color</option>
+        </select>
+      </div>
+
+      <div class="banner" id="unresolved" style="display:none;">
+        <div class="banner-title">Couldn't find these — check the names below</div>
+        <div class="banner-chips" id="unresolvedChips"></div>
+      </div>
+
+      <div class="empty" id="emptyState">
+        <div class="rocket">🔮</div>
+        <h3>No pool loaded</h3>
+        <p>Paste your sealed pool on the left (one card per line, optional quantity prefix) and hit <b>Load Pool</b>, or try the sample pool to see the groupings in action.</p>
+        <button class="btn" id="emptySampleBtn">Load sample pool</button>
+      </div>
+
+      <div class="groups" id="groupsBox"></div>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="modal-wrap">
+      <button class="close" id="closeBtn">✕</button>
+      <div class="modal" id="modal"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = sel => document.querySelector(sel);
+
+    const els = {
+      poolText: $('#poolText'),
+      loadBtn: $('#loadBtn'),
+      sampleBtn: $('#sampleBtn'),
+      emptySampleBtn: $('#emptySampleBtn'),
+      poolFileSel: $('#poolFileSel'),
+      loadFileBtn: $('#loadFileBtn'),
+      browseBtn: $('#browseBtn'),
+      filePicker: $('#filePicker'),
+      loader: $('#loader'),
+      barFill: $('#barFill'),
+      loaderText: $('#loaderText'),
+      loaderN: $('#loaderN'),
+      searchBox: $('#searchBox'),
+      sortSel: $('#sortSel'),
+      groupList: $('#groupList'),
+      topTitle: $('#topTitle'),
+      topSub: $('#topSub'),
+      summary: $('#summary'),
+      unresolved: $('#unresolved'),
+      unresolvedChips: $('#unresolvedChips'),
+      emptyState: $('#emptyState'),
+      groupsBox: $('#groupsBox'),
+      statsBox: $('#statsBox'),
+      stTotal: $('#stTotal'),
+      stUnique: $('#stUnique'),
+      stCmc: $('#stCmc'),
+      stPips: $('#stPips'),
+      overlay: $('#overlay'),
+      modal: $('#modal'),
+      closeBtn: $('#closeBtn'),
+      toast: $('#toast')
+    };
+
+    const SAMPLE_POOL = [
+      '2 Plains', '2 Island', '2 Swamp', '2 Mountain', '2 Forest',
+      '1 Authority of the Consuls',
+      '2 Doomed Traveler',
+      '1 Serra Angel',
+      '1 Knight of the White Orchid',
+      '1 Warleader\u2019s Call',
+      '1 Cloudfin Raptor',
+      '1 Counterspell',
+      '2 Essence Scatter',
+      '1 Mulldrifter',
+      '1 Negate',
+      '1 Preordain',
+      '1 Curator of Mysteries',
+      '1 Festering Goblin',
+      '1 Duress',
+      '1 Murder',
+      '1 Phyrexian Rager',
+      '1 Dragon\u2019s Rage Channeler',
+      '1 Lightning Bolt',
+      '1 Lava Coil',
+      '1 Shock',
+      '1 Viashino Pyromancer',
+      '1 Llanowar Elves',
+      '1 Wood Elves',
+      '1 Giant Growth',
+      '1 Rampant Growth',
+      '1 Ambush Viper',
+      '1 Grizzly Bears',
+      '1 Gaea\u2019s Skyfolk'
+    ];
+
+    const CARD_TYPES = ['Creature', 'Instant', 'Sorcery', 'Enchantment', 'Artifact', 'Land', 'Planeswalker', 'Battle'];
+
+    const COLOR_META = {
+      W:        { label: 'White',     color: '#f4efe0', chip: '#e5dca8', letter: 'W' },
+      U:        { label: 'Blue',      color: '#8fb6ea', chip: '#4d7fc8', letter: 'U' },
+      B:        { label: 'Black',     color: '#9a9aad', chip: '#2b2935', letter: 'B' },
+      R:        { label: 'Red',       color: '#e7664f', chip: '#b02a1b', letter: 'R' },
+      G:        { label: 'Green',     color: '#7db269', chip: '#3d6b2f', letter: 'G' },
+      Multi:    { label: 'Multicolor', color: '#c89b3c', chip: null,      letter: '' },
+      Colorless:{ label: 'Colorless', color: '#b9bfcf', chip: '#6e7486', letter: '' },
+      Land:     { label: 'Land',      color: '#b89a68', chip: '#6b5232', letter: '' }
+    };
+
+    const RARITY_META = {
+      common:    { label: 'Common',    color: '#b8c0d2' },
+      uncommon:  { label: 'Uncommon',  color: '#ccd2e0' },
+      rare:      { label: 'Rare',      color: '#c89b3c' },
+      mythic:    { label: 'Mythic',    color: '#e0533f' },
+      special:   { label: 'Special',   color: '#38bdf8' }
+    };
+
+    const RARITY_ORDER = { common: 0, uncommon: 1, rare: 2, mythic: 3, special: 4 };
+
+    const state = {
+      cards: [],
+      group: 'color',
+      search: '',
+      sort: 'cmc',
+      loading: false,
+      unresolved: []
+    };
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    function parsePool(text) {
+      const map = new Map();
+      for (const raw of text.split(/\r?\n/)) {
+        let line = raw.trim().replace(/"/g, '');
+        if (!line || line.startsWith('#') || line.startsWith('//')) continue;
+        let qty = 1;
+        let name = line.replace(/^[\s"']+|[\s"']+$/g, '');
+        let m = line.match(/^(\d+)\s*[,/xX]\s*(.+)$/);
+        if (m && m[2]) {
+          qty = parseInt(m[1], 10) || 1;
+          name = m[2].trim().replace(/^[\s"']+|[\s"']+$/g, '');
+        } else {
+          m = line.match(/^(\d+)\s*(?:x)?\s*(.*)$/i);
+          if (m && m[2]) {
+            qty = parseInt(m[1], 10) || 1;
+            name = m[2].trim();
+          }
+        }
+        if (!name) continue;
+        const key = name.toLowerCase();
+        map.set(key, { name, qty: (map.get(key) ? map.get(key).qty : 0) + qty });
+      }
+      return map;
+    }
+
+    const norm = s => s.replace(/[\u2019\u2018]/g, "'").replace(/^A-/, '').replace(/\*+$/g, '').trim().toLowerCase();
+
+    async function fetchWithTimeout(url, opts, ms = 15000) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), ms);
+      try {
+        return await fetch(url, Object.assign({}, opts, { signal: ctrl.signal }));
+      } catch (e) {
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function scry(url, opts, attempts = 3) {
+      for (let i = 0; i < attempts; i++) {
+        const res = await fetchWithTimeout(url, opts);
+        if (!res) return null;
+        if (res.ok) return res.json();
+        if (res.status === 429) {
+          let waitMs = 1000;
+          try {
+            const err = await res.json();
+            if (err && err.retry_after) waitMs = Math.min(4, err.retry_after) * 1000;
+          } catch (e2) { /* keep default */ }
+          await sleep(waitMs * (i + 1));
+          continue;
+        }
+        return null;
+      }
+      return null;
+    }
+
+    async function bulkLookup(names) {
+      const map = new Map();
+      if (!names.length) return map;
+      for (let i = 0; i < names.length; i += 75) {
+        const chunk = names.slice(i, i + 75);
+        if (i > 0) await sleep(600);
+        const data = await scry('https://api.scryfall.com/cards/collection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifiers: chunk.map(n => ({ name: n })) })
+        });
+        if (data && data.object === 'list' && Array.isArray(data.data)) {
+          for (const card of data.data) map.set(norm(card.name), card);
+        }
+      }
+      return map;
+    }
+
+    async function fetchCard(name) {
+      const n = norm(name);
+      let data = await scry('https://api.scryfall.com/cards/named?exact=' + encodeURIComponent(name.replace(/[\u2019\u2018]/g, "'")));
+      if (data && data.object !== 'error' && data.name) return data;
+      data = await scry('https://api.scryfall.com/cards/search?q=' +
+        encodeURIComponent('"' + name + '"') + '&unique=cards');
+      if (data && data.object === 'list' && data.data && data.data.length) {
+        const exactList = data.data.filter(c => norm(c.name) === n);
+        let card = exactList.find(c => !c.name.startsWith('A-') && !c.name.includes('*'));
+        card = card || exactList[0];
+        if (!card) {
+          card = data.data[0];
+          card.userFuzzy = true;
+        } else if (norm(card.name) !== n) {
+          card.userFuzzy = true;
+        }
+        return card;
+      }
+      data = await scry('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(name));
+      if (data && data.name) {
+        if (norm(data.name) !== n) data.userFuzzy = true;
+        return data;
+      }
+      return null;
+    }
+
+    function cardImage(card) {
+      const face = card.card_faces && card.card_faces.length ? card.card_faces[0] : null;
+      const uris = face ? face.image_uris : card.image_uris;
+      return uris ? (uris.small || uris.normal || null) : null;
+    }
+
+    function cardImageLarge(card) {
+      const face = card.card_faces && card.card_faces.length ? card.card_faces[0] : null;
+      const uris = face ? face.image_uris : card.image_uris;
+      return uris ? (uris.png || uris.large || uris.normal || null) : null;
+    }
+
+    function oracleText(card) {
+      if (card.card_faces && card.card_faces.length > 1) {
+        return card.card_faces.map((f, i) => {
+          const b = '<b class="face-label">' + (f.name || (i === 0 ? 'Front' : 'Back')) + '</b>' +
+            (f.oracle_text || '').replace(/<newline>/g, '\n');
+          return '<span class="face">' + b + '</span>';
+        }).join('');
+      }
+      return '<span class="face">' + (card.oracle_text || '').replace(/<newline>/g, '\n') + '</span>';
+    }
+
+    function manaTokens(cost) {
+      if (!cost) return [];
+      const re = /\{[^}]+\}/g;
+      return cost.match(re) || [];
+    }
+
+    function colorKey(card) {
+      const cols = card.colors || [];
+      if (cols.length > 1) return 'Multi';
+      if (cols.length === 1) return cols[0];
+      return card.type_line && card.type_line.includes('Land') ? 'Colorless' : 'Colorless';
+    }
+
+    function cmcKey(card) {
+      return String(Math.min(7, Math.round(card.cmc || 0)));
+    }
+
+    function typeKey(card) {
+      const tl = card.type_line || '';
+      for (const t of CARD_TYPES) {
+        if (tl.includes(t)) return t;
+      }
+      const base = tl.split('\u2014')[0].trim();
+      return base.split(/\s+/).pop() || 'Other';
+    }
+
+    function groupKey(entry) {
+      const c = entry.card;
+      switch (state.group) {
+        case 'color': return colorKey(c);
+        case 'cmc': return cmcKey(c);
+        case 'set': return c.set ? c.set.toLowerCase() : 'unknown';
+        case 'type': return typeKey(c);
+        case 'rarity': return c.rarity || 'unknown';
+      }
+      return 'unknown';
+    }
+
+    function groupLabel(group, key) {
+      if (group === 'color') return COLOR_META[key] ? COLOR_META[key].label : key;
+      if (group === 'rarity') return RARITY_META[key] ? RARITY_META[key].label : key;
+      if (group === 'cmc') return key === '7' ? '7+' : key;
+      return key;
+    }
+
+    function groupAccent(group, key) {
+      if (group === 'color') return COLOR_META[key] ? COLOR_META[key].color : 'var(--accent)';
+      if (group === 'rarity') return RARITY_META[key] ? RARITY_META[key].color : 'var(--accent)';
+      return 'var(--accent)';
+    }
+
+    function groupOrder(group, entries) {
+      const keys = [...new Set(entries.map(groupKey))];
+      const start = {
+        color: ['W', 'U', 'B', 'R', 'G', 'Multi', 'Colorless'],
+        cmc: ['0', '1', '2', '3', '4', '5', '6', '7'],
+        type: CARD_TYPES,
+        rarity: ['common', 'uncommon', 'rare', 'mythic', 'special']
+      }[group];
+      const ordered = [];
+      for (const k of start || []) if (keys.includes(k)) ordered.push(k);
+      const rest = keys.filter(k => !(start || []).includes(k)).sort();
+      return ordered.concat(rest);
+    }
+
+    function compareEntries(a, b) {
+      switch (state.sort) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'rarity':
+          return (RARITY_ORDER[a.card.rarity] ?? 9) - (RARITY_ORDER[b.card.rarity] ?? 9) ||
+                 a.name.localeCompare(b.name);
+        case 'color': {
+          const order = { W: 0, U: 1, B: 2, R: 3, G: 4, Multi: 5, Colorless: 6 };
+          return (order[colorKey(a.card)] ?? 9) - (order[colorKey(b.card)] ?? 9) ||
+                 a.name.localeCompare(b.name);
+        }
+        default:
+          return (a.card.cmc || 0) - (b.card.cmc || 0) || a.name.localeCompare(b.name);
+      }
+    }
+
+    function matchesSearch(entry) {
+      const q = state.search.trim().toLowerCase();
+      if (!q) return true;
+      const c = entry.card;
+      const hay = [c.name, c.type_line, c.mana_cost, c.set_name, c.oracle_text]
+        .concat(c.card_faces ? c.card_faces.map(f => f.oracle_text).filter(Boolean) : [])
+        .join(' ').toLowerCase();
+      return hay.includes(q);
+    }
+
+    function setIcon(card) {
+      if (!card.set) return '';
+      return 'https://svgs.scryfall.io/sets/' + card.set.toLowerCase() + '.svg';
+    }
+
+    function render() {
+      const filtered = state.cards.filter(matchesSearch);
+      const groupsEl = $('#groupsBox');
+      groupsEl.innerHTML = '';
+      $('#emptyState').style.display = state.cards.length ? 'none' : 'flex';
+
+      if (!state.cards.length) {
+        renderStats();
+        renderGroupCounts();
+        return;
+      }
+
+      if (!filtered.length) {
+        groupsEl.innerHTML = '<div class="empty" style="padding:50px 20px;"><h3>No matches</h3>' +
+          '<p>Nothing in the pool matches \u201c' + state.search.replace(/</g, '&lt;') + '\u201d.</p></div>';
+        renderStats();
+        renderGroupCounts();
+        return;
+      }
+
+      const order = groupOrder(state.group, filtered);
+
+      const buckets = new Map();
+      for (const e of filtered) {
+        const k = groupKey(e);
+        if (!buckets.has(k)) buckets.set(k, []);
+        buckets.get(k).push(e);
+      }
+
+      const doc = document.createDocumentFragment();
+      for (const key of order) {
+        const list = (buckets.get(key) || []).slice().sort(compareEntries);
+        if (!list.length) continue;
+        const total = list.reduce((s, e) => s + e.qty, 0);
+        const g = document.createElement('div');
+        g.className = 'group';
+        g.style.borderTopColor = groupAccent(state.group, key);
+
+        const head = document.createElement('div');
+        head.className = 'group-head';
+        const bar = document.createElement('div');
+        bar.className = 'gbar';
+        bar.style.background = groupAccent(state.group, key);
+        head.appendChild(bar);
+
+        if (state.group === 'set') {
+          const icon = document.createElement('img');
+          icon.className = 'seticon';
+          icon.src = setIcon(list[0].card);
+          icon.onerror = () => { icon.style.display = 'none'; };
+          icon.alt = '';
+          head.appendChild(icon);
+        }
+
+        const h3 = document.createElement('h3');
+        h3.textContent = groupLabel(state.group, key);
+        if (state.group === 'set') {
+          const small = document.createElement('small');
+          small.textContent = list[0].card.set_name + ' · ' + (list[0].card.set || '').toUpperCase() +
+            (list[0].card.released_at ? ' · ' + list[0].card.released_at.slice(0, 4) : '');
+          h3.appendChild(small);
+        }
+        head.appendChild(h3);
+
+        const count = document.createElement('span');
+        count.className = 'gcount';
+        count.textContent = total + ' × cards · ' + list.length + ' unique';
+        head.appendChild(count);
+        g.appendChild(head);
+
+        const grid = document.createElement('div');
+        grid.className = 'card-grid';
+        for (const e of list) {
+          grid.appendChild(cardNode(e));
+        }
+        g.appendChild(grid);
+        doc.appendChild(g);
+      }
+      groupsEl.appendChild(doc);
+
+      renderStats();
+      renderGroupCounts();
+    }
+
+    function cardNode(entry) {
+      const col = document.createElement('figure');
+      col.className = 'tcard';
+
+      const frame = document.createElement('div');
+      frame.className = 'frame';
+
+      const img = cardImage(entry.card);
+      if (img) {
+        const im = document.createElement('img');
+        im.loading = 'lazy';
+        im.src = img;
+        im.alt = entry.card.name + ' (' + entry.name + ')';
+        im.onerror = () => { im.replaceWith(placeholderNode(entry.card)); };
+        frame.appendChild(im);
+      } else {
+        frame.appendChild(placeholderNode(entry.card));
+      }
+
+      if (entry.qty > 1) {
+        const q = document.createElement('span');
+        q.className = 'qty';
+        q.textContent = '\u00d7' + entry.qty;
+        frame.appendChild(q);
+      }
+
+      const cap = document.createElement('figcaption');
+      const capTitle = entry.card.userFuzzy
+        ? entry.name + ' — loaded as “' + entry.card.name + '”'
+        : entry.name;
+      cap.title = capTitle;
+      cap.textContent = entry.name;
+      if (entry.card.userFuzzy) cap.classList.add('warn');
+      col.appendChild(frame);
+      col.appendChild(cap);
+
+      col.addEventListener('click', () => openModal(entry));
+      return col;
+    }
+
+    function placeholderNode(card) {
+      const p = document.createElement('div');
+      p.className = 'placeholder';
+      p.textContent = card.name;
+      return p;
+    }
+
+    function renderStats() {
+      const entries = state.cards;
+      if (!entries.length) {
+        $('#stTotal').textContent = '\u2014';
+        $('#stUnique').textContent = '\u2014';
+        $('#stCmc').textContent = '\u2014';
+        $('#stPips').innerHTML = '';
+        $('#summary').textContent = '';
+        return;
+      }
+      const total = entries.reduce((s, e) => s + e.qty, 0);
+      const cmcSum = entries.reduce((s, e) => s + (e.card.cmc || 0) * e.qty, 0);
+      const need = { W: 0, U: 0, B: 0, R: 0, G: 0 };
+      let multi = 0, colorless = 0;
+      for (const e of entries) {
+        const cols = e.card.colors || [];
+        if (cols.length > 1) multi += e.qty;
+        else if (!cols.length) colorless += e.qty;
+        else need[cols[0]] += e.qty;
+      }
+      $('#stTotal').textContent = total;
+      $('#stUnique').textContent = entries.length;
+      $('#stCmc').textContent = entries.length ? (cmcSum / total).toFixed(2) : '\u2014';
+
+      const pips = $('#stPips');
+      pips.innerHTML = '';
+      for (const c of ['W', 'U', 'B', 'R', 'G']) {
+        const pip = document.createElement('div');
+        pip.className = 'pip';
+        if (need[c] === 0) pip.style.opacity = '0.4';
+        pip.style.background = COLOR_META[c].chip;
+        pip.style.color = c === 'W' || c === 'G' ? '#14161f' : '#0c0e17';
+        pip.textContent = need[c];
+        pip.title = COLOR_META[c].label + ': ' + need[c] + ' card\u2013copies';
+        pips.appendChild(pip);
+      }
+      if (multi) {
+        const mp = document.createElement('div');
+        mp.className = 'pip multi';
+        mp.textContent = multi;
+        mp.title = 'Multicolor: ' + multi;
+        pips.appendChild(mp);
+      }
+      if (colorless) {
+        const cp = document.createElement('div');
+        cp.className = 'pip extra';
+        cp.textContent = 'Ø ' + colorless;
+        cp.title = 'Colorless & lands: ' + colorless;
+        pips.appendChild(cp);
+      }
+
+      $('#summary').innerHTML = '<b>' + entries.length + '</b> unique · <b>' + total + '</b> cards' +
+        (state.search ? ' · filtered' : '');
+      $('#topSub').textContent = state.search
+        ? 'searching “' + state.search.replace(/</g, '&lt;') + '”'
+        : '';
+    }
+
+    function renderGroupCounts() {
+      $('#' + groupCountId('color')).textContent = countFor('color');
+      $('#' + groupCountId('cmc')).textContent = countFor('cmc');
+      $('#' + groupCountId('type')).textContent = countFor('type');
+      $('#' + groupCountId('set')).textContent = countFor('set');
+      $('#' + groupCountId('rarity')).textContent = countFor('rarity');
+    }
+
+    function groupCountId(g) { return { color: 'cColor', cmc: 'cCmc', type: 'cType', set: 'cSet', rarity: 'cRarity' }[g]; }
+
+    function countFor(group) {
+      const switches = state.group;
+      state.group = group;
+      const keys = new Set(state.cards.map(groupKey));
+      state.group = switches;
+      return keys.size || '\u2014';
+    }
+
+    function openModal(entry) {
+      const c = entry.card;
+      let costHtml = '<span></span>';
+      const cost = manaTokens(c.mana_cost);
+      if (cost.length) {
+        costHtml = cost.map(t =>
+          '<span style="color:var(--accent);font-weight:700;">' + t + '</span>'
+        ).join(' ');
+      }
+      const img = cardImageLarge(c);
+      const art = img
+        ? '<img src="' + img + '" alt="' + c.name.replace(/"/g, '&quot;') + '">'
+        : '<div class="placeholder" style="height:180px;display:flex;align-items:center;justify-content:center;">' + c.name + '</div>';
+
+      const rarity = (c.rarity || 'unknown');
+      const rarityColor = RARITY_META[rarity] ? RARITY_META[rarity].color : 'var(--muted)';
+
+      const setPart = c.set
+        ? '<img class="seticon" src="https://svgs.scryfall.io/sets/' + c.set.toLowerCase() + '.svg" alt="" onerror="this.style.display=\'none\'">' +
+          '<span>' + c.set_name + ' (' + c.set.toUpperCase() + ')</span>'
+        : '<span>' + (c.set_name || 'Unknown set') + '</span>';
+
+      $('#modal').innerHTML =
+        '<div class="art">' + art + '</div>' +
+        '<div class="info">' +
+          '<div class="m-title"><span class="m-name">' + c.name + '</span><span class="m-cost">' + costHtml + '</span></div>' +
+          '<div class="m-type">' + (c.type_line || '') + '</div>' +
+          '<div class="m-meta">' +
+            setPart +
+            (c.collector_number ? '<span>#' + c.collector_number + '</span>' : '') +
+            (c.rarity ? '<span class="m-rarity" style="color:' + rarityColor + ';">' + rarity + '</span>' : '') +
+            (c.prices && c.prices.usd ? '<span>$' + c.prices.usd + '</span>' : '') +
+          '</div>' +
+          '<div class="m-oracle">' + oracleText(c) + '</div>' +
+          '<div class="m-extras">' +
+            (c.power ? '<span class="m-tag">Power / Toughness <b>' + c.power + ' / ' + c.toughness + '</b></span>' : '') +
+            (c.colors && c.colors.length ? '<span class="m-tag">Color identity <b>' + c.colors.join('') + '</b></span>' : '') +
+            (c.artist ? '<span class="m-tag">Art <b>' + c.artist + '</b></span>' : '') +
+            (c.released_at ? '<span class="m-tag">Printed <b>' + c.released_at + '</b></span>' : '') +
+            (c.userFuzzy ? '<span class="m-tag" style="color:#e8a86a;">Loaded as <b>“' + norm(c.name) + '”</b></span>' : '') +
+          '</div>' +
+        '</div>';
+
+      $('#overlay').classList.add('open');
+    }
+
+    function closeModal() {
+      $('#overlay').classList.remove('open');
+    }
+
+    function toast(msg) {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._t);
+      t._t = setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
+    function setLoading(on, total) {
+      state.loading = on;
+      $('#loader').style.display = on ? 'block' : 'none';
+      $('#loadBtn').disabled = on;
+      $('#sampleBtn').disabled = on;
+      $('#loadFileBtn').disabled = on;
+      $('#browseBtn').disabled = on;
+      if (on) {
+        $('#barFill').style.width = '0%';
+        $('#loaderN').textContent = '0 / ' + total;
+      }
+    }
+
+    function setProgress(frac, label) {
+      $('#barFill').style.width = Math.round(frac * 100) + '%';
+      if (label) $('#loaderText').textContent = label;
+    }
+
+    function addEntry(card, qty) {
+      const existing = state.cards.find(e => e.card.id === card.id);
+      if (existing) existing.qty += qty;
+      else state.cards.push({ name: card.name, qty, card });
+    }
+
+    async function loadPool() {
+      const text = els.poolText.value.trim();
+      if (!text) { toast('Paste a card list first.'); return; }
+      if (state.loading) return;
+      const entries = [...parsePool(text).values()];
+      if (!entries.length) { toast('No cards recognized in the list.'); return; }
+
+      setLoading(true, entries.length);
+      state.cards = [];
+      state.unresolved = [];
+      $('#unresolved').style.display = 'none';
+
+      const missing = [];
+      const chunkSize = 75;
+      const nBatches = Math.ceil(entries.length / chunkSize);
+
+      for (let b = 0; b < nBatches; b++) {
+        const chunk = entries.slice(b * chunkSize, (b + 1) * chunkSize);
+        setProgress((b + 0.5) / nBatches, 'Fetching batch ' + (b + 1) + ' of ' + nBatches + '…');
+        $('#loaderN').textContent = chunk.length + ' cards · batch ' + (b + 1) + '/' + nBatches;
+        const found = await bulkLookup(chunk.map(e => e.name));
+        let got = 0;
+        for (const e of chunk) {
+          const card = found.get(norm(e.name));
+          if (card) { addEntry(card, e.qty); got++; }
+          else missing.push(e);
+        }
+        $('#loaderN').textContent = got + ' of ' + chunk.length + ' matched · batch ' + (b + 1) + '/' + nBatches;
+        await sleep(120);
+      }
+
+      let i = 0;
+      for (const e of missing) {
+        i++;
+        setProgress(i / (missing.length || 1), 'Resolving ' + e.name + '…');
+        $('#loaderN').textContent = i + ' / ' + missing.length + ' to resolve';
+        const card = await fetchCard(e.name);
+        if (card) addEntry(card, e.qty);
+        else state.unresolved.push({ name: e.name, qty: e.qty });
+        await sleep(120);
+      }
+
+      setLoading(false);
+      state.cards.sort(compareEntries);
+      saveState();
+
+      if (state.unresolved.length) {
+        $('#unresolvedChips').innerHTML = '';
+        for (const u of state.unresolved) {
+          const chip = document.createElement('button');
+          chip.className = 'chip';
+          chip.textContent = (u.qty > 1 ? u.qty + 'x ' : '') + u.name;
+          chip.title = 'Click to search this name';
+          chip.addEventListener('click', () => {
+            $('#searchBox').value = u.name;
+            state.search = u.name;
+            render();
+          });
+          $('#unresolvedChips').appendChild(chip);
+        }
+        $('#unresolved').style.display = 'flex';
+      }
+
+      render();
+      if (state.cards.length) {
+        const fuzzy = state.cards.filter(e => e.card.userFuzzy).length;
+        toast('Loaded ' + state.cards.length + ' unique cards' +
+          (fuzzy ? ' · ' + fuzzy + ' fuzzy-matched' : '') +
+          (state.unresolved.length ? ' · ' + state.unresolved.length + ' unresolved' : '') + '.');
+      } else {
+        toast('Could not load any cards.');
+      }
+    }
+
+    function loadSample() {
+      els.poolText.value = SAMPLE_POOL.join('\n');
+      if (!state.loading) loadPool();
+    }
+
+    function initPoolFiles() {
+      fetchWithTimeout('pools.json', {}, 6000).then(res => {
+        return (res && res.ok) ? res.json() : null;
+      }).then(manifest => {
+        const sel = els.poolFileSel;
+        sel.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'Sample pool (built-in)';
+        sel.appendChild(opt);
+        if (manifest && Array.isArray(manifest.pools)) {
+          for (const p of manifest.pools) {
+            if (!p || !p.file) continue;
+            const o = document.createElement('option');
+            o.value = p.file;
+            o.textContent = (p.name || p.file) + '  ·  ' + p.file;
+            sel.appendChild(o);
+          }
+        }
+      }).catch(() => { /* no manifest — keep the built-in sample option */ });
+    }
+
+    function loadSelectedPoolFile() {
+      if (state.loading) return;
+      const file = els.poolFileSel.value;
+      if (!file) { loadSample(); return; }
+      els.loadFileBtn.disabled = true;
+      fetchWithTimeout(file, {}, 20000).then(res => {
+        if (res && res.ok) return res.text();
+        throw new Error('missing');
+      }).then(text => {
+        populatePoolText(text);
+        toast('Loaded pool file: ' + file);
+      }).catch(() => {
+        toast('Could not load "' + file + '" — place it in the same folder as index.html.');
+      }).finally(() => {
+        els.loadFileBtn.disabled = false;
+      });
+    }
+
+    function browseLocalFile() {
+      els.filePicker.click();
+    }
+
+    function populatePoolText(text) {
+      if (!text) return;
+      els.poolText.value = text;
+      if (!state.loading) loadPool();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('gsm_pool', els.poolText.value);
+        localStorage.setItem('gsm_group', state.group);
+        localStorage.setItem('gsm_sort', state.sort);
+      } catch (e) { /* ignore */ }
+    }
+
+    function restoreState() {
+      try {
+        const t = localStorage.getItem('gsm_pool');
+        if (t) els.poolText.value = t;
+        const g = localStorage.getItem('gsm_group');
+        if (g && ['color', 'cmc', 'type', 'set', 'rarity'].includes(g)) setGroup(g);
+        const s = localStorage.getItem('gsm_sort');
+        if (s && ['cmc', 'name', 'rarity', 'color'].includes(s)) {
+          state.sort = s;
+          els.sortSel.value = s;
+        }
+        state.search = els.searchBox.value;
+        if (t && t.trim()) setTimeout(loadPool, 80);
+      } catch (e) { /* ignore */ }
+    }
+
+    function setGroup(g) {
+      state.group = g;
+      for (const btn of els.groupList.querySelectorAll('.group-btn')) {
+        btn.classList.toggle('active', btn.dataset.group === g);
+      }
+      $('#topTitle').textContent = {
+        color: 'By Color', cmc: 'By Mana Value', type: 'By Card Type', set: 'By Set', rarity: 'By Rarity'
+      }[g];
+      saveState();
+      render();
+    }
+
+    function initEvents() {
+      els.loadBtn.addEventListener('click', loadPool);
+      els.sampleBtn.addEventListener('click', loadSample);
+      els.emptySampleBtn.addEventListener('click', loadSample);
+      els.loadFileBtn.addEventListener('click', loadSelectedPoolFile);
+      els.browseBtn.addEventListener('click', browseLocalFile);
+      els.filePicker.addEventListener('change', () => {
+        const file = els.filePicker.files && els.filePicker.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') populatePoolText(reader.result);
+          else toast('Could not read that file.');
+          els.filePicker.value = '';
+        };
+        reader.onerror = () => toast('Could not read that file.');
+        reader.readAsText(file);
+      });
+
+      els.groupList.addEventListener('click', e => {
+        const btn = e.target.closest('.group-btn');
+        if (btn) setGroup(btn.dataset.group);
+      });
+
+      els.poolText.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          loadPool();
+        }
+      });
+
+      let searchTimer = null;
+      els.searchBox.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          state.search = els.searchBox.value;
+          render();
+        }, 120);
+      });
+
+      els.sortSel.addEventListener('change', () => {
+        state.sort = els.sortSel.value;
+        saveState();
+        render();
+      });
+
+      els.closeBtn.addEventListener('click', closeModal);
+      els.overlay.addEventListener('click', e => {
+        if (e.target === els.overlay) closeModal();
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+      });
+    }
+
+    render();
+    initEvents();
+    initPoolFiles();
+    restoreState();
+  </script>
+</body>
+</html>
