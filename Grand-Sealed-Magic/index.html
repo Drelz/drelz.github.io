@@ -387,6 +387,25 @@
       font-weight: 600;
       letter-spacing: 1px;
     }
+    #groupCheck {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 0.95rem;
+      letter-spacing: 0;
+      vertical-align: 1px;
+    }
+    #groupCheck.ok { color: var(--ok); font-weight: 800; }
+    #groupCheck.fail {
+      color: #fff;
+      background: var(--danger);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
+      text-align: center;
+      font-weight: 800;
+      cursor: help;
+    }
     .topbar .spacer { flex: 1; }
     .topbar select {
       background: var(--surface);
@@ -820,7 +839,7 @@
   <main class="main">
     <div class="main-inner">
       <div class="topbar">
-        <h2><span id="topTitle">By Set</span> <span id="topSub"></span></h2>
+        <h2><span id="topTitle">By Set</span> <span id="topSub"></span> <span id="groupCheck"></span></h2>
         <div class="spacer"></div>
         <div class="chip-summary" id="summary"></div>
         <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Sort</label>
@@ -971,10 +990,32 @@
       unresolved: [],
       colorFilter: [],
       rarityFilter: [],
-      typeFilter: []
+      typeFilter: [],
+      failedLookup: []
     };
 
     const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    function parseCsvLine(line) {
+      const fields = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (line[i + 1] === '"') { cur += '"'; i++; }
+            else inQuotes = false;
+          } else cur += ch;
+        } else if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          fields.push(cur); cur = '';
+        } else cur += ch;
+      }
+      fields.push(cur);
+      return fields.map(f => f.trim());
+    }
 
     function parsePool(text) {
       const map = new Map();
@@ -986,30 +1027,50 @@
         let name = line;
         let set = '';
         let png = '';
+        let colors = null;
+        let cmc = 0;
+        let manaCost = '';
+        let rarity = '';
+        let typeLine = '';
+        let oracleText = '';
 
-        const three = line.match(/^\s*"([^"]+)"\s*[,\t]\s*([A-Za-z0-9]{3})\s*[,\t]\s*(\S*)\s*$/);
-        const threeUnquoted = line.match(/^\s*([^,"\t]+?)\s*[,\t]\s*([A-Za-z0-9]{3})\s*[,\t]\s*(\S*)\s*$/);
-        if (three) {
-          name = three[1].trim();
-          set = three[2].toLowerCase();
-          png = three[3].trim();
-        } else if (threeUnquoted) {
-          name = threeUnquoted[1].trim();
-          set = threeUnquoted[2].toLowerCase();
-          png = threeUnquoted[3].trim();
-        } else if (blankSplit && blankSplit[1]) {
-          name = blankSplit[1].trim();
-          set = blankSplit[2].toLowerCase();
-          const two = blankSplit[1].match(/,(\S+)$/);
-          if (two) png = two[1];
-        } else {
-          const two = line.match(/^\s*(?:(\d+)\s*[,\t]\s*)?(.*?)\s*[,\t]\s*([A-Za-z0-9]{3})\s*$/);
-          if (two && two[2] && !two[2].includes("'")) {
-            name = two[2].replace(/^[\s"']+|[\s"']+$/g, '');
-            set = two[3].toLowerCase();
-            if (two[1]) qty = parseInt(two[1], 10) || 1;
+        const csvFields = line.indexOf('"') >= 0 ? parseCsvLine(line) : null;
+        if (csvFields && csvFields.length >= 2 && csvFields[0]) {
+          name = csvFields[0];
+          set = (csvFields[1] || '').toLowerCase();
+          if (csvFields.length >= 3) png = csvFields[2];
+          if (csvFields.length >= 9) {
+            const rawColors = csvFields[3] || '';
+            colors = rawColors.length ? rawColors.replace(/[^WUBRG]/gi, '').toUpperCase().split('') : null;
+            manaCost = csvFields[4] || '';
+            cmc = parseFloat(csvFields[5]) || 0;
+            rarity = csvFields[6] || '';
+            typeLine = csvFields[7] || '';
+            oracleText = csvFields[8] || '';
           }
-        }
+        } else {
+    const three = line.match(/^\s*"([^"]+)"\s*[,\t]\s*([A-Za-z0-9]{3})\s*[,\t]\s*(\S*)\s*$/);
+    const threeUnquoted = line.match(/^\s*([^,"\t]+?)\s*[,\t]\s*([A-Za-z0-9]{3})\s*[,\t]\s*(\S*)\s*$/);
+    if (three) {
+      name = three[1].trim();
+      set = three[2].toLowerCase();
+      png = three[3].trim();
+    } else if (threeUnquoted) {
+      name = threeUnquoted[1].trim();
+      set = threeUnquoted[2].toLowerCase();
+      png = threeUnquoted[3].trim();
+    } else {
+      const two = line.match(/^\s*(?:(\d+)\s*[,\t]\s*)?(.*?)\s*[,\t]\s*([A-Za-z0-9]{3})\s*$/);
+      if (two && two[2] && !two[2].includes("'")) {
+        name = two[2].replace(/^[\s"']+|[\s"']+$/g, '');
+        set = two[3].toLowerCase();
+        if (two[1]) qty = parseInt(two[1], 10) || 1;
+      } else if (blankSplit && blankSplit[0] && blankSplit[1]) {
+        name = blankSplit[0].trim();
+        set = blankSplit[1].toLowerCase();
+      }
+    }
+  }
 
         const qm = name.match(/^(\d+)\s*[,/xX]\s*(.+)$/) || name.match(/^(\d+)\s*\*?\s*(.+)$/);
         if (qm && qm[2]) {
@@ -1019,9 +1080,11 @@
         if (!name) continue;
         const key = name.toLowerCase();
         if (map.has(key)) {
-          map.get(key).qty += qty;
+          const e = map.get(key);
+          e.qty += qty;
+          if (!e.colors && colors) e.colors = colors;
         } else {
-          map.set(key, { name, qty, set, png });
+          map.set(key, { name, qty, set, png, colors, cmc, manaCost, rarity, typeLine, oracleText });
         }
       }
       return map;
@@ -1584,6 +1647,25 @@
       if (label) $('#loaderText').textContent = label;
     }
 
+    function updateGroupCheck() {
+      const el = $('#groupCheck');
+      if (state.loading) { el.textContent = ''; el.className = ''; el.title = ''; return; }
+      const failed = [...new Set(state.failedLookup)];
+      if (failed.length) {
+        el.textContent = '!';
+        el.className = 'fail';
+        el.title = failed.join('\n');
+      } else if (state.cards.length) {
+        el.textContent = '★';
+        el.className = 'ok';
+        el.title = 'All cards matched';
+      } else {
+        el.textContent = '';
+        el.className = '';
+        el.title = '';
+      }
+    }
+
     function addEntry(card, qty) {
       rememberSetMeta(card);
       const existing = state.cards.find(e => e.card.id === card.id);
@@ -1601,6 +1683,7 @@
       setLoading(true, entries.length);
       state.cards = [];
       state.unresolved = [];
+      state.failedLookup = [];
       $('#unresolved').style.display = 'none';
       $('#groupsBox').innerHTML = '';
       $('#summary').innerHTML = '';
@@ -1629,19 +1712,19 @@
       }
 
       for (const e of linked) {
-        const colors = cardColorsHint(e.name);
+        const colors = e.colors || cardColorsHint(e.name);
         const stub = {
           id: 'png-' + e.png,
           name: e.name,
           set: e.set || '',
           set_name: e.set ? setFullName(e.set) : 'Custom',
-          colors,
-          color_identity: colors,
-          cmc: 0,
-          mana_cost: '',
-          type_line: 'Custom',
-          rarity: 'special',
-          oracle_text: '',
+          colors: colors.slice(),
+          color_identity: colors.slice(),
+          cmc: e.cmc || 0,
+          mana_cost: e.manaCost || '',
+          type_line: e.typeLine || 'Custom',
+          rarity: e.rarity || 'special',
+          oracle_text: e.oracleText || '',
           userPng: true,
           image_uris: { png: e.png, small: e.png, normal: e.png, large: e.png }
         };
@@ -1655,13 +1738,17 @@
         $('#loaderN').textContent = i + ' / ' + missing.length + ' to resolve';
         const card = await fetchCard(e.name, e.set);
         if (card) addEntry(card, e.qty);
-        else state.unresolved.push({ name: e.name, qty: e.qty });
+        else {
+          state.unresolved.push({ name: e.name, qty: e.qty });
+          state.failedLookup.push(e.name);
+        }
         await sleep(120);
       }
 
       setLoading(false);
       state.cards.sort(compareEntries);
       saveState();
+      updateGroupCheck();
 
       if (state.unresolved.length) {
         $('#unresolvedChips').innerHTML = '';
@@ -1714,8 +1801,6 @@
 
     async function enrichLinkedCards() {
       const pend = state.cards.filter(e => e.card.userPng && !e.card.enriched);
-      if (!pend.length) return;
-      let patched = 0;
       for (let i = 0; i < pend.length; i += 75) {
         const chunk = pend.slice(i, i + 75);
         if (i > 0) await sleep(600);
@@ -1723,12 +1808,19 @@
         for (const e of chunk) {
           const key = norm(e.name) + '|' + (e.card.set || '').toLowerCase();
           const real = found.get(key);
-          if (real) { patchLinkedMeta(e, real); patched++; }
+          if (real) {
+            patchLinkedMeta(e, real);
+            const fi = state.failedLookup.indexOf(e.name);
+            if (fi >= 0) state.failedLookup.splice(fi, 1);
+          } else if (!state.failedLookup.includes(e.name)) {
+            state.failedLookup.push(e.name);
+          }
         }
       }
-      if (patched && !state.loading) {
+      if (!state.loading) {
         render();
         saveState();
+        updateGroupCheck();
       }
     }
 

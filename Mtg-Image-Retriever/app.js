@@ -136,16 +136,48 @@ function imageUrl(card) {
   return null;
 }
 
+function cardInfo(card) {
+  const faces = card.card_faces || [];
+  return {
+    name: card.name || "",
+    set: (card.set || "").toUpperCase(),
+    url: imageUrl(card) || "",
+    colors: (card.colors || card.color_identity || []).join(""),
+    manaCost: card.mana_cost || (faces[0] && faces[0].mana_cost) || "",
+    cmc: card.cmc != null ? String(card.cmc) : "",
+    rarity: card.rarity || "",
+    typeLine: card.type_line || faces.map((f) => f.type_line || "").join(" // ") || "",
+    oracleText: card.oracle_text || faces.map((f) => f.oracle_text || "").filter(Boolean).join(" // ") || "",
+  };
+}
+
+function csvField(value) {
+  const s = String(value == null ? "" : value).replace(/\n/g, " ");
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
+function csvRow(info) {
+  return [info.name, info.set, info.url, info.colors, info.manaCost, info.cmc, info.rarity, info.typeLine, info.oracleText].map(csvField).join(",");
+}
+
 function render(identifiers, found, notFound) {
   document.getElementById("results-title").textContent =
     `Results (${found.size} found, ${notFound.length} not found)`;
 
   const csvLines = identifiers.map((identifier) => {
     const match = found.get(identifier.id);
-    const url = match ? imageUrl(match) : "";
-    const set = identifier.set ? identifier.set.toUpperCase() : "";
-    const name = String(identifier.name).replace(/"/g, '""');
-    return `"${name}",${set},${url}`;
+    if (match) return csvRow(cardInfo(match));
+    return csvRow({
+      name: identifier.name,
+      set: (identifier.set || "").toUpperCase(),
+      url: "",
+      colors: "",
+      manaCost: "",
+      cmc: "",
+      rarity: "",
+      typeLine: "",
+      oracleText: "",
+    });
   });
 
   const csvEl = document.getElementById("csv-output");
