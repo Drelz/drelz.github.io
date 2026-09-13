@@ -703,7 +703,9 @@
         </div>
       </div>
       <p class="hint-text">
-        Accepts <code>2x Serra Angel</code>, <code>2,Serra Angel</code> or plain names. Lines starting with <code>#</code> are ignored.
+        Accepts <code>2x Serra Angel</code>, <code>2,Serra Angel</code> or plain names.
+        Also supports <code>"Name",SET,https://…png</code> (quoted, generator output), <code>Name&#9;SET&#9;https://…png</code>, and 2-part <code>Name&#9;SET</code>.
+        Lines starting with <code>#</code> are ignored.
         Card data &amp; art load live from Scryfall.
       </p>
     </div>
@@ -899,24 +901,50 @@
     function parsePool(text) {
       const map = new Map();
       for (const raw of text.split(/\r?\n/)) {
-        let line = raw.trim().replace(/"/g, '');
+        let line = raw.trim();
         if (!line || line.startsWith('#') || line.startsWith('//')) continue;
         let qty = 1;
-        let name = line.replace(/^[\s"']+|[\s"']+$/g, '');
-        let m = line.match(/^(\d+)\s*[,/xX]\s*(.+)$/);
-        if (m && m[2]) {
-          qty = parseInt(m[1], 10) || 1;
-          name = m[2].trim().replace(/^[\s"']+|[\s"']+$/g, '');
+        const blankSplit = line.split(/\s+([A-Za-z0-9]{3})\s*$/);
+        let name = line;
+        let set = '';
+        let png = '';
+
+        const three = line.match(/^\s*"([^"]+)"\s*[,\t]\s*([A-Za-z0-9]{3})\s*[,\t]\s*(\S*)\s*$/);
+        const threeUnquoted = line.match(/^\s*([^,"\t]+?)\s*[,\t]\s*([A-Za-z0-9]{3})\s*[,\t]\s*(\S*)\s*$/);
+        if (three) {
+          name = three[1].trim();
+          set = three[2].toLowerCase();
+          png = three[3].trim();
+        } else if (threeUnquoted) {
+          name = threeUnquoted[1].trim();
+          set = threeUnquoted[2].toLowerCase();
+          png = threeUnquoted[3].trim();
+        } else if (blankSplit && blankSplit[1]) {
+          name = blankSplit[1].trim();
+          set = blankSplit[2].toLowerCase();
+          const two = blankSplit[1].match(/,(\S+)$/);
+          if (two) png = two[1];
         } else {
-          m = line.match(/^(\d+)\s*(?:x)?\s*(.*)$/i);
-          if (m && m[2]) {
-            qty = parseInt(m[1], 10) || 1;
-            name = m[2].trim();
+          const two = line.match(/^\s*(?:(\d+)\s*[,\t]\s*)?(.*?)\s*[,\t]\s*([A-Za-z0-9]{3})\s*$/);
+          if (two && two[2] && !two[2].includes("'")) {
+            name = two[2].replace(/^[\s"']+|[\s"']+$/g, '');
+            set = two[3].toLowerCase();
+            if (two[1]) qty = parseInt(two[1], 10) || 1;
           }
+        }
+
+        const qm = name.match(/^(\d+)\s*[,/xX]\s*(.+)$/) || name.match(/^(\d+)\s*\*?\s*(.+)$/);
+        if (qm && qm[2]) {
+          qty = parseInt(qm[1], 10) || 1;
+          name = qm[2].trim();
         }
         if (!name) continue;
         const key = name.toLowerCase();
-        map.set(key, { name, qty: (map.get(key) ? map.get(key).qty : 0) + qty });
+        if (map.has(key)) {
+          map.get(key).qty += qty;
+        } else {
+          map.set(key, { name, qty, set, png });
+        }
       }
       return map;
     }
@@ -954,30 +982,36 @@
       return null;
     }
 
-    async function bulkLookup(names) {
+    async function bulkLookup(entries) {
       const map = new Map();
-      if (!names.length) return map;
-      for (let i = 0; i < names.length; i += 75) {
-        const chunk = names.slice(i, i + 75);
+      if (!entries.length) return map;
+      for (let i = 0; i < entries.length; i += 75) {
+        const chunk = entries.slice(i, i + 75);
         if (i > 0) await sleep(600);
         const data = await scry('https://api.scryfall.com/cards/collection', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifiers: chunk.map(n => ({ name: n })) })
+          body: JSON.stringify({
+            identifiers: chunk.map(e => e.set ? { name: e.name, set: e.set } : { name: e.name })
+          })
         });
         if (data && data.object === 'list' && Array.isArray(data.data)) {
-          for (const card of data.data) map.set(norm(card.name), card);
+          for (const card of data.data) map.set(norm(card.name) + '|' + (card.set || '').toLowerCase(), card);
         }
       }
       return map;
     }
 
-    async function fetchCard(name) {
+    async function fetchCard(name, set) {
       const n = norm(name);
-      let data = await scry('https://api.scryfall.com/cards/named?exact=' + encodeURIComponent(name.replace(/[\u2019\u2018]/g, "'")));
+      let url = 'https://api.scryfall.com/cards/named?exact=' + encodeURIComponent(name.replace(/[\u2019\u2018]/g, "'"));
+      if (set) url += '&set=' + encodeURIComponent(set);
+      let data = await scry(url);
       if (data && data.object !== 'error' && data.name) return data;
-      data = await scry('https://api.scryfall.com/cards/search?q=' +
-        encodeURIComponent('"' + name + '"') + '&unique=cards');
+      url = 'https://api.scryfall.com/cards/search?q=' +
+        encodeURIComponent('"' + name + '"') + '&unique=cards';
+      if (set) url += '&e=' + encodeURIComponent(set);
+      data = await scry(url);
       if (data && data.object === 'list' && data.data && data.data.length) {
         const exactList = data.data.filter(c => norm(c.name) === n);
         let card = exactList.find(c => !c.name.startsWith('A-') && !c.name.includes('*'));
@@ -996,6 +1030,26 @@
         return data;
       }
       return null;
+    }
+
+    function applyPng(card, png) {
+      card.image_uris = card.image_uris || {};
+      card.image_uris.png = png;
+      card.image_uris.small = png;
+      card.image_uris.normal = png;
+      card.image_uris.large = png;
+      card.userPng = true;
+      return card;
+    }
+
+    function cardColorsHint(name) {
+      const n = (name || '').toLowerCase();
+      if (n === 'plains') return ['W'];
+      if (n === 'island') return ['U'];
+      if (n === 'swamp') return ['B'];
+      if (n === 'mountain') return ['R'];
+      if (n === 'forest') return ['G'];
+      return ['W', 'U', 'B', 'R', 'G'];
     }
 
     function cardImage(card) {
@@ -1420,17 +1474,20 @@
       $('#unresolved').style.display = 'none';
 
       const missing = [];
+      const linked = entries.filter(e => e.png);
+      const toResolve = entries.filter(e => !e.png);
       const chunkSize = 75;
-      const nBatches = Math.ceil(entries.length / chunkSize);
+      const nBatches = Math.ceil(toResolve.length / chunkSize);
 
       for (let b = 0; b < nBatches; b++) {
-        const chunk = entries.slice(b * chunkSize, (b + 1) * chunkSize);
+        const chunk = toResolve.slice(b * chunkSize, (b + 1) * chunkSize);
         setProgress((b + 0.5) / nBatches, 'Fetching batch ' + (b + 1) + ' of ' + nBatches + '…');
         $('#loaderN').textContent = chunk.length + ' cards · batch ' + (b + 1) + '/' + nBatches;
-        const found = await bulkLookup(chunk.map(e => e.name));
+        const found = await bulkLookup(chunk);
         let got = 0;
         for (const e of chunk) {
-          const card = found.get(norm(e.name));
+          const key = norm(e.name) + '|' + (e.set || '').toLowerCase();
+          const card = found.get(key);
           if (card) { addEntry(card, e.qty); got++; }
           else missing.push(e);
         }
@@ -1438,12 +1495,32 @@
         await sleep(120);
       }
 
+      for (const e of linked) {
+        const colors = cardColorsHint(e.name);
+        const stub = {
+          id: 'png-' + e.png,
+          name: e.name,
+          set: e.set || '',
+          set_name: e.set ? e.set.toUpperCase() : 'Custom',
+          colors,
+          color_identity: colors,
+          cmc: 0,
+          mana_cost: '',
+          type_line: 'Custom',
+          rarity: 'special',
+          oracle_text: '',
+          userPng: true,
+          image_uris: { png: e.png, small: e.png, normal: e.png, large: e.png }
+        };
+        addEntry(stub, e.qty);
+      }
+
       let i = 0;
       for (const e of missing) {
         i++;
         setProgress(i / (missing.length || 1), 'Resolving ' + e.name + '…');
         $('#loaderN').textContent = i + ' / ' + missing.length + ' to resolve';
-        const card = await fetchCard(e.name);
+        const card = await fetchCard(e.name, e.set);
         if (card) addEntry(card, e.qty);
         else state.unresolved.push({ name: e.name, qty: e.qty });
         await sleep(120);
@@ -1505,25 +1582,35 @@
             sel.appendChild(o);
           }
         }
+        const savedFile = localStorage.getItem('gsm_file');
+        if (savedFile && [...sel.options].some(o => o.value === savedFile)) {
+          sel.value = savedFile;
+        } else {
+          sel.value = '';
+        }
+        if (sel.value && !localStorage.getItem('gsm_pool')) loadSelectedPoolFile();
       }).catch(() => { /* no manifest — keep the built-in sample option */ });
     }
 
     function loadSelectedPoolFile() {
-      if (state.loading) return;
+      if (state.loading) return false;
       const file = els.poolFileSel.value;
-      if (!file) { loadSample(); return; }
+      if (!file) { loadSample(); return false; }
       els.loadFileBtn.disabled = true;
       fetchWithTimeout(file, {}, 20000).then(res => {
         if (res && res.ok) return res.text();
-        throw new Error('missing');
+        return null;
       }).then(text => {
-        populatePoolText(text);
-        toast('Loaded pool file: ' + file);
+        if (text) {
+          populatePoolText(text);
+          toast('Loaded pool file: ' + file);
+        }
       }).catch(() => {
         toast('Could not load "' + file + '" — place it in the same folder as index.html.');
       }).finally(() => {
         els.loadFileBtn.disabled = false;
       });
+      return true;
     }
 
     function browseLocalFile() {
@@ -1541,6 +1628,7 @@
         localStorage.setItem('gsm_pool', els.poolText.value);
         localStorage.setItem('gsm_group', state.group);
         localStorage.setItem('gsm_sort', state.sort);
+        localStorage.setItem('gsm_file', els.poolFileSel.value);
       } catch (e) { /* ignore */ }
     }
 

@@ -1,6 +1,18 @@
 {
   "pools": [
     {
+      "name": "Player A",
+      "file": "PlayerA.txt"
+    },
+    {
+      "name": "Player B",
+      "file": "PlayerB.txt"
+    },
+    {
+      "name": "Player C",
+      "file": "PlayerC.txt"
+    },
+    {
       "name": "Sample sealed pool",
       "file": "sample-sealed-pool.txt"
     },
