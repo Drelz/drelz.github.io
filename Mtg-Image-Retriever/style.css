@@ -172,6 +172,38 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   user-select: all;
 }
 
+#not-found { margin-top: 1.5rem; }
+
+#not-found .hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+#copy-not-found {
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.82rem;
+  background: #8a6a2f;
+}
+
+#copy-not-found:hover { background: #a07c35; }
+
+#not-found-output {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.8rem 1rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--err);
+  max-height: 40vh;
+  user-select: all;
+}
+
 .site-footer {
   margin-top: auto;
   padding: 1rem 20px 2rem;

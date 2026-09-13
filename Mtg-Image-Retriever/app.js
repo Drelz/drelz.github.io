@@ -49,6 +49,7 @@ async function run() {
 
   if (identifiers.length === 0) {
     resultsEl.hidden = true;
+    document.getElementById("not-found").hidden = true;
     statusEl.textContent = "Nothing to look up.";
     return;
   }
@@ -56,6 +57,7 @@ async function run() {
   lookupBtn.disabled = true;
   statusEl.textContent = `Looking up ${identifiers.length} card${identifiers.length > 1 ? "s" : ""}…`;
   resultsEl.hidden = true;
+  document.getElementById("not-found").hidden = true;
 
   try {
     const found = new Map();
@@ -162,6 +164,38 @@ function render(identifiers, found, notFound) {
     copyBtn.textContent = "Copied!";
     setTimeout(() => (copyBtn.textContent = prev), 1500);
   };
+
+  const notFoundEl = document.getElementById("not-found");
+  const notFoundLines = [];
+  const seen = new Set();
+  for (const identifier of notFound) {
+    if (seen.has(identifier.id)) continue;
+    seen.add(identifier.id);
+    const set = identifier.set ? identifier.set.toUpperCase() : "";
+    const name = String(identifier.name).replace(/"/g, '""');
+    notFoundLines.push(`"${name}",${set}`);
+  }
+
+  if (notFoundLines.length > 0) {
+    document.getElementById("not-found-title").textContent =
+      `Not found (${notFoundLines.length})`;
+    const nfEl = document.getElementById("not-found-output");
+    nfEl.textContent = notFoundLines.join("\n");
+    const copyNfBtn = document.getElementById("copy-not-found");
+    copyNfBtn.hidden = false;
+    copyNfBtn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(nfEl.textContent);
+      } catch {
+        nfEl.select();
+        document.execCommand("copy");
+      }
+      const prev = copyNfBtn.textContent;
+      copyNfBtn.textContent = "Copied!";
+      setTimeout(() => (copyNfBtn.textContent = prev), 1500);
+    };
+    notFoundEl.hidden = false;
+  }
 
   resultsEl.hidden = false;
 }
