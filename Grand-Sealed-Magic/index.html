@@ -80,7 +80,8 @@
       padding: 12px;
     }
 
-    .panel h2 {
+    .panel h2,
+    .panel summary {
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 1.5px;
@@ -90,8 +91,27 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      cursor: pointer;
+      user-select: none;
     }
-    .panel h2 .hint {
+    .panel summary {
+      list-style: none;
+    }
+    .panel summary::-webkit-details-marker {
+      display: none;
+    }
+    .panel summary::after {
+      content: '▸';
+      margin-left: auto;
+      font-size: 0.62rem;
+      color: var(--muted);
+      transition: transform 0.15s;
+    }
+    .panel[open] summary::after {
+      content: '▾';
+    }
+    .panel h2 .hint,
+    .panel summary .hint {
       margin-left: auto;
       font-weight: 400;
       letter-spacing: 0;
@@ -230,39 +250,46 @@
       box-shadow: 0 0 0 1px var(--accent-glow);
     }
 
-    .group-list { display: flex; flex-direction: column; gap: 5px; }
-    .group-btn {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      padding: 8px 10px;
-      background: var(--surface);
+    .filters { display: flex; gap: 5px; flex-wrap: wrap; }
+    .filters + h2 { margin-top: 10px; }
+    .f-chip {
       border: 1px solid var(--border);
-      border-radius: 8px;
+      background: var(--surface);
       color: var(--text);
-      font-size: 0.78rem;
-      text-align: left;
+      border-radius: 7px;
+      font-size: 0.66rem;
+      line-height: 1.3;
+      padding: 4px 8px;
+      cursor: pointer;
       transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
     }
-    .group-btn:hover { border-color: var(--border); background: var(--surface2); }
-    .group-btn.active {
+    .f-chip:hover { background: var(--surface2); }
+    .f-chip.active {
+      color: var(--accent);
       border-color: var(--accent);
       background: var(--surface2);
       box-shadow: 0 0 0 1px var(--accent-glow);
     }
-    .group-btn .ico {
-      width: 22px;
-      text-align: center;
-      font-size: 0.9rem;
-      flex-shrink: 0;
+    .color-chip {
+      width: 26px; height: 26px;
+      padding: 0;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 800;
     }
-    .group-btn .count {
-      margin-left: auto;
-      font-size: 0.68rem;
-      color: var(--muted);
+    .color-chip[data-color="W"] { background: #e5dca8; color: #14161f; }
+    .color-chip[data-color="U"] { background: #4d7fc8; color: #0c0e17; }
+    .color-chip[data-color="B"] { background: #2b2935; color: #d9d9e2; }
+    .color-chip[data-color="R"] { background: #b02a1b; color: #f3e6dd; }
+    .color-chip[data-color="G"] { background: #3d6b2f; color: #ddf0d2; }
+    .color-chip[data-color="C"] { background: #6e7486; color: #f2f2f6; }
+    .color-chip.active {
+      border-color: transparent;
+      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
     }
-    .group-btn.active .count { color: var(--accent); }
 
     .stats { display: flex; flex-direction: column; gap: 7px; }
     .stat-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--muted); }
@@ -684,11 +711,11 @@
   <aside class="sidebar">
     <div class="app-title">
       <h1>Grand Sealed<br>Magic</h1>
-      <p>Visualize a limited pool · grouped by color, cost, set &amp; more</p>
+      <p>v12 Visualize a limited card pool</p>
     </div>
 
-    <div class="panel">
-      <h2>Pool List <span class="hint">1 per line</span></h2>
+    <details class="panel" id="poolPanel" open>
+      <summary>Pool List <span class="hint">1 per line</span></summary>
       <textarea id="poolText" spellcheck="false" placeholder="2 Plains&#10;1 Lightning Bolt&#10;1 Doom Blade&#10;1 Llanowar Elves"></textarea>
       <div style="display:flex; gap:8px; margin-top:10px;">
         <button class="btn full" id="loadBtn">Load Pool</button>
@@ -707,10 +734,10 @@
         Lines starting with <code>#</code> are ignored.
         Card data &amp; art load live from Scryfall.
       </p>
-    </div>
+    </details>
 
-    <div class="panel">
-      <h2>Saved Pools <span class="hint">.txt / .csv</span></h2>
+    <details class="panel" id="savedPanel" open>
+      <summary>Saved Pools <span class="hint">.txt / .csv</span></summary>
       <select id="poolFileSel"></select>
       <div style="display:flex; gap:8px; margin-top:8px;">
         <button class="btn full" id="loadFileBtn">Load Pool File</button>
@@ -720,7 +747,7 @@
       <p class="hint-text">
         Place .txt/.csv pools next to <code>index.html</code> and list them in <code>pools.json</code> to load them from the dropdown.
       </p>
-    </div>
+    </details>
 
     <div class="divider"></div>
 
@@ -732,13 +759,33 @@
     <div class="divider"></div>
 
     <div class="panel">
-      <h2>Group By</h2>
-      <div class="group-list" id="groupList">
-        <button class="group-btn" data-group="color"><span class="ico">🎨</span>Color<span class="count" id="cColor"></span></button>
-        <button class="group-btn" data-group="cmc"><span class="ico">🔢</span>Mana Value<span class="count" id="cCmc"></span></button>
-        <button class="group-btn" data-group="type"><span class="ico">🃏</span>Card Type<span class="count" id="cType"></span></button>
-        <button class="group-btn active" data-group="set"><span class="ico">📦</span>Set<span class="count" id="cSet"></span></button>
-        <button class="group-btn" data-group="rarity"><span class="ico">💎</span>Rarity<span class="count" id="cRarity"></span></button>
+      <h2>Color <span class="hint">optional</span></h2>
+      <div class="filters" id="colorFilter">
+        <button class="f-chip color-chip" data-color="W" title="White">W</button>
+        <button class="f-chip color-chip" data-color="U" title="Blue">U</button>
+        <button class="f-chip color-chip" data-color="B" title="Black">B</button>
+        <button class="f-chip color-chip" data-color="R" title="Red">R</button>
+        <button class="f-chip color-chip" data-color="G" title="Green">G</button>
+        <button class="f-chip color-chip" data-color="C" title="Colorless">C</button>
+      </div>
+
+      <h2>Rarity <span class="hint">optional</span></h2>
+      <div class="filters" id="rarityFilter">
+        <button class="f-chip rarity-chip" data-rarity="common" title="Common">Common</button>
+        <button class="f-chip rarity-chip" data-rarity="uncommon" title="Uncommon">Uncommon</button>
+        <button class="f-chip rarity-chip" data-rarity="rare" title="Rare">Rare</button>
+        <button class="f-chip rarity-chip" data-rarity="mythic" title="Mythic">Mythic</button>
+      </div>
+
+      <h2>Type <span class="hint">optional</span></h2>
+      <div class="filters" id="typeFilter">
+        <button class="f-chip type-chip" data-type="Creature">Creature</button>
+        <button class="f-chip type-chip" data-type="Instant">Instant</button>
+        <button class="f-chip type-chip" data-type="Sorcery">Sorcery</button>
+        <button class="f-chip type-chip" data-type="Enchantment">Enchantment</button>
+        <button class="f-chip type-chip" data-type="Artifact">Artifact</button>
+        <button class="f-chip type-chip" data-type="Land">Land</button>
+        <button class="f-chip type-chip" data-type="Planeswalker">Planeswalker</button>
       </div>
     </div>
 
@@ -804,6 +851,8 @@
       sampleBtn: $('#sampleBtn'),
       emptySampleBtn: $('#emptySampleBtn'),
       poolFileSel: $('#poolFileSel'),
+      poolPanel: $('#poolPanel'),
+      savedPanel: $('#savedPanel'),
       loadFileBtn: $('#loadFileBtn'),
       browseBtn: $('#browseBtn'),
       filePicker: $('#filePicker'),
@@ -813,7 +862,9 @@
       loaderN: $('#loaderN'),
       searchBox: $('#searchBox'),
       sortSel: $('#sortSel'),
-      groupList: $('#groupList'),
+      colorFilter: $('#colorFilter'),
+      rarityFilter: $('#rarityFilter'),
+      typeFilter: $('#typeFilter'),
       topTitle: $('#topTitle'),
       topSub: $('#topSub'),
       summary: $('#summary'),
@@ -893,7 +944,10 @@
       search: '',
       sort: 'set',
       loading: false,
-      unresolved: []
+      unresolved: [],
+      colorFilter: [],
+      rarityFilter: [],
+      typeFilter: []
     };
 
     const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1213,13 +1267,24 @@
     }
 
     function matchesSearch(entry) {
-      const q = state.search.trim().toLowerCase();
-      if (!q) return true;
       const c = entry.card;
-      const hay = [c.name, c.type_line, c.mana_cost, c.set_name, c.oracle_text]
-        .concat(c.card_faces ? c.card_faces.map(f => f.oracle_text).filter(Boolean) : [])
-        .join(' ').toLowerCase();
-      return hay.includes(q);
+      const q = state.search.trim().toLowerCase();
+      if (q) {
+        const hay = [c.name, c.type_line, c.mana_cost, c.set_name, c.oracle_text]
+          .concat(c.card_faces ? c.card_faces.map(f => f.oracle_text).filter(Boolean) : [])
+          .join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (state.colorFilter.length) {
+        const cols = c.colors || [];
+        if (!state.colorFilter.some(col => col === 'C' ? !cols.length : cols.includes(col))) return false;
+      }
+      if (state.rarityFilter.length && !state.rarityFilter.includes(c.rarity)) return false;
+      if (state.typeFilter.length) {
+        const tl = c.type_line || '';
+        if (!state.typeFilter.some(t => tl.includes(t))) return false;
+      }
+      return true;
     }
 
     function setIcon(card) {
@@ -1235,15 +1300,18 @@
 
       if (!state.cards.length) {
         renderStats();
-        renderGroupCounts();
         return;
       }
 
       if (!filtered.length) {
+        const parts = [];
+        if (state.search.trim()) parts.push('\u201c' + state.search.trim().replace(/</g, '&lt;') + '\u201d');
+        if (state.colorFilter.length) parts.push(state.colorFilter.length + ' color' + (state.colorFilter.length > 1 ? 's' : '') + ' selected');
+        if (state.rarityFilter.length) parts.push(state.rarityFilter.length + ' rarity' + (state.rarityFilter.length > 1 ? 'ies' : '') + ' selected');
+        if (state.typeFilter.length) parts.push(state.typeFilter.length + ' type' + (state.typeFilter.length > 1 ? 's' : '') + ' selected');
         groupsEl.innerHTML = '<div class="empty" style="padding:50px 20px;"><h3>No matches</h3>' +
-          '<p>Nothing in the pool matches \u201c' + state.search.replace(/</g, '&lt;') + '\u201d.</p></div>';
+          '<p>Nothing in the pool matches ' + (parts.join(', ') || 'your filters') + '.</p></div>';
         renderStats();
-        renderGroupCounts();
         return;
       }
 
@@ -1308,7 +1376,6 @@
       groupsEl.appendChild(doc);
 
       renderStats();
-      renderGroupCounts();
     }
 
     function cardNode(entry) {
@@ -1410,28 +1477,10 @@
       }
 
       $('#summary').innerHTML = '<b>' + entries.length + '</b> unique · <b>' + total + '</b> cards' +
-        (state.search ? ' · filtered' : '');
+        (state.search.trim() || state.colorFilter.length || state.rarityFilter.length || state.typeFilter.length ? ' · filtered' : '');
       $('#topSub').textContent = state.search
         ? 'searching “' + state.search.replace(/</g, '&lt;') + '”'
         : '';
-    }
-
-    function renderGroupCounts() {
-      $('#' + groupCountId('color')).textContent = countFor('color');
-      $('#' + groupCountId('cmc')).textContent = countFor('cmc');
-      $('#' + groupCountId('type')).textContent = countFor('type');
-      $('#' + groupCountId('set')).textContent = countFor('set');
-      $('#' + groupCountId('rarity')).textContent = countFor('rarity');
-    }
-
-    function groupCountId(g) { return { color: 'cColor', cmc: 'cCmc', type: 'cType', set: 'cSet', rarity: 'cRarity' }[g]; }
-
-    function countFor(group) {
-      const switches = state.group;
-      state.group = group;
-      const keys = new Set(state.cards.map(groupKey));
-      state.group = switches;
-      return keys.size || '\u2014';
     }
 
     function openModal(entry) {
@@ -1605,6 +1654,8 @@
 
       render();
       if (state.cards.length) {
+        els.poolPanel.open = false;
+        els.savedPanel.open = false;
         const fuzzy = state.cards.filter(e => e.card.userFuzzy).length;
         toast('Loaded ' + state.cards.length + ' unique cards' +
           (fuzzy ? ' · ' + fuzzy + ' fuzzy-matched' : '') +
@@ -1638,7 +1689,13 @@
             sel.appendChild(o);
           }
         }
-        sel.value = '';
+        const savedFile = localStorage.getItem('gsm_file');
+        if (savedFile && [...sel.options].some(o => o.value === savedFile)) {
+          sel.value = savedFile;
+        } else {
+          sel.value = '';
+        }
+        if (sel.value && !localStorage.getItem('gsm_pool')) loadSelectedPoolFile();
       }).catch(() => { /* no manifest — keep the select placeholder */ });
     }
 
@@ -1676,8 +1733,11 @@
     function saveState() {
       try {
         localStorage.setItem('gsm_pool', els.poolText.value);
-        localStorage.setItem('gsm_group', state.group);
         localStorage.setItem('gsm_sort', state.sort);
+        localStorage.setItem('gsm_file', els.poolFileSel.value);
+        localStorage.setItem('gsm_colors', JSON.stringify(state.colorFilter));
+        localStorage.setItem('gsm_rarities', JSON.stringify(state.rarityFilter));
+        localStorage.setItem('gsm_types', JSON.stringify(state.typeFilter));
       } catch (e) { /* ignore */ }
     }
 
@@ -1685,27 +1745,39 @@
       try {
         const t = localStorage.getItem('gsm_pool');
         if (t) els.poolText.value = t;
-        const g = localStorage.getItem('gsm_group');
-        if (g && ['color', 'cmc', 'type', 'set', 'rarity'].includes(g)) setGroup(g);
         const s = localStorage.getItem('gsm_sort');
         if (s && ['set', 'cmc', 'name', 'rarity', 'color'].includes(s)) {
           state.sort = s;
           els.sortSel.value = s;
         }
+        const cf = localStorage.getItem('gsm_colors');
+        if (cf) { const v = JSON.parse(cf); if (Array.isArray(v)) state.colorFilter = v; }
+        const rf = localStorage.getItem('gsm_rarities');
+        if (rf) { const v = JSON.parse(rf); if (Array.isArray(v)) state.rarityFilter = v; }
+        const tf = localStorage.getItem('gsm_types');
+        if (tf) { const v = JSON.parse(tf); if (Array.isArray(v)) state.typeFilter = v; }
         state.search = els.searchBox.value;
+        if (t && t.trim()) setTimeout(loadPool, 80);
       } catch (e) { /* ignore */ }
+      syncFilterChips();
     }
 
-    function setGroup(g) {
-      state.group = g;
-      for (const btn of els.groupList.querySelectorAll('.group-btn')) {
-        btn.classList.toggle('active', btn.dataset.group === g);
-      }
-      $('#topTitle').textContent = {
-        color: 'By Color', cmc: 'By Mana Value', type: 'By Card Type', set: 'By Set', rarity: 'By Rarity'
-      }[g];
+    function toggleFilter(arr, val) {
+      const i = arr.indexOf(val);
+      if (i >= 0) arr.splice(i, 1);
+      else arr.push(val);
+      syncFilterChips();
       saveState();
       render();
+    }
+
+    function syncFilterChips() {
+      els.colorFilter.querySelectorAll('.color-chip').forEach(b =>
+        b.classList.toggle('active', state.colorFilter.includes(b.dataset.color)));
+      els.rarityFilter.querySelectorAll('.rarity-chip').forEach(b =>
+        b.classList.toggle('active', state.rarityFilter.includes(b.dataset.rarity)));
+      els.typeFilter.querySelectorAll('.type-chip').forEach(b =>
+        b.classList.toggle('active', state.typeFilter.includes(b.dataset.type)));
     }
 
     function initEvents() {
@@ -1727,9 +1799,17 @@
         reader.readAsText(file);
       });
 
-      els.groupList.addEventListener('click', e => {
-        const btn = e.target.closest('.group-btn');
-        if (btn) setGroup(btn.dataset.group);
+      els.colorFilter.addEventListener('click', e => {
+        const b = e.target.closest('.color-chip');
+        if (b) toggleFilter(state.colorFilter, b.dataset.color);
+      });
+      els.rarityFilter.addEventListener('click', e => {
+        const b = e.target.closest('.rarity-chip');
+        if (b) toggleFilter(state.rarityFilter, b.dataset.rarity);
+      });
+      els.typeFilter.addEventListener('click', e => {
+        const b = e.target.closest('.type-chip');
+        if (b) toggleFilter(state.typeFilter, b.dataset.type);
       });
 
       els.poolText.addEventListener('keydown', e => {
