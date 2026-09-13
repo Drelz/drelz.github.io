@@ -1571,7 +1571,7 @@
         sel.innerHTML = '';
         const opt = document.createElement('option');
         opt.value = '';
-        opt.textContent = 'Sample pool (built-in)';
+        opt.textContent = 'Select a pool…';
         sel.appendChild(opt);
         if (manifest && Array.isArray(manifest.pools)) {
           for (const p of manifest.pools) {
@@ -1582,14 +1582,8 @@
             sel.appendChild(o);
           }
         }
-        const savedFile = localStorage.getItem('gsm_file');
-        if (savedFile && [...sel.options].some(o => o.value === savedFile)) {
-          sel.value = savedFile;
-        } else {
-          sel.value = '';
-        }
-        if (sel.value && !localStorage.getItem('gsm_pool')) loadSelectedPoolFile();
-      }).catch(() => { /* no manifest — keep the built-in sample option */ });
+        sel.value = '';
+      }).catch(() => { /* no manifest — keep the select placeholder */ });
     }
 
     function loadSelectedPoolFile() {
@@ -1628,7 +1622,6 @@
         localStorage.setItem('gsm_pool', els.poolText.value);
         localStorage.setItem('gsm_group', state.group);
         localStorage.setItem('gsm_sort', state.sort);
-        localStorage.setItem('gsm_file', els.poolFileSel.value);
       } catch (e) { /* ignore */ }
     }
 
@@ -1644,7 +1637,6 @@
           els.sortSel.value = s;
         }
         state.search = els.searchBox.value;
-        if (t && t.trim()) setTimeout(loadPool, 80);
       } catch (e) { /* ignore */ }
     }
 
