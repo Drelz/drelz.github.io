@@ -2,19 +2,19 @@
   "pools": [
     {
       "name": "Andreas",
-      "file": "PlayerA.csv"
+      "file": "Andreas.csv"
     },
     {
       "name": "Lars",
-      "file": "PlayerB.csv"
+      "file": "Lars.csv"
     },
     {
       "name": "Frederik",
-      "file": "PlayerC.csv"
+      "file": "Frederik.csv"
     },
     {
       "name": "Morten",
-      "file": "PlayerD.csv"
+      "file": "Morten.csv"
     },
     {
       "name": "Sample sealed pool",
