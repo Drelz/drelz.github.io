@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MTG Shadowboxing — Front Page</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0c0e17;
+      --surface:      #181b2c;
+      --surface2:     #21253c;
+      --border:       #272c4e;
+      --accent:       #c89b3c;
+      --accent2:      #8b6914;
+      --accent-glow:  rgba(200, 155, 60, 0.25);
+      --compare:      #38bdf8;
+      --text:         #e8e0d0;
+      --muted:        #6b7092;
+    }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      border-radius: 50%;
+      z-index: 0;
+      pointer-events: none;
+      filter: blur(90px);
+    }
+    body::before {
+      width: 420px; height: 420px;
+      top: -120px; left: -100px;
+      background: var(--accent-glow);
+    }
+    body::after {
+      width: 380px; height: 380px;
+      bottom: -120px; right: -100px;
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 880px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .hero {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 44px 40px 38px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .kicker {
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--compare);
+    }
+
+    h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-shadow: 0 0 24px var(--accent-glow);
+      line-height: 1.1;
+    }
+    h1 span { display: inline-block; }
+
+    .rule {
+      width: 72px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      border-radius: 2px;
+    }
+
+    .tagline {
+      font-size: 0.92rem;
+      color: var(--text);
+      letter-spacing: 0.4px;
+    }
+
+    .desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 560px;
+    }
+
+    .launch-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 14px 42px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #0c0e17;
+      background: linear-gradient(180deg, #d9ac52, var(--accent) 60%, var(--accent2));
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      text-decoration: none;
+      box-shadow: 0 6px 22px var(--accent-glow);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .launch-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(200, 155, 60, 0.45);
+    }
+
+    .meta {
+      font-size: 0.66rem;
+      color: var(--muted);
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--accent);
+      border-radius: 10px;
+      padding: 16px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .feature.alt { border-top-color: var(--compare); }
+
+    .feature strong {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .feature span {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 0.66rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 480px) {
+      .hero { padding: 34px 22px 28px; }
+      h1 { font-size: 1.9rem; letter-spacing: 2px; }
+      .launch-btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="hero">
+      <div class="kicker">A Solo Goldfish &amp; Deck Testing Tool</div>
+      <h1>MTG<br><span>Shadowboxing</span></h1>
+      <div class="rule"></div>
+      <p class="tagline">Draw, play, and test a Magic deck by yourself — no opponent required.</p>
+      <p class="desc">
+        Paste any standard decklist, shuffle up, and mulligan into a hand you actually like.
+        Play lands and creatures, tap for mana, and watch your plan come together turn by turn.
+      </p>
+      <a class="launch-btn" href="mtg-shadowboxing.html">Launch the App</a>
+      <div class="meta">100% in your browser · Card data &amp; images via Scryfall</div>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <strong>🃏 Goldfish Practice</strong>
+        <span>Draw, mulligan, tap, untap, and move cards between zones with hotkeys and handy popups.</span>
+      </div>
+      <div class="feature alt">
+        <strong>📊 Deck Analysis</strong>
+        <span>Card types, mana curve, color needs vs. land sources, creature types, and card roles.</span>
+      </div>
+      <div class="feature">
+        <strong>⚖️ Deck Comparison</strong>
+        <span>Load a second decklist and compare KPIs, curves, and breakdowns side-by-side.</span>
+      </div>
+      <div class="feature alt">
+        <strong>☁️ Card Lookups</strong>
+        <span>Real rulings and art pulled live from Scryfall — everything stays client-side.</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      MTG Shadowboxing · Solo goldfish &amp; deck testing<br>
+      Magic: The Gathering is © Wizards of the Coast. This is a fan tool, not affiliated with them.
+    </div>
+
+  </div>
+</body>
+</html>
