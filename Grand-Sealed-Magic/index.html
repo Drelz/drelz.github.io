@@ -290,6 +290,13 @@
       border-color: transparent;
       box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
     }
+    .f-chip.rarity-chip[data-rarity="common"]   { background: #191a20; color: #c9cedb; border-color: #34363e; }
+    .f-chip.rarity-chip[data-rarity="uncommon"] { background: #a6adb9; color: #14161f; border-color: #c3cad6; }
+    .f-chip.rarity-chip[data-rarity="rare"]     { background: #c89b3c; color: #1c1403; border-color: #ddbb6c; }
+    .f-chip.rarity-chip[data-rarity="mythic"]   { background: #b8432c; color: #f7e6dd; border-color: #d7673f; }
+    .f-chip.rarity-chip.active {
+      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px currentColor;
+    }
 
     .stats { display: flex; flex-direction: column; gap: 7px; }
     .stat-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--muted); }
@@ -435,6 +442,22 @@
     .empty .rocket { font-size: 3rem; }
     .empty h3 { font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; color: var(--text); }
     .empty p { font-size: 0.78rem; color: var(--muted); max-width: 420px; line-height: 1.6; }
+
+    .loader-center {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 90px 20px;
+    }
+    .loader-center #loader {
+      width: min(420px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+    }
+    .loader-center .bar { height: 8px; }
 
     .groups { display: flex; flex-direction: column; gap: 30px; }
 
@@ -721,13 +744,6 @@
         <button class="btn full" id="loadBtn">Load Pool</button>
       </div>
       <button class="btn ghost full" id="sampleBtn" style="margin-top:8px;">Use sample pool</button>
-      <div class="loader-row" id="loader" style="display:none;">
-        <div class="bar"><i id="barFill"></i></div>
-        <div class="loader-label">
-          <span><span class="spin">◌</span> <span id="loaderText">Fetching cards…</span></span>
-          <span id="loaderN">0 / 0</span>
-        </div>
-      </div>
       <p class="hint-text">
         Accepts <code>2x Serra Angel</code>, <code>2,Serra Angel</code> or plain names.
         Also supports <code>"Name",SET,https://…png</code> (quoted, generator output), <code>Name&#9;SET&#9;https://…png</code>, and 2-part <code>Name&#9;SET</code>.
@@ -809,10 +825,8 @@
         <div class="chip-summary" id="summary"></div>
         <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Sort</label>
         <select id="sortSel">
-          <option value="set">Set</option>
+          <option value="set" selected>Set</option>
           <option value="cmc">Mana Value</option>
-          <option value="name">Name</option>
-          <option value="rarity">Rarity</option>
           <option value="color">Color</option>
         </select>
       </div>
@@ -820,6 +834,16 @@
       <div class="banner" id="unresolved" style="display:none;">
         <div class="banner-title">Couldn't find these — check the names below</div>
         <div class="banner-chips" id="unresolvedChips"></div>
+      </div>
+
+      <div class="loader-center" id="loaderCenter" style="display:none;">
+        <div class="loader-row" id="loader">
+          <div class="bar"><i id="barFill"></i></div>
+          <div class="loader-label">
+            <span><span class="spin">◌</span> <span id="loaderText">Fetching cards…</span></span>
+            <span id="loaderN">0 / 0</span>
+          </div>
+        </div>
       </div>
 
       <div class="empty" id="emptyState">
@@ -1543,7 +1567,8 @@
 
     function setLoading(on, total) {
       state.loading = on;
-      $('#loader').style.display = on ? 'block' : 'none';
+      $('#loaderCenter').style.display = on ? 'flex' : 'none';
+      if (on) $('#emptyState').style.display = 'none';
       $('#loadBtn').disabled = on;
       $('#sampleBtn').disabled = on;
       $('#loadFileBtn').disabled = on;
@@ -1663,6 +1688,45 @@
       } else {
         toast('Could not load any cards.');
       }
+      enrichLinkedCards();
+    }
+
+    function patchLinkedMeta(entry, real) {
+      const stub = entry.card;
+      stub.colors = (real.colors || []).slice();
+      stub.color_identity = (real.color_identity || real.colors || []).slice();
+      stub.cmc = real.cmc || 0;
+      stub.mana_cost = real.mana_cost || '';
+      stub.type_line = real.type_line || stub.type_line;
+      stub.rarity = real.rarity || stub.rarity;
+      stub.set_name = real.set_name || stub.set_name;
+      stub.oracle_text = real.oracle_text || '';
+      stub.collector_number = real.collector_number || '';
+      stub.power = real.power;
+      stub.toughness = real.toughness;
+      stub.userFuzzy = stub.userFuzzy || real.userFuzzy;
+      stub.enriched = true;
+      rememberSetMeta(real);
+    }
+
+    async function enrichLinkedCards() {
+      const pend = state.cards.filter(e => e.card.userPng && !e.card.enriched);
+      if (!pend.length) return;
+      let patched = 0;
+      for (let i = 0; i < pend.length; i += 75) {
+        const chunk = pend.slice(i, i + 75);
+        if (i > 0) await sleep(600);
+        const found = await bulkLookup(chunk.map(e => ({ name: e.name, set: e.card.set })));
+        for (const e of chunk) {
+          const key = norm(e.name) + '|' + (e.card.set || '').toLowerCase();
+          const real = found.get(key);
+          if (real) { patchLinkedMeta(e, real); patched++; }
+        }
+      }
+      if (patched && !state.loading) {
+        render();
+        saveState();
+      }
     }
 
     function loadSample() {
@@ -1733,7 +1797,6 @@
     function saveState() {
       try {
         localStorage.setItem('gsm_pool', els.poolText.value);
-        localStorage.setItem('gsm_sort', state.sort);
         localStorage.setItem('gsm_file', els.poolFileSel.value);
         localStorage.setItem('gsm_colors', JSON.stringify(state.colorFilter));
         localStorage.setItem('gsm_rarities', JSON.stringify(state.rarityFilter));
@@ -1745,11 +1808,6 @@
       try {
         const t = localStorage.getItem('gsm_pool');
         if (t) els.poolText.value = t;
-        const s = localStorage.getItem('gsm_sort');
-        if (s && ['set', 'cmc', 'name', 'rarity', 'color'].includes(s)) {
-          state.sort = s;
-          els.sortSel.value = s;
-        }
         const cf = localStorage.getItem('gsm_colors');
         if (cf) { const v = JSON.parse(cf); if (Array.isArray(v)) state.colorFilter = v; }
         const rf = localStorage.getItem('gsm_rarities');
