@@ -734,10 +734,10 @@
     <div class="panel">
       <h2>Group By</h2>
       <div class="group-list" id="groupList">
-        <button class="group-btn active" data-group="color"><span class="ico">🎨</span>Color<span class="count" id="cColor"></span></button>
+        <button class="group-btn" data-group="color"><span class="ico">🎨</span>Color<span class="count" id="cColor"></span></button>
         <button class="group-btn" data-group="cmc"><span class="ico">🔢</span>Mana Value<span class="count" id="cCmc"></span></button>
         <button class="group-btn" data-group="type"><span class="ico">🃏</span>Card Type<span class="count" id="cType"></span></button>
-        <button class="group-btn" data-group="set"><span class="ico">📦</span>Set<span class="count" id="cSet"></span></button>
+        <button class="group-btn active" data-group="set"><span class="ico">📦</span>Set<span class="count" id="cSet"></span></button>
         <button class="group-btn" data-group="rarity"><span class="ico">💎</span>Rarity<span class="count" id="cRarity"></span></button>
       </div>
     </div>
@@ -757,7 +757,7 @@
   <main class="main">
     <div class="main-inner">
       <div class="topbar">
-        <h2><span id="topTitle">Pool</span> <span id="topSub"></span></h2>
+        <h2><span id="topTitle">By Set</span> <span id="topSub"></span></h2>
         <div class="spacer"></div>
         <div class="chip-summary" id="summary"></div>
         <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Sort</label>
@@ -889,7 +889,7 @@
 
     const state = {
       cards: [],
-      group: 'color',
+      group: 'set',
       search: '',
       sort: 'set',
       loading: false,
@@ -980,6 +980,43 @@
         return null;
       }
       return null;
+    }
+
+    const SET_NAMES = {};
+
+    function rememberSetMeta(card) {
+      if (card && card.set && card.set_name && !SET_NAMES[card.set.toLowerCase()]) {
+        SET_NAMES[card.set.toLowerCase()] = card.set_name;
+      }
+    }
+
+    async function loadSetNames() {
+      try {
+        const cached = localStorage.getItem('gsm_sets');
+        if (cached) {
+          try {
+            const obj = JSON.parse(cached);
+            if (obj && obj.ts && Date.now() - obj.ts < 7 * 864e5) {
+              Object.assign(SET_NAMES, obj.map);
+              return;
+            }
+          } catch (e1) { /* ignore */ }
+        }
+        const data = await scry('https://api.scryfall.com/sets');
+        if (data && Array.isArray(data.data)) {
+          for (const s of data.data) {
+            if (s.code && s.name) SET_NAMES[s.code.toLowerCase()] = s.name;
+          }
+          try {
+            localStorage.setItem('gsm_sets', JSON.stringify({ ts: Date.now(), map: SET_NAMES }));
+          } catch (e2) { /* ignore */ }
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    function setFullName(code) {
+      if (!code) return 'Custom';
+      return SET_NAMES[code.toLowerCase()] || code.toUpperCase();
     }
 
     async function bulkLookup(entries) {
@@ -1117,6 +1154,7 @@
       if (group === 'color') return COLOR_META[key] ? COLOR_META[key].label : key;
       if (group === 'rarity') return RARITY_META[key] ? RARITY_META[key].label : key;
       if (group === 'cmc') return key === '7' ? '7+' : key;
+      if (group === 'set') return setFullName(key);
       return key;
     }
 
@@ -1136,7 +1174,19 @@
       }[group];
       const ordered = [];
       for (const k of start || []) if (keys.includes(k)) ordered.push(k);
-      const rest = keys.filter(k => !(start || []).includes(k)).sort();
+      let rest = keys.filter(k => !(start || []).includes(k));
+      if (group === 'set') {
+        const rel = new Map();
+        for (const e of entries) {
+          const k = groupKey(e);
+          if (!rel.has(k) || (e.card.released_at && rel.get(k) > e.card.released_at)) {
+            rel.set(k, e.card.released_at || '9999');
+          }
+        }
+        rest.sort((a, b) => (rel.get(a) || '9999').localeCompare(rel.get(b) || '9999') || a.localeCompare(b));
+      } else {
+        rest.sort();
+      }
       return ordered.concat(rest);
     }
 
@@ -1235,7 +1285,7 @@
         h3.textContent = groupLabel(state.group, key);
         if (state.group === 'set') {
           const small = document.createElement('small');
-          small.textContent = list[0].card.set_name + ' · ' + (list[0].card.set || '').toUpperCase() +
+          small.textContent = (list[0].card.set || '').toUpperCase() +
             (list[0].card.released_at ? ' · ' + list[0].card.released_at.slice(0, 4) : '');
           h3.appendChild(small);
         }
@@ -1461,6 +1511,7 @@
     }
 
     function addEntry(card, qty) {
+      rememberSetMeta(card);
       const existing = state.cards.find(e => e.card.id === card.id);
       if (existing) existing.qty += qty;
       else state.cards.push({ name: card.name, qty, card });
@@ -1506,7 +1557,7 @@
           id: 'png-' + e.png,
           name: e.name,
           set: e.set || '',
-          set_name: e.set ? e.set.toUpperCase() : 'Custom',
+          set_name: e.set ? setFullName(e.set) : 'Custom',
           colors,
           color_identity: colors,
           cmc: 0,
@@ -1716,6 +1767,7 @@
     initEvents();
     initPoolFiles();
     restoreState();
+    loadSetNames().then(() => { if (state.cards.length) render(); });
   </script>
 </body>
 </html>
