@@ -82,6 +82,9 @@ async function run() {
     statusEl.textContent = `Done — ${found.size} found, ${notFound.length} not found.`;
   } catch (err) {
     statusEl.textContent = `Error: ${err.message}`;
+    if (err instanceof TypeError) {
+      statusEl.textContent += " — check your internet connection, or open this page from github.io (file:// pages cannot reach the Scryfall API).";
+    }
   } finally {
     lookupBtn.disabled = false;
   }
@@ -93,7 +96,6 @@ async function lookupBatch(identifiers) {
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
-      "User-Agent": "Image-Retriever/1.3.0 (MTG card image lookup tool)",
     },
     body: JSON.stringify({
       identifiers: identifiers.map(({ name, set }) => ({ name, set })),
