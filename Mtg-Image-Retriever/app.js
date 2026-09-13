@@ -67,10 +67,10 @@ async function run() {
     }
 
     for (const chunk of chunks) {
-      const data = await lookupBatch(chunk);
+      const batch = await lookupBatch(chunk);
 
       for (const identifier of chunk) {
-        const card = data.cards.get(identifier.id) || data.notFound.get(identifier.id);
+        const card = batch.found.get(identifier.id);
         if (card) found.set(identifier.id, card);
         else notFound.push(identifier);
       }
@@ -106,19 +106,20 @@ async function lookupBatch(identifiers) {
   }
   if (json.warnings?.length) statusEl.textContent = json.warnings[0];
 
-  const cards = new Map();
-  const notFound = new Map();
-
+  const found = new Map();
   for (const card of json.data || []) {
-    const cardsIn = identifiers.find((i) => i.name.toLowerCase() === card.name.toLowerCase() && i.set === card.set);
-    const id = cardsIn ? cardsIn.id : card.name.toLowerCase();
-    cards.set(id, card);
+    found.set(cardKey(card.name, card.set), card);
   }
+  const notFound = new Map();
   for (const miss of json.not_found || []) {
-    notFound.set(`${miss.name.toLowerCase()}|${(miss.set || "").toLowerCase()}`, miss);
+    notFound.set(cardKey(miss.name, miss.set), miss);
   }
 
-  return { cards, notFound };
+  return { found, notFound };
+}
+
+function cardKey(name, set) {
+  return `${String(name || "").toLowerCase()}|${String(set || "").toLowerCase()}`;
 }
 
 function imageUrl(card) {
@@ -132,76 +133,35 @@ function imageUrl(card) {
 }
 
 function render(identifiers, found, notFound) {
-  if (identifiers.length === 0 || (found.size === 0 && notFound.length === 0)) {
-    resultsEl.hidden = true;
-    return;
-  }
+  document.getElementById("results-title").textContent =
+    `Results (${found.size} found, ${notFound.length} not found)`;
 
-  const rows = [];
-  for (const identifier of identifiers) {
+  const csvLines = identifiers.map((identifier) => {
     const match = found.get(identifier.id);
-    if (match) {
-      rows.push(renderRow(identifier, match, true));
-    } else {
-      rows.push(renderRow(identifier, null, false));
+    const url = match ? imageUrl(match) : "";
+    const set = identifier.set ? identifier.set.toUpperCase() : "";
+    const name = String(identifier.name).replace(/"/g, '""');
+    return `"${name}",${set},${url}`;
+  });
+
+  const csvEl = document.getElementById("csv-output");
+  csvEl.textContent = csvLines.join("\n");
+
+  const copyBtn = document.getElementById("copy-csv");
+  copyBtn.hidden = false;
+  copyBtn.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(csvEl.textContent);
+    } catch {
+      csvEl.select();
+      document.execCommand("copy");
     }
-  }
+    const prev = copyBtn.textContent;
+    copyBtn.textContent = "Copied!";
+    setTimeout(() => (copyBtn.textContent = prev), 1500);
+  };
 
-  const title = document.createElement("h2");
-  title.textContent = `Results (${found.size} found, ${notFound.length} not found)`;
-
-  const list = document.createElement("section");
-  list.append(...rows);
-
-  resultsEl.replaceChildren(title, list);
   resultsEl.hidden = false;
-}
-
-function renderRow(identifier, match, isFound) {
-  const row = document.createElement("div");
-  row.className = "card-row" + (isFound ? "" : " not-found");
-
-  const info = document.createElement("div");
-  info.className = "card-info";
-
-  const name = document.createElement("div");
-  name.className = "card-name";
-  name.textContent = identifier.name;
-
-  const meta = document.createElement("div");
-  meta.className = "card-set";
-  meta.textContent = identifier.set ? identifier.set.toUpperCase() : "—";
-
-  info.append(name, meta);
-
-  if (isFound && match && imageUrl(match)) {
-    const img = document.createElement("img");
-    img.className = "thumb";
-    img.src = imageUrl(match);
-    img.alt = identifier.name;
-    img.loading = "lazy";
-
-    const link = document.createElement("a");
-    link.className = "link";
-    link.href = imageUrl(match);
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = imageUrl(match);
-
-    const badge = document.createElement("span");
-    badge.className = "badge";
-    badge.textContent = "Found";
-
-    row.prepend(img);
-    row.append(info, link, badge);
-  } else {
-    const badge = document.createElement("span");
-    badge.className = "badge not-found";
-    badge.textContent = "Not found";
-    row.append(info, badge);
-  }
-
-  return row;
 }
 
 function sleep(ms) {
