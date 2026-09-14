@@ -1308,7 +1308,7 @@
     function groupOrder(group, entries) {
       const keys = [...new Set(entries.map(groupKey))];
       const start = {
-        color: ['W', 'U', 'B', 'R', 'G', 'Multi', 'Colorless'],
+        color: ['W', 'U', 'B', 'G', 'R', 'Multi', 'Colorless'],
         cmc: ['0', '1', '2', '3', '4', '5', '6', '7'],
         type: CARD_TYPES,
         rarity: ['common', 'uncommon', 'rare', 'mythic', 'special']
@@ -1339,7 +1339,7 @@
           return (RARITY_ORDER[a.card.rarity] ?? 9) - (RARITY_ORDER[b.card.rarity] ?? 9) ||
                  a.name.localeCompare(b.name);
         case 'color': {
-          const order = { W: 0, U: 1, B: 2, R: 3, G: 4, Multi: 5, Colorless: 6 };
+          const order = { W: 0, U: 1, B: 2, G: 3, R: 4, Multi: 5, Colorless: 6 };
           return (order[colorKey(a.card)] ?? 9) - (order[colorKey(b.card)] ?? 9) ||
                  a.name.localeCompare(b.name);
         }
@@ -1380,6 +1380,7 @@
     }
 
     function render() {
+      els.topTitle.textContent = { set: 'By Set', cmc: 'By Mana Value', color: 'By Color' }[state.group] || 'By Set';
       const filtered = state.cards.filter(matchesSearch);
       const groupsEl = $('#groupsBox');
       groupsEl.innerHTML = '';
@@ -1983,6 +1984,7 @@
 
       els.sortSel.addEventListener('change', () => {
         state.sort = els.sortSel.value;
+        state.group = els.sortSel.value;
         saveState();
         render();
       });
