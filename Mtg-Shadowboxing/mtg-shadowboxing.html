@@ -998,6 +998,40 @@
     }
     .ss-legend.active { display: flex; }
 
+    /* Deck Overview: sort toolbar */
+    .overview-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .ov-sort-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .seg-group { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+    .seg-btn {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .seg-btn:hover:not(.active) { color: var(--text); border-color: var(--accent2); }
+    .seg-btn.active { background: var(--accent); color: #160f00; border-color: var(--accent); }
+    .ov-count { font-size: 0.68rem; color: var(--muted); margin-left: auto; }
+
     /* Breakdown Layout: Donut Chart on Left, Progress Bars on Right */
     .breakdown-row {
       display: flex;
@@ -1426,6 +1460,7 @@
     <div class="shortcut-row"><span id="lbl-mulligan-shortcut">London Mulligan</span><span class="kbd-badge">M</span></div>
     <div class="shortcut-row"><span>Untap All Board</span><span class="kbd-badge">U</span></div>
     <div class="shortcut-row"><span>Deck Stats Page</span><span class="kbd-badge">S</span></div>
+    <div class="shortcut-row"><span>Deck Overview Page</span><span class="kbd-badge">O</span></div>
     <div class="shortcut-row"><span>New Game</span><span class="kbd-badge">N</span></div>
   </div>
 
@@ -1448,7 +1483,8 @@
     <button class="btn-primary"   id="btn-mulligan"  disabled>Mulligan <span class="kbd-badge">M</span></button>
     <button class="btn-secondary" id="btn-draw-one"  disabled>Draw Card <span class="kbd-badge">D</span></button>
     <button class="btn-secondary" id="btn-untap-all" disabled>Untap All <span class="kbd-badge">U</span></button>
-    <button class="btn-secondary" id="btn-stats"     disabled>📊 Stats <span class="kbd-badge">S</span></button>
+    <button class="btn-secondary" id="btn-stats"       disabled>📊 Stats <span class="kbd-badge">S</span></button>
+    <button class="btn-secondary" id="btn-deck-overview" disabled>🃏 Deck Overview <span class="kbd-badge">O</span></button>
     <button class="btn-ghost"     id="btn-new-game"  disabled>New Game <span class="kbd-badge">N</span></button>
   </div>
 
@@ -1700,7 +1736,40 @@
         </div>
 
       </div>
+</div>
 
+  </section>
+
+  <!-- ── DECK OVERVIEW PAGE OVERLAY ──────────────────────────────────────── -->
+  <section class="stats-page-view" id="deck-overview-page">
+    <div class="stats-page-header">
+      <div class="stats-page-title">
+        <h2>🃏 Deck Overview</h2>
+        <p>Every card in your deck — sort by type, mana value, color, or name</p>
+      </div>
+      <button class="btn-primary" id="btn-close-overview">← Back to Gameboard <span class="kbd-badge">Esc</span></button>
+    </div>
+
+    <div class="stats-main-layout">
+      <div class="stats-content-area">
+
+        <div class="overview-toolbar">
+          <div class="ov-sort-group" id="ov-sort-group">
+            <span class="s-label">Sort by</span>
+            <div class="seg-group">
+              <button class="seg-btn" data-mode="type">Type</button>
+              <button class="seg-btn" data-mode="cmc">Mana Cost</button>
+              <button class="seg-btn" data-mode="color">Color</button>
+              <button class="seg-btn" data-mode="name">Name</button>
+            </div>
+            <button class="seg-btn" id="ov-order-btn">Groups ↑</button>
+            <span class="ov-count" id="ov-count-label"></span>
+          </div>
+        </div>
+
+        <div class="deck-groups-grid" id="ov-deck-groups"></div>
+
+      </div>
     </div>
   </section>
 
@@ -1966,6 +2035,19 @@ const compareBadge           = $('compare-badge');
 const compareSection         = $('compare-section');
 const shortcutsBox           = $('shortcuts-box');
 
+// Deck Overview View
+const btnDeckOverview        = $('btn-deck-overview');
+const deckOverviewPage       = $('deck-overview-page');
+const btnCloseOverview       = $('btn-close-overview');
+const ovSortGroup            = $('ov-sort-group');
+const ovOrderBtn             = $('ov-order-btn');
+const ovCountLabel           = $('ov-count-label');
+const ovDeckGroups           = $('ov-deck-groups');
+
+// Deck Overview State
+let overviewSortMode = 'type';
+let overviewSortAsc  = true;
+
 const tooltipEl              = $('tooltip');
 const toastEl                = $('toast');
 
@@ -2078,6 +2160,7 @@ function loadDeck() {
   btnClear.disabled    = false;
   btnNewGame.disabled  = false;
   btnStats.disabled    = false;
+  btnDeckOverview.disabled = false;
   btnLoad.textContent  = 'Reload Deck';
 
   resetMulliganState();
@@ -2596,29 +2679,50 @@ popupCancel.addEventListener('click',   (e) => { e.stopPropagation(); closeAllPo
 document.addEventListener('click', closeAllPopups);
 
 // ── DECK STATS PAGE OPEN / CLOSE ─────────────────────────────────────────
+function setView(view) {
+  const overlayOpen = view !== 'game';
+  statsPage.classList.toggle('active', view === 'stats');
+  deckOverviewPage.classList.toggle('active', view === 'overview');
+  compareSection.style.display = overlayOpen ? 'flex' : 'none';
+  shortcutsBox.style.display   = overlayOpen ? 'none' : '';
+  statsSection.style.display   = overlayOpen ? 'none' : (fullDeck.length ? '' : 'none');
+}
+
+function isOverlayOpen() {
+  return statsPage.classList.contains('active') ||
+         deckOverviewPage.classList.contains('active');
+}
+
 function openStatsPage() {
   if (!fullDeck.length) {
     showToast('Load a deck to view stats!');
     return;
   }
   buildAndRenderStats();
-  statsPage.classList.add('active');
-  syncSidebarForStats(true);
+  setView('stats');
 }
 
 function closeStatsPage() {
-  statsPage.classList.remove('active');
-  syncSidebarForStats(false);
+  setView('game');
 }
 
-function syncSidebarForStats(statsOpen) {
-  compareSection.style.display  = statsOpen ? 'flex' : 'none';
-  shortcutsBox.style.display    = statsOpen ? 'none' : '';
-  statsSection.style.display    = statsOpen ? 'none' : (fullDeck.length ? '' : 'none');
+function openDeckOverview() {
+  if (!fullDeck.length) {
+    showToast('Load a deck to view the overview!');
+    return;
+  }
+  renderDeckOverview();
+  setView('overview');
+}
+
+function closeDeckOverview() {
+  setView('game');
 }
 
 btnStats.addEventListener('click', openStatsPage);
 btnCloseStats.addEventListener('click', closeStatsPage);
+btnDeckOverview.addEventListener('click', openDeckOverview);
+btnCloseOverview.addEventListener('click', closeDeckOverview);
 
 // ── MANA SYMBOL BADGE RENDERER: (1)(R)(G) ────────────────────────────────
 function renderManaSymbolsHTML(manaCost, cmc) {
@@ -2940,6 +3044,156 @@ function analyzeDeck(cardList) {
     groups
   };
 }
+
+// ── DECK OVERVIEW: CLASSIFY & SORT ───────────────────────────────────────
+const PRIMARY_TYPE_ORDER = ['Creature', 'Planeswalker', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land', 'Other'];
+const COLOR_GROUP_ORDER  = ['White', 'Blue', 'Black', 'Red', 'Green', 'Multicolor', 'Colorless'];
+const COLOR_NAME_BY_KEY  = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' };
+
+function classifyPrimaryType(cached) {
+  const t = (cached?.typeLine || '').toLowerCase();
+  if (t.includes('land'))        return 'Land';
+  if (t.includes('creature'))    return 'Creature';
+  if (t.includes('planeswalker'))return 'Planeswalker';
+  if (t.includes('instant'))     return 'Instant';
+  if (t.includes('sorcery'))     return 'Sorcery';
+  if (t.includes('artifact'))    return 'Artifact';
+  if (t.includes('enchantment')) return 'Enchantment';
+  return 'Other';
+}
+
+function colorGroupOf(cached) {
+  const colors = new Set();
+  (cached?.manaCost || '').match(/\{([^}]+)\}/g)?.forEach(raw => {
+    const inner = raw.replace(/[{}]/g, '').toUpperCase();
+    ['W', 'U', 'B', 'R', 'G'].forEach(c => { if (inner.includes(c)) colors.add(c); });
+  });
+  if (!colors.size) {
+    (cached?.producedMana || deduceLandMana(cached?.typeLine || '', cached?.oracleText || ''))
+      .forEach(c => { if (['W', 'U', 'B', 'R', 'G'].includes(c)) colors.add(c); });
+  }
+  if (colors.size > 1) return 'Multicolor';
+  if (colors.size === 1) return COLOR_NAME_BY_KEY[[...colors][0]];
+  return 'Colorless';
+}
+
+function groupedOverviewCards() {
+  const counts = {};
+  fullDeck.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
+
+  const cards = Object.keys(counts).map(name => {
+    const cached = cardCache[name] || {};
+    return {
+      name,
+      qty: counts[name],
+      cmc: typeof cached.cmc === 'number' ? cached.cmc : 0,
+      manaCost: cached.manaCost || '',
+      type: classifyPrimaryType(cached),
+      color: colorGroupOf(cached)
+    };
+  });
+
+  const groups = {};
+  const groupOrder = [];
+  const push = (key, card) => {
+    if (!groups[key]) { groups[key] = []; groupOrder.push(key); }
+    groups[key].push(card);
+  };
+
+  cards.forEach(card => {
+    if (overviewSortMode === 'type')      push(card.type, card);
+    else if (overviewSortMode === 'color')push(card.color, card);
+    else if (overviewSortMode === 'cmc')  push('cmc-' + card.cmc, card);
+    else                                  push('all', card);
+  });
+
+  if (overviewSortMode === 'type') {
+    groupOrder.sort((a, b) => PRIMARY_TYPE_ORDER.indexOf(a) - PRIMARY_TYPE_ORDER.indexOf(b));
+  } else if (overviewSortMode === 'color') {
+    groupOrder.sort((a, b) => COLOR_GROUP_ORDER.indexOf(a) - COLOR_GROUP_ORDER.indexOf(b));
+  } else if (overviewSortMode === 'cmc') {
+    groupOrder.sort((a, b) => Number(a.replace('cmc-', '')) - Number(b.replace('cmc-', '')));
+  }
+
+  if (!overviewSortAsc) groupOrder.reverse();
+
+  const total = cards.reduce((s, c) => s + c.qty, 0);
+  return { cards, groups, groupOrder, total };
+}
+
+function overviewGroupLabel(key, mode) {
+  if (mode === 'cmc') return `Mana Value ${key.replace('cmc-', '')}`;
+  if (key === 'all')  return 'All Cards';
+  return key;
+}
+
+function overviewSortLabel() {
+  if (overviewSortMode === 'type')      return 'Type';
+  if (overviewSortMode === 'cmc')       return 'Mana Cost';
+  if (overviewSortMode === 'color')     return 'Color';
+  return 'Name';
+}
+
+function renderDeckOverview() {
+  const { groups, groupOrder, total } = groupedOverviewCards();
+  ovDeckGroups.innerHTML = '';
+
+  document.querySelectorAll('#ov-sort-group .seg-btn[data-mode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === overviewSortMode);
+  });
+  ovOrderBtn.textContent = overviewSortAsc ? 'Groups ↑' : 'Groups ↓';
+  ovCountLabel.textContent = `${total} cards · ${groupOrder.length} group${groupOrder.length > 1 ? 's' : ''} by ${overviewSortLabel()}`;
+
+  groupOrder.forEach(key => {
+    const list = groups[key];
+    const sorted = [...list].sort((a, b) => {
+      const cmp = a.name.localeCompare(b.name);
+      return (overviewSortMode === 'name' && !overviewSortAsc) ? -cmp : cmp;
+    });
+    const groupTotal = sorted.reduce((s, c) => s + c.qty, 0);
+
+    const box = document.createElement('div');
+    box.className = 'deck-group-box';
+
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    header.innerHTML = `<span>${overviewGroupLabel(key, overviewSortMode)}</span><span>${groupTotal}</span>`;
+    box.appendChild(header);
+
+    sorted.forEach(card => {
+      const row = document.createElement('div');
+      row.className = 'group-card-item';
+
+      const left = document.createElement('div');
+      left.className = 'group-card-left';
+      left.innerHTML = `<span class="group-card-qty">${card.qty}</span><span class="group-card-title">${card.name}</span>`;
+
+      const right = document.createElement('div');
+      right.innerHTML = renderManaSymbolsHTML(card.manaCost, card.cmc);
+
+      row.append(left, right);
+      row.addEventListener('mouseenter', ev => showTooltip(card.name, ev));
+      row.addEventListener('mousemove',  moveTooltip);
+      row.addEventListener('mouseleave', hideTooltip);
+      box.appendChild(row);
+    });
+
+    ovDeckGroups.appendChild(box);
+  });
+}
+
+ovSortGroup.addEventListener('click', (e) => {
+  const btn = e.target.closest('.seg-btn[data-mode]');
+  if (!btn) return;
+  overviewSortMode = btn.dataset.mode;
+  overviewSortAsc  = true;
+  renderDeckOverview();
+});
+
+ovOrderBtn.addEventListener('click', () => {
+  overviewSortAsc = !overviewSortAsc;
+  renderDeckOverview();
+});
 
 // ── CALCULATE & BUILD DECK STATISTICS ────────────────────────────────────
 function buildAndRenderStats() {
@@ -3410,8 +3664,8 @@ function showRoleTooltip(def, e) {
 
 // ── KEYBOARD SHORTCUTS ───────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && statsPage.classList.contains('active')) {
-    closeStatsPage();
+  if (e.key === 'Escape' && isOverlayOpen()) {
+    setView('game');
     return;
   }
 
@@ -3422,21 +3676,27 @@ document.addEventListener('keydown', (e) => {
 
   if (key === 'D') {
     e.preventDefault();
-    if (!btnDrawOne.disabled && !statsPage.classList.contains('active') && cardsToBottom === 0) {
+    if (!btnDrawOne.disabled && !isOverlayOpen() && cardsToBottom === 0) {
       drawOneCard();
     }
   } else if (key === 'M') {
     e.preventDefault();
-    if (!btnMulligan.disabled && !statsPage.classList.contains('active')) handleMulligan();
+    if (!btnMulligan.disabled && !isOverlayOpen()) handleMulligan();
   } else if (key === 'U') {
     e.preventDefault();
-    if (!btnUntapAll.disabled && !statsPage.classList.contains('active') && cardsToBottom === 0) {
+    if (!btnUntapAll.disabled && !isOverlayOpen() && cardsToBottom === 0) {
       untapAll();
     }
   } else if (key === 'S') {
     e.preventDefault();
     if (statsPage.classList.contains('active')) closeStatsPage();
+    else if (deckOverviewPage.classList.contains('active')) openStatsPage();
     else openStatsPage();
+  } else if (key === 'O') {
+    e.preventDefault();
+    if (deckOverviewPage.classList.contains('active')) closeDeckOverview();
+    else if (statsPage.classList.contains('active')) openDeckOverview();
+    else openDeckOverview();
   } else if (key === 'N') {
     e.preventDefault();
     if (fullDeck.length >= 40) newGame();
@@ -3486,6 +3746,9 @@ async function drainQueue() {
   draining = false;
   if (statsPage.classList.contains('active')) {
     buildAndRenderStats();
+  }
+  if (deckOverviewPage.classList.contains('active')) {
+    renderDeckOverview();
   }
 }
 
@@ -3800,11 +4063,12 @@ function clearAll() {
   btnDrawOne.disabled  = true;
   btnUntapAll.disabled = true;
   btnStats.disabled    = true;
+  btnDeckOverview.disabled = true;
   btnMulligan.disabled = true;
   btnLoad.textContent  = 'Load Deck & Draw';
   turnNum.textContent  = '—';
 
-  closeStatsPage();
+  setView('game');
   updateStats();
   renderHand();
   renderBoard();
