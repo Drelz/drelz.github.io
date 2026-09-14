@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MTG Shadowboxing — Front Page</title>
+  <title>MTG Shadowboxing</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg:           #0c0e17;
+      --sidebar-bg:   #10121d;
       --surface:      #181b2c;
       --surface2:     #21253c;
       --border:       #272c4e;
@@ -16,216 +17,4160 @@
       --accent2:      #8b6914;
       --accent-glow:  rgba(200, 155, 60, 0.25);
       --compare:      #38bdf8;
+      --compare2:     #0284c7;
+      --compare-glow: rgba(56, 189, 248, 0.25);
       --text:         #e8e0d0;
       --muted:        #6b7092;
+
+      /* Right zones */
+      --gy-bg:        #12101b;
+      --gy-bdr:       #322744;
+      --exile-bg:     #0d1424;
+      --exile-bdr:    #1c2d54;
+      --exile-accent: #60a5fa;
+
+      --zone-c-bg:    rgba(22, 48, 25, 0.45);
+      --zone-l-bg:    rgba(50, 32, 14, 0.45);
+      --zone-h-bg:    rgba(13, 15, 36, 0.85);
+
+      /* Zone text tints (graveyard / exile labels) */
+      --gy-text:       #b7a4d6;
+      --gy-muted:      #8c7ea8;
+      --exile-muted:   #728ec4;
+      --mb-hint:       #fde68a;
+      --donut-empty-bg: rgba(255, 255, 255, 0.06);
+
+      /* Card sizes */
+      --card-w-board: 116px;
+      --card-h-board: 162px;
+      --card-w-hand:  154px;
+      --card-h-hand:  215px;
+      --radius:       9px;
+    }
+
+    body.light {
+      --bg:            #eceef4;
+      --sidebar-bg:    #e2e5ef;
+      --surface:       #ffffff;
+      --surface2:      #f1f3f9;
+      --border:        #c8cede;
+      --accent:        #a8760e;
+      --accent2:       #8a6410;
+      --accent-glow:   rgba(168, 118, 14, 0.22);
+      --compare:       #0284c7;
+      --compare2:      #0369a1;
+      --compare-glow:  rgba(2, 132, 199, 0.22);
+      --text:          #232734;
+      --muted:         #5d6273;
+
+      /* Right zones */
+      --gy-bg:         #ece6f6;
+      --gy-bdr:        #c7b4e5;
+      --exile-bg:      #e3ebf9;
+      --exile-bdr:     #a5c2ea;
+      --exile-accent:  #1d4ed8;
+
+      --zone-c-bg:     rgba(38, 84, 46, 0.07);
+      --zone-l-bg:     rgba(122, 86, 32, 0.08);
+      --zone-h-bg:     rgba(247, 248, 252, 0.92);
+
+      --gy-text:       #7a55b8;
+      --gy-muted:      #6f5c97;
+      --exile-muted:   #5d7bb5;
+      --mb-hint:       #8a5d00;
+      --donut-empty-bg: rgba(0, 0, 0, 0.06);
     }
 
     body {
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── LEFT SIDEBAR ─────────────────────────────────────────── */
+    .sidebar {
+      width: 250px;
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 40px 20px 60px;
+      overflow-y: auto;
+      padding: 16px 14px 20px;
+      gap: 16px;
     }
 
-    body::before,
-    body::after {
-      content: "";
-      position: fixed;
-      border-radius: 50%;
-      z-index: 0;
-      pointer-events: none;
-      filter: blur(90px);
-    }
-    body::before {
-      width: 420px; height: 420px;
-      top: -120px; left: -100px;
-      background: var(--accent-glow);
-    }
-    body::after {
-      width: 380px; height: 380px;
-      bottom: -120px; right: -100px;
-      background: rgba(56, 189, 248, 0.12);
-    }
-
-    .page {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 880px;
-      display: flex;
-      flex-direction: column;
-      gap: 26px;
-    }
-
-    .hero {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 44px 40px 38px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-    }
-
-    .kicker {
-      font-size: 0.66rem;
-      font-weight: 700;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      color: var(--compare);
-    }
-
-    h1 {
-      font-size: 2.6rem;
+    .app-title h1 {
+      font-size: 1.15rem;
       font-weight: 800;
-      letter-spacing: 3px;
+      letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--accent);
-      text-shadow: 0 0 24px var(--accent-glow);
-      line-height: 1.1;
+      text-shadow: 0 0 16px var(--accent-glow);
+      line-height: 1.2;
     }
-    h1 span { display: inline-block; }
-
-    .rule {
-      width: 72px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      border-radius: 2px;
-    }
-
-    .tagline {
-      font-size: 0.92rem;
-      color: var(--text);
-      letter-spacing: 0.4px;
-    }
-
-    .desc {
-      font-size: 0.8rem;
+    .app-title p {
       color: var(--muted);
-      line-height: 1.6;
-      max-width: 560px;
+      font-size: 0.65rem;
+      margin-top: 3px;
+      letter-spacing: 0.5px;
     }
-
-    .launch-btn {
+    .app-title .home-link {
       display: inline-block;
-      margin-top: 8px;
-      padding: 14px 42px;
-      font-size: 0.95rem;
-      font-weight: 800;
-      letter-spacing: 1.5px;
+      margin-top: 6px;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
-      color: #0c0e17;
-      background: linear-gradient(180deg, #d9ac52, var(--accent) 60%, var(--accent2));
-      border: 1px solid var(--accent);
-      border-radius: 8px;
+      color: var(--accent);
       text-decoration: none;
-      box-shadow: 0 6px 22px var(--accent-glow);
-      transition: transform 0.12s, box-shadow 0.12s;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      background: rgba(0, 0, 0, 0.2);
     }
-    .launch-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(200, 155, 60, 0.45);
-    }
+    .app-title .home-link:hover { border-color: var(--accent); }
 
-    .meta {
-      font-size: 0.66rem;
+    .s-section { display: flex; flex-direction: column; gap: 6px; }
+
+    .s-label {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
       color: var(--muted);
     }
 
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 14px;
+    textarea {
+      width: 100%;
+      height: 160px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Cascadia Code', 'Courier New', monospace;
+      font-size: 0.72rem;
+      padding: 8px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.45;
+    }
+    textarea:focus { border-color: var(--accent2); }
+    textarea::placeholder { color: var(--muted); opacity: 0.45; font-size: 0.68rem; }
+
+    /* Buttons & Badges */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      transition: background 0.15s, transform 0.08s, opacity 0.15s;
+      letter-spacing: 0.2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    button:active:not(:disabled) { transform: scale(0.97); }
+    button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-primary   { background: var(--accent); color: #160f00; font-weight: 700; }
+    .btn-primary:hover:not(:disabled) { background: #daa93f; }
+    .btn-compare   { background: var(--compare); color: #082f49; font-weight: 700; }
+    .btn-compare:hover:not(:disabled) { background: #7dd3fc; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover:not(:disabled) { background: #2b3054; }
+    .btn-ghost     { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { color: #e05555; border-color: #e05555; }
+
+    .kbd-badge {
+      display: inline-block;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 0.62rem;
+      font-family: monospace;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
     }
 
-    .feature {
+    .btn-group { display: flex; flex-direction: column; gap: 5px; }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    .stat-box {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-top: 3px solid var(--accent);
-      border-radius: 10px;
-      padding: 16px 16px 14px;
+      border-radius: 5px;
+      padding: 5px 8px;
+    }
+    .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--accent); line-height: 1; display: block; }
+    .stat-lbl { font-size: 0.54rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); display: block; margin-top: 2px; }
+
+    /* Keyboard Shortcuts Box */
+    .shortcuts-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 10px;
+      font-size: 0.66rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .shortcuts-box strong { color: var(--accent); font-size: 0.68rem; display: block; margin-bottom: 4px; }
+    .shortcut-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+
+    .compare-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px 0 4px;
+      border-top: 1px solid var(--border);
+    }
+    .compare-panel .compare-header-box  { padding-bottom: 8px; }
+    .compare-panel .compare-header-title { font-size: 0.7rem; }
+    .compare-panel .compare-legend      { padding: 6px 8px; font-size: 0.6rem; }
+    .compare-panel textarea             { font-size: 0.62rem; min-height: 80px; }
+    .compare-panel .btn-group           { gap: 4px; }
+    .compare-panel .btn-compare,
+    .compare-panel .btn-secondary,
+    .compare-panel .btn-ghost           { font-size: 0.6rem; padding: 4px 6px; }
+
+    body.light .compare-panel .compare-legend { background: rgba(0,0,0,0.04); }
+
+    /* ── MAIN WORKSPACE ───────────────────────────────────────── */
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+      position: relative;
+    }
+
+    /* Controls bar */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: var(--sidebar-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .turn-display { display: flex; align-items: baseline; gap: 6px; }
+    .turn-label   { font-size: 0.58rem; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
+    .turn-number  { font-size: 1.65rem; font-weight: 800; color: var(--accent); line-height: 1; min-width: 1.8ch; }
+
+    .ctrl-divider { width: 1px; height: 26px; background: var(--border); margin: 0 3px; }
+
+    /* Arena: Battlefield on Left, Right Zones Panel (Graveyard + Exile) */
+    .arena {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* Battlefield */
+    .battlefield {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .zone {
+      flex: 1;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 14px 12px;
+      border-bottom: 1px solid var(--border);
+      overflow-y: auto;
+    }
+    .zone-creatures { background: var(--zone-c-bg); }
+    .zone-lands     { background: var(--zone-l-bg); }
+
+    .zone-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+    .zone-name  { font-size: 0.62rem; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
+    .zone-count { font-size: 0.56rem; background: var(--surface2); color: var(--muted); border-radius: 8px; padding: 1px 6px; border: 1px solid var(--border); }
+    .zone-hint  { font-size: 0.62rem; color: var(--muted); opacity: 0.45; font-style: italic; margin-left: auto; }
+
+    .zone-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-content: flex-start;
+      align-items: center;
+      padding: 4px 2px;
+    }
+
+    /* ── RIGHT PANEL (GRAVEYARD ON TOP, EXILE BELOW) ──────────── */
+    .right-panel {
+      width: 230px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .gy-section {
+      flex: 1;
+      background: var(--gy-bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-bottom: 2px solid var(--border);
+      min-height: 130px;
+    }
+
+    .exile-section {
+      flex: 1;
+      background: var(--exile-bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 130px;
+    }
+
+    .panel-zone-header {
+      padding: 8px 12px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .gy-header-bg    { background: rgba(22, 17, 34, 0.8); border-bottom: 1px solid var(--gy-bdr); }
+    .exile-header-bg { background: rgba(13, 22, 42, 0.85); border-bottom: 1px solid var(--exile-bdr); }
+
+    .pz-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pz-name  { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+    .pz-count { font-size: 0.55rem; border-radius: 8px; padding: 1px 5px; }
+    .pz-hint  { font-size: 0.58rem; opacity: 0.75; }
+
+    .gy-name-color  { color: #b7a4d6; }
+    .gy-badge-color { background: #261f38; color: #b7a4d6; border: 1px solid #443560; }
+    .gy-hint-color  { color: #81729c; }
+
+    .exile-name-color  { color: var(--exile-accent); }
+    .exile-badge-color { background: #14223f; color: var(--exile-accent); border: 1px solid #233b6e; }
+    .exile-hint-color  { color: #6b86ba; }
+
+    .pz-cards-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .pz-empty {
+      font-size: 0.68rem;
+      font-style: italic;
+      text-align: center;
+      margin-top: 24px;
+      line-height: 1.4;
+      padding: 0 10px;
+    }
+    .gy-empty-color    { color: #64557d; }
+    .exile-empty-color { color: #435b8a; }
+
+    /* Side Zone Card Element */
+    .side-card {
+      width: 100%;
+      border-radius: 6px;
+      padding: 5px;
+      cursor: pointer;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      position: relative;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    }
+    .gy-card-item {
+      background: #1a1626;
+      border: 1px solid #372c4d;
+    }
+    .gy-card-item:hover {
+      border-color: #8e68cf;
+      background: #241d36;
+      transform: translateX(-2px);
+    }
+    .exile-card-item {
+      background: #101a2f;
+      border: 1px solid #20335e;
+    }
+    .exile-card-item:hover {
+      border-color: var(--exile-accent);
+      background: #162444;
+      transform: translateX(-2px);
+    }
+
+    .side-card-img {
+      width: 36px;
+      height: 50px;
+      border-radius: 3px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #110e1a;
+      display: block;
+    }
+    .side-card-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .side-card-name {
+      font-size: 0.64rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+    .gy-card-item .side-card-name { color: #dfd8ed; }
+    .exile-card-item .side-card-name { color: #dbeafe; }
+
+    .side-card-type {
+      font-size: 0.54rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .gy-card-item .side-card-type { color: #8c7ea8; }
+    .exile-card-item .side-card-type { color: #728ec4; }
+
+    .side-card-action-hint {
+      font-size: 0.52rem;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .side-card:hover .side-card-action-hint { opacity: 1; }
+    .gy-card-item .side-card-action-hint { color: #caa5ff; }
+    .exile-card-item .side-card-action-hint { color: #93c5fd; }
+
+    /* ── BOTTOM: HAND ZONE ────────────────────────────────────── */
+    .hand-zone {
+      flex-shrink: 0;
+      background: var(--zone-h-bg);
+      border-top: 2px solid var(--border);
+      padding: 8px 16px 12px;
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .feature.alt { border-top-color: var(--compare); }
 
-    .feature strong {
+    .mulligan-banner {
+      background: linear-gradient(90deg, rgba(200, 155, 60, 0.22), rgba(180, 83, 9, 0.28));
+      border: 1px solid var(--accent);
+      color: #ffd885;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      letter-spacing: 0.3px;
+    }
+    .mulligan-banner.active { display: flex; }
+    .mb-left { display: flex; align-items: center; gap: 8px; }
+    .mb-count {
+      background: var(--accent);
+      color: #1a1100;
+      font-weight: 800;
+      border-radius: 4px;
+      padding: 1px 7px;
       font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      color: var(--text);
-    }
-    .feature span {
-      font-size: 0.72rem;
-      color: var(--muted);
-      line-height: 1.5;
     }
 
-    .footer {
+    .hand-cards {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      min-height: calc(var(--card-h-hand) + 12px);
+      align-items: flex-start;
+    }
+    .hand-cards::-webkit-scrollbar { height: 6px; }
+    .hand-cards::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    .hand-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .zone-empty {
+      display: flex;
+      align-items: center;
+      height: calc(var(--card-h-hand) + 12px);
+      color: var(--muted);
+      font-size: 0.8rem;
+      opacity: 0.45;
+      font-style: italic;
+    }
+
+    /* ── CARDS: BOARD & HAND ──────────────────────────────────── */
+
+    .hand-card {
+      width: var(--card-w-hand);
+      height: var(--card-h-hand);
+      flex-shrink: 0;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .hand-card:hover {
+      transform: translateY(-10px) scale(1.04);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.75), 0 0 0 1px var(--accent2);
+      z-index: 20;
+    }
+    .hand-card.is-dealing {
+      animation: dealIn 0.25s ease-out both;
+    }
+
+    body.mulligan-active .hand-card:hover {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 2px #f59e0b, 0 16px 36px rgba(0,0,0,0.75);
+    }
+    .card-bottom-hint {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.85);
+      border: 1px solid #f59e0b;
+      color: #fbbf24;
+      font-size: 0.52rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+      display: none;
+    }
+    body.mulligan-active .hand-card:hover .card-bottom-hint {
+      display: block;
+    }
+
+    .board-card-wrapper {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--card-w-board);
+      height: var(--card-h-board);
+      position: relative;
+      flex-shrink: 0;
+      transition: width 0.22s cubic-bezier(0.2, 0.8, 0.4, 1), height 0.22s cubic-bezier(0.2, 0.8, 0.4, 1);
+    }
+    .board-card-wrapper.tapped {
+      width: var(--card-h-board);
+      height: var(--card-w-board);
+    }
+
+    .board-card {
+      width: var(--card-w-board);
+      height: var(--card-h-board);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      transform-origin: center center;
+      transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.15s ease;
+      flex-shrink: 0;
+    }
+    .board-card:hover {
+      box-shadow: 0 0 0 1px var(--accent2), 0 8px 24px rgba(0,0,0,0.65);
+      z-index: 10;
+    }
+    .board-card.tapped {
+      transform: rotate(90deg);
+    }
+    .board-card.tapped:hover {
+      transform: rotate(90deg) scale(1.03);
+    }
+
+    .card-gy-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(18, 12, 28, 0.85);
+      border: 1px solid #5a427d;
+      color: #caa5ff;
+      border-radius: 4px;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s;
+      z-index: 15;
+      padding: 0;
+    }
+    .board-card:hover .card-gy-btn { opacity: 1; }
+    .card-gy-btn:hover { background: #6b3fb3; color: #fff; }
+
+    @keyframes dealIn {
+      from { opacity: 0; transform: translateY(22px) scale(0.94); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .hand-card img, .board-card img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+
+    .card-face {
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: inherit;
+      background: var(--surface2);
+    }
+    .cf-header {
+      background: #1b263b;
+      padding: 5px 7px;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--text);
+      flex-shrink: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.3;
+    }
+    .cf-art {
+      flex: 1;
+      background: linear-gradient(135deg, #1b2238 0%, #111422 60%, #1e1b2e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cf-name {
+      font-size: 0.58rem;
+      color: var(--muted);
       text-align: center;
+      padding: 3px 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .badge-new {
+      position: absolute;
+      top: 5px; right: 5px;
+      background: var(--accent);
+      color: #160f00;
+      font-size: 0.48rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .tap-hint {
+      position: absolute;
+      bottom: 3px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.48rem;
+      color: var(--muted);
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      text-shadow: 0 1px 3px #000;
+    }
+    .board-card:hover .tap-hint { opacity: 0.9; }
+
+    /* ── POPUP MENUS ──────────────────────────────────────────── */
+    .action-popup {
+      position: fixed;
+      z-index: 100;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.85);
+      min-width: 175px;
+    }
+    .action-popup.open { display: flex; }
+    .action-popup-title {
+      font-size: 0.6rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .action-popup button { padding: 6px 10px; font-size: 0.74rem; text-align: left; }
+
+    /* Top of Library popup: card preview */
+    #lib-popup { min-width: 210px; }
+    .lib-card-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 2px;
+    }
+    .lib-card-preview img {
+      width: 200px;
+      border-radius: 11px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+      display: block;
+    }
+    .lib-card-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    /* ── STATS PAGE OVERLAY / VIEW ────────────────────────────── */
+    .stats-page-view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .stats-page-view.active { display: flex; }
+
+    .stats-page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--sidebar-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .stats-page-title h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .stats-page-title p {
+      color: var(--muted);
+      font-size: 0.7rem;
+      margin-top: 2px;
+    }
+
+    .stats-main-layout {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      width: 100%;
+    }
+
+    .stats-content-area {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      min-width: 0;
+    }
+
+    .compare-header-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-header-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--compare);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .compare-header-desc {
+      font-size: 0.63rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .compare-legend {
+      display: flex;
+      gap: 12px;
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.66rem;
+      font-weight: 600;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .dot-primary { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+    .dot-compare { background: var(--compare); box-shadow: 0 0 6px var(--compare-glow); }
+
+    .compare-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.64rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--compare);
+      font-weight: 600;
+    }
+    .compare-status-badge.inactive {
+      background: rgba(107, 112, 146, 0.1);
+      border-color: rgba(107, 112, 146, 0.25);
+      color: var(--muted);
+    }
+
+    /* KPI Cards */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .kpi-val-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .kpi-val {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+    .kpi-compare-val {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--compare);
+      line-height: 1.1;
+      display: none;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .kpi-compare-val.active { display: flex; }
+    .kpi-compare-tag {
+      font-size: 0.58rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .kpi-lbl {
+      font-size: 0.64rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .stats-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 1060px) {
+      .stats-two-col { grid-template-columns: 1fr; }
+    }
+
+    .stats-section-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ss-title-row {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ss-title-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .ss-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .ss-desc {
+      font-size: 0.62rem;
+      color: var(--muted);
+    }
+    .ss-legend {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.62rem;
+      font-weight: 600;
+    }
+    .ss-legend.active { display: flex; }
+
+    /* Deck Overview: sort toolbar */
+    .overview-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .ov-sort-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .seg-group { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+    .seg-btn {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .seg-btn:hover:not(.active) { color: var(--text); border-color: var(--accent2); }
+    .seg-btn.active { background: var(--accent); color: #160f00; border-color: var(--accent); }
+    .ov-count { font-size: 0.68rem; color: var(--muted); margin-left: auto; }
+
+    /* Deck Overview: full-size card thumbnails (hand-style) */
+    .deck-overview-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .ov-thumb {
+      width: var(--card-w-hand);
+      height: var(--card-h-hand);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .ov-thumb:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.65), 0 0 0 1px var(--accent2);
+      z-index: 10;
+    }
+    .ov-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: inherit;
+    }
+    .ov-thumb-qty {
+      position: absolute;
+      top: 6px; left: 6px;
+      background: var(--accent);
+      color: #160f00;
+      font-size: 0.66rem;
+      font-weight: 800;
+      border-radius: 5px;
+      padding: 2px 7px;
+      z-index: 6;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+
+    /* Breakdown Layout: Donut Chart on Left, Progress Bars on Right */
+    .breakdown-row {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    @media (max-width: 580px) {
+      .breakdown-row { flex-direction: column; }
+    }
+
+    .donut-chart-container {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+
+    .donut-chart {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+      position: relative;
+    }
+
+    .donut-hole {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+    }
+    .donut-total-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .donut-total-lbl {
+      font-size: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .bars-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .bar-group-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .bar-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+    }
+    .bar-label-name { color: var(--text); font-weight: 600; display: flex; align-items: center; gap: 7px; }
+    .bar-label-val  { color: var(--muted); font-size: 0.68rem; }
+    .bar-track {
+      width: 100%;
+      height: 7px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    /* Comparison Bar Styling */
+    .comp-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.64rem;
+      color: var(--compare);
+      margin-top: -1px;
+    }
+    .comp-bar-track {
+      flex: 1;
+      height: 5px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .comp-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--compare);
+      transition: width 0.3s ease;
+      opacity: 0.9;
+    }
+
+    /* Mana Pip Icons / Badges: (1), (R), (G), etc. */
+    .mana-pip {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 800;
+      font-family: sans-serif;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .pip-generic { background: #94a3b8; color: #0f172a; border: 1px solid #64748b; }
+    .pip-W { background: #fef08a; color: #713f12; border: 1px solid #ca8a04; }
+    .pip-U { background: #38bdf8; color: #082f49; border: 1px solid #0284c7; }
+    .pip-B { background: #475569; color: #f8fafc; border: 1px solid #334155; }
+    .pip-R { background: #ef4444; color: #450a0a; border: 1px solid #b91c1c; }
+    .pip-G { background: #22c55e; color: #052e16; border: 1px solid #15803d; }
+    .pip-C { background: #cbd5e1; color: #1e293b; border: 1px solid #94a3b8; }
+
+    .mana-cost-container {
+      display: inline-flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    /* Mana Curve Histogram (Dual/Overlay support) */
+    .curve-chart {
+      display: flex;
+      align-items: flex-end;
+      height: 155px;
+      gap: 12px;
+      padding: 16px 10px 0;
+    }
+    .curve-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .curve-counts-row {
+      display: flex;
+      gap: 5px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      line-height: 1;
+      min-height: 12px;
+      align-items: center;
+    }
+    .curve-count-main {
+      color: var(--accent);
+    }
+    .curve-count-comp {
+      color: var(--compare);
+      display: none;
+    }
+    .curve-count-comp.active { display: inline; }
+    
+    .curve-bars-pair {
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 4px;
+      height: 100px;
+    }
+    .curve-bar {
+      flex: 1;
+      min-height: 3px;
+      background: linear-gradient(to top, var(--accent2), var(--accent));
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s ease;
+    }
+    .curve-bar-comp {
+      flex: 1;
+      min-height: 3px;
+      background: linear-gradient(to top, var(--compare2), var(--compare));
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s ease;
+      display: none;
+    }
+    .curve-bar-comp.active { display: block; }
+    .curve-label {
       font-size: 0.66rem;
       color: var(--muted);
-      line-height: 1.8;
+      font-weight: 600;
     }
-    .footer a { color: var(--accent); text-decoration: none; }
-    .footer a:hover { text-decoration: underline; }
 
-    @media (max-width: 480px) {
-      .hero { padding: 34px 22px 28px; }
-      h1 { font-size: 1.9rem; letter-spacing: 2px; }
-      .launch-btn { width: 100%; text-align: center; }
+    /* Decklist Tables Grouped by Type */
+    .deck-groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
     }
+    .deck-group-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .group-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .group-card-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.74rem;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      cursor: pointer;
+    }
+    .group-card-item:hover { color: var(--accent); }
+    .group-card-left { display: flex; gap: 8px; align-items: center; }
+    .group-card-qty  { font-weight: 700; color: var(--muted); min-width: 1.5ch; }
+
+    .group-card-item.expandable-row { cursor: pointer; }
+    .chevron { display: inline-block; font-size: 0.6rem; color: var(--muted); transition: transform 0.15s; }
+    .expandable-row.open .chevron { transform: rotate(90deg); }
+    .collapse-target { display: none; }
+    .collapse-target.open { display: block; }
+    .sub-card-list {
+      margin: 2px 0 4px 10px;
+      padding-left: 10px;
+      border-left: 2px solid var(--border);
+    }
+    .sub-card-list .group-card-qty { min-width: auto; }
+
+    /* ── TOOLTIP ──────────────────────────────────────────────── */
+    .tooltip {
+      position: fixed;
+      z-index: 200;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.1s;
+    }
+    .tooltip.visible { opacity: 1; }
+    .tooltip img { width: 230px; border-radius: 11px; box-shadow: 0 18px 48px rgba(0,0,0,0.85); display: block; }
+    .tooltip-text {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      max-width: 200px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    }
+
+    /* ── TOAST ────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%) translateY(50px);
+      background: var(--surface2);
+      border: 1px solid var(--accent2);
+      color: var(--accent);
+      padding: 8px 20px;
+      border-radius: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+      transition: transform 0.22s, opacity 0.22s;
+      opacity: 0;
+      z-index: 300;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* ── LIGHT THEME OVERRIDES ───────────────────────────────────────── */
+    body.light .btn-secondary:hover:not(:disabled) { background: #d9deec; }
+    body.light .kbd-badge             { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.18); color: var(--accent2); }
+    body.light .shortcuts-box         { background: rgba(0,0,0,0.05); }
+
+    body.light .gy-header-bg    { background: rgba(233, 226, 246, 0.95); }
+    body.light .exile-header-bg { background: rgba(224, 236, 250, 0.95); }
+
+    body.light .gy-name-color   { color: var(--gy-text); }
+    body.light .gy-badge-color  { background: #efe8fb; color: var(--gy-text); border-color: #cdbbeb; }
+    body.light .gy-hint-color   { color: var(--gy-muted); }
+
+    body.light .exile-name-color  { color: var(--exile-accent); }
+    body.light .exile-badge-color { background: #e5f0fe; color: var(--exile-accent); border-color: #b1cdf0; }
+    body.light .exile-hint-color  { color: var(--exile-muted); }
+
+    body.light .gy-empty-color    { color: var(--gy-muted); }
+    body.light .exile-empty-color { color: var(--exile-muted); }
+
+    body.light .gy-card-item         { background: #f5f1fb; border-color: #d6c7ea; }
+    body.light .gy-card-item:hover   { background: #ebe1f6; border-color: #9b74d4; }
+    body.light .exile-card-item      { background: #eef4fd; border-color: #bdd2ef; }
+    body.light .exile-card-item:hover{ background: #e3edfb; }
+
+    body.light .side-card-img { background: #e4e6ec; }
+
+    body.light .gy-card-item .side-card-name        { color: #332a49; }
+    body.light .gy-card-item .side-card-type        { color: var(--gy-muted); }
+    body.light .gy-card-item .side-card-action-hint { color: #8a5cd6; }
+    body.light .exile-card-item .side-card-name       { color: #1e3a63; }
+    body.light .exile-card-item .side-card-type       { color: var(--exile-muted); }
+    body.light .exile-card-item .side-card-action-hint{ color: #3b82f6; }
+
+    body.light .mulligan-banner {
+      color: #7a5200;
+      background: linear-gradient(90deg, rgba(200, 155, 60, 0.14), rgba(180, 83, 9, 0.16));
+    }
+
+    body.light .cf-header { background: #dde5f1; }
+    body.light .cf-art    { background: linear-gradient(135deg, #e8edf6 0%, #d8dde3 60%, #e3e0e9 100%); }
+
+    body.light .group-card-item { border-bottom-color: rgba(0,0,0,0.06); }
+    body.light .bar-track       { background: rgba(0,0,0,0.1); }
+    body.light .comp-bar-track  { background: rgba(0,0,0,0.09); }
+    body.light .donut-chart     { box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+    body.light .donut-hole      { box-shadow: inset 0 2px 6px rgba(0,0,0,0.08); }
+    body.light .hand-cards::-webkit-scrollbar-track { background: rgba(0,0,0,0.07); }
   </style>
 </head>
 <body>
-  <div class="page">
 
-    <div class="hero">
-      <div class="kicker">A Solo Goldfish &amp; Deck Testing Tool</div>
-      <h1>MTG<br><span>Shadowboxing</span></h1>
-      <div class="rule"></div>
-      <p class="tagline">Draw, play, and test a Magic deck by yourself — no opponent required.</p>
-      <p class="desc">
-        Paste any standard decklist, shuffle up, and mulligan into a hand you actually like.
-        Play lands and creatures, tap for mana, and watch your plan come together turn by turn.
+<!-- ── LEFT SIDEBAR ─────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+
+  <div class="app-title">
+    <h1>MTG<br>Shadowboxing</h1>
+    <p>v21 · Solo Goldfish & Deck Testing</p>
+    <a class="home-link" href="index.html">← Front Page</a>
+  </div>
+
+  <div class="s-section">
+    <div class="s-label">Decklist (Min 40 Cards)</div>
+    <textarea id="decklist" placeholder="4 Goblin Guide&#10;4 Monastery Swiftspear&#10;4 Lightning Bolt&#10;16 Mountain&#10;&#10;Paste standard MTG format.&#10;Ctrl+Enter to load."></textarea>
+    <div class="btn-group">
+      <button class="btn-primary"   id="btn-load">Load Deck & Draw</button>
+      <button class="btn-secondary" id="btn-sample">Load Sample Burn</button>
+      <button class="btn-ghost"     id="btn-clear" disabled>Clear</button>
+    </div>
+  </div>
+
+  <div class="s-section" id="stats-section" style="display:none">
+    <div class="s-label">Game Stats</div>
+    <div class="stats-grid">
+      <div class="stat-box"><span class="stat-val" id="stat-total">0</span><span class="stat-lbl">Deck Total</span></div>
+      <div class="stat-box" id="stat-lib-box" style="cursor:pointer;" title="Click to view top card"><span class="stat-val" id="stat-lib">0</span><span class="stat-lbl">In Library · Click</span></div>
+      <div class="stat-box"><span class="stat-val" id="stat-hand">0</span><span class="stat-lbl">In Hand</span></div>
+      <div class="stat-box"><span class="stat-val" id="stat-board">0</span><span class="stat-lbl">On Board</span></div>
+      <div class="stat-box" style="border-color: var(--gy-bdr); background: var(--gy-bg);">
+        <span class="stat-val" id="stat-gy" style="color: var(--gy-text);">0</span>
+        <span class="stat-lbl" style="color: var(--gy-muted);">Graveyard</span>
+      </div>
+      <div class="stat-box" style="border-color: var(--exile-bdr); background: var(--exile-bg);">
+        <span class="stat-val" id="stat-exile" style="color: var(--exile-accent);">0</span>
+        <span class="stat-lbl" style="color: var(--exile-muted);">Exile</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-panel" id="compare-section" style="display:none">
+    <div class="compare-header-box">
+      <div class="compare-header-title">
+        <span>⚖️ Deck Comparison</span>
+      </div>
+      <p class="compare-header-desc">
+        Load another decklist to compare KPIs, card types, and mana curves side-by-side.
       </p>
-      <a class="launch-btn" href="mtg-shadowboxing.html">Launch the App</a>
-      <div class="meta">100% in your browser · Card data &amp; images via Scryfall</div>
     </div>
 
-    <div class="features">
-      <div class="feature">
-        <strong>🃏 Goldfish Practice</strong>
-        <span>Draw, mulligan, tap, untap, and move cards between zones with hotkeys and handy popups.</span>
-      </div>
-      <div class="feature alt">
-        <strong>📊 Deck Analysis</strong>
-        <span>Card types, mana curve, color needs vs. land sources, creature types, and card roles.</span>
-      </div>
-      <div class="feature">
-        <strong>⚖️ Deck Comparison</strong>
-        <span>Load a second decklist and compare KPIs, curves, and breakdowns side-by-side.</span>
-      </div>
-      <div class="feature alt">
-        <strong>☁️ Card Lookups</strong>
-        <span>Real rulings and art pulled live from Scryfall — everything stays client-side.</span>
+    <div class="compare-legend">
+      <div class="legend-item"><span class="legend-dot dot-primary"></span> Primary</div>
+      <div class="legend-item"><span class="legend-dot dot-compare"></span> Compare</div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-label">Comparison Decklist</div>
+      <textarea id="compare-decklist" placeholder="4 Delver of Secrets&#10;4 Murktide Regent&#10;4 Lightning Bolt&#10;4 Counterspell&#10;4 Brainstorm&#10;18 Island&#10;&#10;Paste standard MTG format."></textarea>
+      <div class="btn-group">
+        <button class="btn-compare" id="btn-load-compare">Load Comparison</button>
+        <button class="btn-secondary" id="btn-sample-compare">Sample UR Murktide</button>
+        <button class="btn-ghost" id="btn-clear-compare" disabled>Clear Comparison</button>
       </div>
     </div>
 
-    <div class="footer">
-      MTG Shadowboxing · Solo goldfish &amp; deck testing<br>
-      Magic: The Gathering is © Wizards of the Coast. This is a fan tool, not affiliated with them.
+    <div id="compare-status-container">
+      <div class="compare-status-badge inactive" id="compare-badge">
+        <span>⚪ No comparison deck loaded</span>
+      </div>
     </div>
+  </div>
+
+  <div class="shortcuts-box" id="shortcuts-box">
+    <strong>Keyboard Commands:</strong>
+    <div class="shortcut-row"><span>Draw (Auto-Untap)</span><span class="kbd-badge">D</span></div>
+    <div class="shortcut-row"><span id="lbl-mulligan-shortcut">London Mulligan</span><span class="kbd-badge">M</span></div>
+    <div class="shortcut-row"><span>Untap All Board</span><span class="kbd-badge">U</span></div>
+    <div class="shortcut-row"><span>Deck Stats Page</span><span class="kbd-badge">S</span></div>
+    <div class="shortcut-row"><span>Deck Overview Page</span><span class="kbd-badge">O</span></div>
+    <div class="shortcut-row"><span>New Game</span><span class="kbd-badge">N</span></div>
+  </div>
+
+  <div style="margin-top:auto;">
+    <button class="btn-ghost" id="btn-theme" style="width:100%;">☀️ Light Mode</button>
+  </div>
+
+</aside>
+
+<!-- ── MAIN WORKSPACE ──────────────────────────────────────────────────── -->
+<main class="workspace">
+
+  <!-- Controls bar -->
+  <div class="controls-bar">
+    <div class="turn-display">
+      <span class="turn-label">Turn</span>
+      <span class="turn-number" id="turn-num">—</span>
+    </div>
+    <div class="ctrl-divider"></div>
+    <button class="btn-primary"   id="btn-mulligan"  disabled>Mulligan <span class="kbd-badge">M</span></button>
+    <button class="btn-secondary" id="btn-draw-one"  disabled>Draw Card <span class="kbd-badge">D</span></button>
+    <button class="btn-secondary" id="btn-untap-all" disabled>Untap All <span class="kbd-badge">U</span></button>
+    <button class="btn-secondary" id="btn-stats"       disabled>📊 Stats <span class="kbd-badge">S</span></button>
+    <button class="btn-secondary" id="btn-deck-overview" disabled>🃏 Deck Overview <span class="kbd-badge">O</span></button>
+    <button class="btn-ghost"     id="btn-new-game"  disabled>New Game <span class="kbd-badge">N</span></button>
+  </div>
+
+  <!-- Arena: Battlefield on Left, Right Zones Panel (Graveyard + Exile) -->
+  <div class="arena">
+
+    <!-- Battlefield -->
+    <div class="battlefield">
+
+      <!-- Creatures / Non-Land Permanents -->
+      <div class="zone zone-creatures">
+        <div class="zone-header">
+          <span class="zone-name">⚔️ Creatures & Permanents</span>
+          <span class="zone-count" id="cnt-creatures">0</span>
+          <span class="zone-hint">Click card to Tap/Untap (turns sideways) · 💀 or Right-click to Graveyard</span>
+        </div>
+        <div class="zone-cards" id="zone-creatures"></div>
+      </div>
+
+      <!-- Lands -->
+      <div class="zone zone-lands">
+        <div class="zone-header">
+          <span class="zone-name">🏞️ Lands</span>
+          <span class="zone-count" id="cnt-lands">0</span>
+          <span class="zone-hint">Click land to Tap/Untap for mana · 💀 or Right-click to Graveyard</span>
+        </div>
+        <div class="zone-cards" id="zone-lands"></div>
+      </div>
+
+    </div>
+
+    <!-- Right Panel: Graveyard (Top) + Exile (Bottom) -->
+    <aside class="right-panel">
+
+      <!-- Graveyard -->
+      <div class="gy-section">
+        <div class="panel-zone-header gy-header-bg">
+          <div class="pz-title-row">
+            <span class="pz-name gy-name-color">💀 Graveyard</span>
+            <span class="pz-count gy-badge-color" id="cnt-gy">0</span>
+          </div>
+          <span class="pz-hint gy-hint-color">Click card for Hand, Board or Exile</span>
+        </div>
+        <div class="pz-cards-list" id="graveyard-cards">
+          <div class="pz-empty gy-empty-color">Graveyard is empty.</div>
+        </div>
+      </div>
+
+      <!-- Exile -->
+      <div class="exile-section">
+        <div class="panel-zone-header exile-header-bg">
+          <div class="pz-title-row">
+            <span class="pz-name exile-name-color">🌀 Exile</span>
+            <span class="pz-count exile-badge-color" id="cnt-exile">0</span>
+          </div>
+          <span class="pz-hint exile-hint-color">Click exiled card to return</span>
+        </div>
+        <div class="pz-cards-list" id="exile-cards">
+          <div class="pz-empty exile-empty-color">Exile zone is empty.</div>
+        </div>
+      </div>
+
+    </aside>
 
   </div>
+
+  <!-- Hand Zone -->
+  <div class="hand-zone">
+    <div class="zone-header">
+      <span class="zone-name">🎴 Hand</span>
+      <span class="zone-count" id="cnt-hand">0</span>
+      <span class="zone-hint" id="hand-hint">Click to play · Right-click to discard</span>
+    </div>
+
+    <!-- London Mulligan Active Requirement Banner -->
+    <div class="mulligan-banner" id="mulligan-banner">
+      <div class="mb-left">
+        <span>⚠️ London Mulligan: Select</span>
+        <span class="mb-count" id="mulligan-cards-needed">1</span>
+        <span>card(s) to put on the bottom of your library before play can begin.</span>
+      </div>
+      <span style="font-size:0.65rem; color:var(--mb-hint);">Click any card in your hand to return it</span>
+    </div>
+
+    <div class="hand-cards" id="hand-cards">
+      <div class="zone-empty">Load a deck (min 40 cards) to begin.</div>
+    </div>
+  </div>
+
+  <!-- ── DECK STATS PAGE OVERLAY ──────────────────────────────────────── -->
+  <section class="stats-page-view" id="stats-page">
+    <div class="stats-page-header">
+      <div class="stats-page-title">
+        <h2>📊 Deck Analysis & Comparison</h2>
+        <p>Breakdown with pie charts, mana needs vs. land sources, and comparison overlay</p>
+      </div>
+      <button class="btn-primary" id="btn-close-stats">← Back to Gameboard <span class="kbd-badge">Esc</span></button>
+    </div>
+
+    <div class="stats-main-layout">
+
+      <!-- Left / Main Stats Content Area -->
+      <div class="stats-content-area">
+
+        <!-- KPI Summary Cards with Comparison Overlay -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-val-row">
+              <span class="kpi-val" id="sp-total">0</span>
+              <span class="kpi-compare-val" id="sp-comp-total">vs <span class="comp-v">0</span></span>
+            </div>
+            <div class="kpi-lbl">Total Deck Cards</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val-row">
+              <span class="kpi-val" id="sp-unique">0</span>
+              <span class="kpi-compare-val" id="sp-comp-unique">vs <span class="comp-v">0</span></span>
+            </div>
+            <div class="kpi-lbl">Unique Cards</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val-row">
+              <span class="kpi-val" id="sp-spells">0</span>
+              <span class="kpi-compare-val" id="sp-comp-spells">vs <span class="comp-v">0</span></span>
+            </div>
+            <div class="kpi-lbl">Spells & Permanents</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val-row">
+              <span class="kpi-val" id="sp-lands">0</span>
+              <span class="kpi-compare-val" id="sp-comp-lands">vs <span class="comp-v">0</span></span>
+            </div>
+            <div class="kpi-lbl">Lands Count</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val-row">
+              <span class="kpi-val" id="sp-avg-cmc">0.0</span>
+              <span class="kpi-compare-val" id="sp-comp-avg-cmc">vs <span class="comp-v">0.0</span></span>
+            </div>
+            <div class="kpi-lbl">Avg Mana Value (Spells)</div>
+          </div>
+        </div>
+
+        <!-- ROW 1: Type Breakdown + Mana Curve with Overlay -->
+        <div class="stats-two-col">
+
+          <!-- Type Breakdown -->
+          <div class="stats-section-box">
+            <div class="ss-title-row">
+              <div class="ss-title-col">
+                <div class="ss-title">Card Types Breakdown</div>
+                <div class="ss-desc">Proportions of card categories in the deck (bars scaled to maximum)</div>
+              </div>
+              <div class="ss-legend" id="type-breakdown-legend">
+                <span class="legend-item"><span class="legend-dot dot-primary"></span> Primary</span>
+                <span class="legend-item"><span class="legend-dot dot-compare"></span> Compare</span>
+              </div>
+            </div>
+            <div class="breakdown-row">
+              <div class="donut-chart-container" id="type-donut-container"></div>
+              <div class="bars-container" id="sp-type-bars"></div>
+            </div>
+          </div>
+
+          <!-- Mana Curve Histogram with Dual Bar Overlay -->
+          <div class="stats-section-box">
+            <div class="ss-title-row">
+              <div class="ss-title-col">
+                <div class="ss-title">Mana Curve (Non-Land Spells)</div>
+                <div class="ss-desc">Distribution of converted mana values</div>
+              </div>
+              <div class="ss-legend" id="mana-curve-legend">
+                <span class="legend-item"><span class="legend-dot dot-primary"></span> Primary</span>
+                <span class="legend-item"><span class="legend-dot dot-compare"></span> Compare</span>
+              </div>
+            </div>
+            <div class="curve-chart" id="sp-mana-curve"></div>
+          </div>
+
+        </div>
+
+        <!-- ROW 2: Mana Needs (Spell Costs) vs. Mana Sources (Land Production) -->
+        <div class="stats-two-col">
+
+          <!-- Chart 1: Mana Needs (Spell Costs) -->
+          <div class="stats-section-box">
+            <div class="ss-title-row">
+              <div class="ss-title-col">
+                <div class="ss-title">Mana Needs (Spell Costs)</div>
+                <div class="ss-desc">Colored mana symbols (pips) required to cast your spells</div>
+              </div>
+            </div>
+            <div class="breakdown-row">
+              <div class="donut-chart-container" id="color-donut-container"></div>
+              <div class="bars-container" id="sp-color-bars"></div>
+            </div>
+          </div>
+
+          <!-- Chart 2: Mana Sources (Land Production) -->
+          <div class="stats-section-box">
+            <div class="ss-title-row">
+              <div class="ss-title-col">
+                <div class="ss-title">Mana Sources (Land Production)</div>
+                <div class="ss-desc">Colors produced by basic, dual, and non-basic lands in your deck</div>
+              </div>
+            </div>
+            <div class="breakdown-row">
+              <div class="donut-chart-container" id="land-donut-container"></div>
+              <div class="bars-container" id="sp-land-bars"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Full Deck Composition with Styled Mana Badges (1)(Symbol) -->
+        <div class="stats-section-box">
+          <div class="ss-title-row">
+            <div class="ss-title-col">
+              <div class="ss-title">Full Deck Composition (Primary Deck)</div>
+              <div class="ss-desc">Individual cards grouped by category with mana costs</div>
+            </div>
+          </div>
+          <div class="deck-groups-grid" id="sp-deck-groups"></div>
+        </div>
+
+        <!-- Creature Types + Card Roles side by side -->
+        <div class="stats-two-col">
+
+          <div class="stats-section-box">
+            <div class="ss-title-row">
+              <div class="ss-title-col">
+                <div class="ss-title">Creature Types</div>
+                <div class="ss-desc">Every creature subtype in the deck. A creature with multiple types (e.g. 'Creature — Human Wall') counts once for each type.</div>
+              </div>
+            </div>
+            <div id="sp-creature-types"></div>
+          </div>
+
+          <div class="stats-section-box">
+            <div class="ss-title-row">
+              <div class="ss-title-col">
+                <div class="ss-title">Card Roles</div>
+                <div class="ss-desc">How each spell functions in the deck. Hover a role for what it catches plus example cards.</div>
+              </div>
+            </div>
+            <div id="sp-card-roles"></div>
+          </div>
+
+        </div>
+
+      </div>
+</div>
+
+  </section>
+
+  <!-- ── DECK OVERVIEW PAGE OVERLAY ──────────────────────────────────────── -->
+  <section class="stats-page-view" id="deck-overview-page">
+    <div class="stats-page-header">
+      <div class="stats-page-title">
+        <h2>🃏 Deck Overview</h2>
+        <p>Every card in your deck — sort by type, mana value, color, or name</p>
+      </div>
+      <button class="btn-primary" id="btn-close-overview">← Back to Gameboard <span class="kbd-badge">Esc</span></button>
+    </div>
+
+    <div class="stats-main-layout">
+      <div class="stats-content-area">
+
+        <div class="overview-toolbar">
+          <div class="ov-sort-group" id="ov-sort-group">
+            <span class="s-label">Sort by</span>
+            <div class="seg-group">
+              <button class="seg-btn" data-mode="type">Type</button>
+              <button class="seg-btn" data-mode="cmc">Mana Cost</button>
+              <button class="seg-btn" data-mode="color">Color</button>
+              <button class="seg-btn" data-mode="name">Name</button>
+            </div>
+            <button class="seg-btn" id="ov-order-btn">Groups ↑</button>
+            <span class="ov-count" id="ov-count-label"></span>
+          </div>
+        </div>
+
+        <div class="deck-groups-grid" id="ov-deck-groups"></div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── POPUP MENU: PLAY FROM HAND (UNRECOGNIZED) ────────────────────────── -->
+<div class="action-popup" id="zone-popup">
+  <div class="action-popup-title">Play to…</div>
+  <button class="btn-secondary" id="popup-creature">⚔️ Creatures / Battlefield</button>
+  <button class="btn-secondary" id="popup-land">🏞️ Lands</button>
+  <button class="btn-secondary" id="popup-gy">💀 Graveyard (Instant / Sorcery)</button>
+  <button class="btn-ghost"     id="popup-cancel">Cancel</button>
+</div>
+
+<!-- ── POPUP MENU: TOP OF LIBRARY ───────────────────────────────────────── -->
+<div class="action-popup" id="lib-popup">
+  <div class="action-popup-title" id="lib-popup-title">Top of Library</div>
+  <div id="lib-popup-card"></div>
+  <button class="btn-secondary" id="lib-btn-hand">🎴 Move to Hand</button>
+  <button class="btn-secondary" id="lib-btn-top">⤒ Keep on Top</button>
+  <button class="btn-secondary" id="lib-btn-bottom">⤓ Send to Bottom</button>
+  <button class="btn-ghost"     id="lib-btn-cancel">Cancel</button>
+</div>
+
+<!-- ── POPUP MENU: GRAVEYARD CARD DESTINATIONS ─────────────────────────── -->
+<div class="action-popup" id="gy-popup">
+  <div class="action-popup-title" id="gy-popup-title">Move Card To…</div>
+  <button class="btn-secondary" id="gy-btn-hand">🎴 To Hand</button>
+  <button class="btn-secondary" id="gy-btn-board">⚔️ / 🏞️ To Battlefield</button>
+  <button class="btn-secondary" id="gy-btn-exile">🌀 To Exile</button>
+  <button class="btn-ghost"     id="gy-btn-cancel">Cancel</button>
+</div>
+
+<!-- ── POPUP MENU: EXILE CARD DESTINATIONS ─────────────────────────────── -->
+<div class="action-popup" id="exile-popup">
+  <div class="action-popup-title" id="exile-popup-title">Move Exiled Card To…</div>
+  <button class="btn-secondary" id="exile-btn-hand">🎴 To Hand</button>
+  <button class="btn-secondary" id="exile-btn-gy">💀 To Graveyard</button>
+  <button class="btn-ghost"     id="exile-btn-cancel">Cancel</button>
+</div>
+
+<!-- ── TOOLTIP ────────────────────────────────────────────────────────── -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- ── TOAST ──────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── BASIC LANDS & PRESETS (Unhinged UNH Full-Art by John Avon!) ──────────
+const CARD_PRESETS = {
+  'Plains': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/d/1d7dba1c-a702-43c0-8fca-e47bbad4a00f.jpg',
+    typeLine: 'Basic Land — Plains',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['W'],
+    oracleText: '{T}: Add {W}.'
+  },
+  'Island': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/0/c/0c4eaecf-dd4c-45ab-9b50-2abe987d35d4.jpg',
+    typeLine: 'Basic Land — Island',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['U'],
+    oracleText: '{T}: Add {U}.'
+  },
+  'Swamp': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/3/8365ab45-6d78-47ad-a6ed-282069b0fabc.jpg',
+    typeLine: 'Basic Land — Swamp',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['B'],
+    oracleText: '{T}: Add {B}.'
+  },
+  'Mountain': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/4/2/42232ea6-e31d-46a6-9f94-b2ad2416d79b.jpg',
+    typeLine: 'Basic Land — Mountain',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['R'],
+    oracleText: '{T}: Add {R}.'
+  },
+  'Forest': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/9/19e71532-3f79-4fec-974f-b0e85c7fe701.jpg',
+    typeLine: 'Basic Land — Forest',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['G'],
+    oracleText: '{T}: Add {G}.'
+  },
+  'Wastes': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/a/baf8f4f2-9f25-4cd2-8d78-1041e134aeac.jpg',
+    typeLine: 'Basic Land',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['C'],
+    oracleText: '{T}: Add {C}.'
+  },
+  'Snow-Covered Plains': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/d/1d7dba1c-a702-43c0-8fca-e47bbad4a00f.jpg',
+    typeLine: 'Basic Snow Land — Plains',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['W'],
+    oracleText: '{T}: Add {W}.'
+  },
+  'Snow-Covered Island': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/0/c/0c4eaecf-dd4c-45ab-9b50-2abe987d35d4.jpg',
+    typeLine: 'Basic Snow Land — Island',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['U'],
+    oracleText: '{T}: Add {U}.'
+  },
+  'Snow-Covered Swamp': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/3/8365ab45-6d78-47ad-a6ed-282069b0fabc.jpg',
+    typeLine: 'Basic Snow Land — Swamp',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['B'],
+    oracleText: '{T}: Add {B}.'
+  },
+  'Snow-Covered Mountain': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/4/2/42232ea6-e31d-46a6-9f94-b2ad2416d79b.jpg',
+    typeLine: 'Basic Snow Land — Mountain',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['R'],
+    oracleText: '{T}: Add {R}.'
+  },
+  'Snow-Covered Forest': {
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/9/19e71532-3f79-4fec-974f-b0e85c7fe701.jpg',
+    typeLine: 'Basic Snow Land — Forest',
+    cmc: 0,
+    manaCost: '',
+    producedMana: ['G'],
+    oracleText: '{T}: Add {G}.'
+  }
+};
+
+// ── APP STATE ────────────────────────────────────────────────────────────
+let fullDeck          = [];
+let compareDeck       = [];       // Comparison Decklist
+let library           = [];
+let hand              = [];       // { name, isNew, delay }
+let boardCreatures    = [];       // { name, tapped }
+let boardLands        = [];       // { name, tapped }
+let graveyard         = [];       // { name }
+let exile             = [];       // { name }
+let cardCache         = { ...CARD_PRESETS };
+let turn              = 0;
+let landsPlayedThisTurn = 0;
+let totalCards        = 0;
+let gameStarted       = false;
+let pendingIdx        = null;
+
+// London Mulligan State
+let mulliganCount     = 0;
+let cardsToBottom     = 0;
+
+let selectedGyIdx     = null;
+let selectedExileIdx  = null;
+
+// ── DOM REFERENCES ───────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const decklistEl             = $('decklist');
+const btnLoad                = $('btn-load');
+const btnSample              = $('btn-sample');
+const btnClear               = $('btn-clear');
+const statsSection           = $('stats-section');
+const btnMulligan            = $('btn-mulligan');
+const lblMulliganShortcut    = $('lbl-mulligan-shortcut');
+const btnDrawOne             = $('btn-draw-one');
+const btnUntapAll            = $('btn-untap-all');
+const btnStats               = $('btn-stats');
+const btnNewGame             = $('btn-new-game');
+const turnNum                = $('turn-num');
+const zCreaturesEl           = $('zone-creatures');
+const zLandsEl               = $('zone-lands');
+const handCardsEl            = $('hand-cards');
+const handHintEl             = $('hand-hint');
+const mulliganBanner         = $('mulligan-banner');
+const mulliganCardsNeeded    = $('mulligan-cards-needed');
+const gyCardsEl              = $('graveyard-cards');
+const exileCardsEl           = $('exile-cards');
+const cntCreatures           = $('cnt-creatures');
+const cntLands               = $('cnt-lands');
+const cntHand                = $('cnt-hand');
+const cntGy                  = $('cnt-gy');
+const cntExile               = $('cnt-exile');
+const statTotal              = $('stat-total');
+const statLib                = $('stat-lib');
+const statLibBox             = $('stat-lib-box');
+const statHand               = $('stat-hand');
+const statBoard              = $('stat-board');
+const statGy                 = $('stat-gy');
+const statExile              = $('stat-exile');
+
+// Popups
+const zonePopup              = $('zone-popup');
+const popupCreature          = $('popup-creature');
+const popupLand              = $('popup-land');
+const popupGy                = $('popup-gy');
+const popupCancel            = $('popup-cancel');
+
+const gyPopup                = $('gy-popup');
+const gyPopupTitle           = $('gy-popup-title');
+const gyBtnHand              = $('gy-btn-hand');
+const gyBtnBoard             = $('gy-btn-board');
+const gyBtnExile             = $('gy-btn-exile');
+const gyBtnCancel            = $('gy-btn-cancel');
+
+const exilePopup             = $('exile-popup');
+const exilePopupTitle        = $('exile-popup-title');
+const exileBtnHand           = $('exile-btn-hand');
+const exileBtnGy             = $('exile-btn-gy');
+const exileBtnCancel         = $('exile-btn-cancel');
+
+// Top of Library Popup
+const libPopup               = $('lib-popup');
+const libPopupTitle          = $('lib-popup-title');
+const libPopupCard           = $('lib-popup-card');
+const libBtnHand             = $('lib-btn-hand');
+const libBtnTop              = $('lib-btn-top');
+const libBtnBottom           = $('lib-btn-bottom');
+const libBtnCancel           = $('lib-btn-cancel');
+
+// Stats View
+const statsPage              = $('stats-page');
+const btnCloseStats          = $('btn-close-stats');
+const spTotal                = $('sp-total');
+const spUnique               = $('sp-unique');
+const spSpells               = $('sp-spells');
+const spLands                = $('sp-lands');
+const spAvgCmc               = $('sp-avg-cmc');
+
+const spCompTotal            = $('sp-comp-total');
+const spCompUnique           = $('sp-comp-unique');
+const spCompSpells           = $('sp-comp-spells');
+const spCompLands            = $('sp-comp-lands');
+const spCompAvgCmc           = $('sp-comp-avg-cmc');
+
+const typeBreakdownLegend    = $('type-breakdown-legend');
+const manaCurveLegend        = $('mana-curve-legend');
+
+const typeDonutContainer     = $('type-donut-container');
+const colorDonutContainer    = $('color-donut-container');
+const landDonutContainer     = $('land-donut-container');
+const spTypeBars             = $('sp-type-bars');
+const spColorBars            = $('sp-color-bars');
+const spLandBars             = $('sp-land-bars');
+const spManaCurve            = $('sp-mana-curve');
+const spDeckGroups           = $('sp-deck-groups');
+const spCreatureTypes        = $('sp-creature-types');
+const spCardRoles            = $('sp-card-roles');
+
+// Comparison Controls
+const compareDecklistEl      = $('compare-decklist');
+const btnLoadCompare         = $('btn-load-compare');
+const btnSampleCompare       = $('btn-sample-compare');
+const btnClearCompare        = $('btn-clear-compare');
+const compareBadge           = $('compare-badge');
+const compareSection         = $('compare-section');
+const shortcutsBox           = $('shortcuts-box');
+
+// Deck Overview View
+const btnDeckOverview        = $('btn-deck-overview');
+const deckOverviewPage       = $('deck-overview-page');
+const btnCloseOverview       = $('btn-close-overview');
+const ovSortGroup            = $('ov-sort-group');
+const ovOrderBtn             = $('ov-order-btn');
+const ovCountLabel           = $('ov-count-label');
+const ovDeckGroups           = $('ov-deck-groups');
+
+// Deck Overview State
+let overviewSortMode = 'type';
+let overviewSortAsc  = true;
+
+const tooltipEl              = $('tooltip');
+const toastEl                = $('toast');
+
+// ── SAMPLE DECKS ─────────────────────────────────────────────────────────
+const SAMPLE = `4 Goblin Guide
+4 Monastery Swiftspear
+4 Eidolon of the Great Revel
+4 Lightning Bolt
+4 Chain Lightning
+4 Rift Bolt
+4 Lava Spike
+4 Skullcrack
+4 Searing Blaze
+4 Light Up the Stage
+4 Inspiring Vantage
+4 Sacred Foundry
+16 Mountain`;
+
+const SAMPLE_COMPARE = `4 Dragon's Rage Channeler
+4 Ledger Shredder
+4 Murktide Regent
+4 Ragavan, Nimble Pilferer
+4 Brainstorm
+4 Counterspell
+4 Lightning Bolt
+4 Consider
+4 Expressive Iteration
+4 Mishra's Bauble
+4 Scalding Tarn
+4 Steam Vents
+1 Spirebluff Canal
+9 Island
+6 Mountain`;
+
+// ── PARSE DECKLIST ───────────────────────────────────────────────────────
+function parseDecklist(text) {
+  const cards = [], seen = new Set();
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('//') || line.startsWith('#')) continue;
+    const m = line.match(/^(\d+)\s*[xX]?\s+(.+)$/);
+    if (!m) continue;
+    const qty  = Math.min(parseInt(m[1], 10), 100);
+    const name = m[2].trim();
+    if (!name || qty < 1) continue;
+    seen.add(name);
+    for (let i = 0; i < qty; i++) cards.push(name);
+  }
+  return { cards, uniqueCount: seen.size };
+}
+
+// ── FISHER-YATES SHUFFLE ─────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── DEDUCE LAND MANA COLORS ──────────────────────────────────────────────
+function deduceLandMana(typeLine, oracleText) {
+  const res = new Set();
+  const t = (typeLine || '').toLowerCase();
+  const o = (oracleText || '').toLowerCase();
+
+  if (t.includes('plains')) res.add('W');
+  if (t.includes('island')) res.add('U');
+  if (t.includes('swamp')) res.add('B');
+  if (t.includes('mountain')) res.add('R');
+  if (t.includes('forest')) res.add('G');
+  if (t.includes('wastes')) res.add('C');
+
+  if (o.includes('search your library for')) {
+    if (o.includes('plains')) res.add('W');
+    if (o.includes('island')) res.add('U');
+    if (o.includes('swamp')) res.add('B');
+    if (o.includes('mountain')) res.add('R');
+    if (o.includes('forest')) res.add('G');
+  }
+
+  if (o.includes('any color') || o.includes('any type')) {
+    ['W', 'U', 'B', 'R', 'G'].forEach(c => res.add(c));
+  }
+
+  ['W', 'U', 'B', 'R', 'G', 'C'].forEach(c => {
+    if (oracleText && oracleText.includes(`{${c}}`)) {
+      res.add(c);
+    }
+  });
+
+  return Array.from(res);
+}
+
+// ── LOAD PRIMARY DECK ────────────────────────────────────────────────────
+function loadDeck() {
+  const { cards } = parseDecklist(decklistEl.value);
+
+  if (cards.length < 40) {
+    showToast(`Deck has only ${cards.length} cards. Minimum deck size is 40!`);
+    return;
+  }
+
+  fullDeck   = cards;
+  totalCards = cards.length;
+  cardCache  = { ...CARD_PRESETS };
+
+  statsSection.style.display = '';
+  btnClear.disabled    = false;
+  btnNewGame.disabled  = false;
+  btnStats.disabled    = false;
+  btnDeckOverview.disabled = false;
+  btnLoad.textContent  = 'Reload Deck';
+
+  resetMulliganState();
+  executeInitialHand();
+
+  [...new Set(cards)].forEach(name => {
+    if (!cardCache[name]) fetchCardData(name);
+  });
+
+  showToast(`Loaded ${totalCards} cards & drew 7-card opening hand!`);
+}
+
+// ── LOAD COMPARISON DECK ─────────────────────────────────────────────────
+function loadComparisonDeck() {
+  const { cards } = parseDecklist(compareDecklistEl.value);
+
+  if (cards.length === 0) {
+    showToast('Comparison decklist is empty. Paste cards first!');
+    return;
+  }
+
+  compareDeck = cards;
+  btnClearCompare.disabled = false;
+
+  compareBadge.className = 'compare-status-badge';
+  compareBadge.innerHTML = `<span>🔵 Comparing ${compareDeck.length} cards</span>`;
+
+  [...new Set(cards)].forEach(name => {
+    if (!cardCache[name]) fetchCardData(name);
+  });
+
+  buildAndRenderStats();
+  showToast(`Comparison deck loaded (${compareDeck.length} cards)!`);
+}
+
+function clearComparisonDeck() {
+  compareDeck = [];
+  compareDecklistEl.value = '';
+  btnClearCompare.disabled = true;
+
+  compareBadge.className = 'compare-status-badge inactive';
+  compareBadge.innerHTML = `<span>⚪ No comparison deck loaded</span>`;
+
+  buildAndRenderStats();
+  showToast('Cleared comparison deck.');
+}
+
+// ── NEW GAME ─────────────────────────────────────────────────────────────
+function newGame() {
+  if (fullDeck.length < 40) return;
+  resetMulliganState();
+  executeInitialHand();
+  showToast('New game! Reset mulligan & drew fresh 7-card hand.');
+}
+
+function resetMulliganState() {
+  mulliganCount = 0;
+  cardsToBottom = 0;
+  document.body.classList.remove('mulligan-active');
+  mulliganBanner.classList.remove('active');
+  btnMulligan.disabled = false;
+  btnMulligan.innerHTML = `Mulligan <span class="kbd-badge">M</span>`;
+  if (lblMulliganShortcut) lblMulliganShortcut.textContent = 'London Mulligan';
+  handHintEl.textContent = 'Click to play · Right-click to discard';
+}
+
+// ── INITIAL OPENING HAND ─────────────────────────────────────────────────
+function executeInitialHand() {
+  library        = shuffle(fullDeck);
+  hand           = [];
+  boardCreatures = [];
+  boardLands     = [];
+  graveyard      = [];
+  exile          = [];
+  turn           = 1;
+  gameStarted    = true;
+
+  landsPlayedThisTurn = 0;
+  turnNum.textContent = turn;
+
+  for (let i = 0; i < 7; i++) {
+    hand.push({ name: library.shift(), isNew: true, delay: i * 35 });
+  }
+
+  btnDrawOne.disabled  = library.length === 0;
+  btnUntapAll.disabled = false;
+  btnMulligan.disabled = false;
+  btnNewGame.disabled  = false;
+
+  updateStats();
+  renderHand();
+  renderBoard();
+  renderGraveyard();
+  renderExile();
+}
+
+// ── LONDON MULLIGAN ──────────────────────────────────────────────────────
+function handleMulligan() {
+  if (fullDeck.length < 40) return;
+
+  mulliganCount++;
+  cardsToBottom = mulliganCount;
+
+  library        = shuffle(fullDeck);
+  hand           = [];
+  boardCreatures = [];
+  boardLands     = [];
+  graveyard      = [];
+  exile          = [];
+  turn           = 1;
+  gameStarted    = true;
+
+  landsPlayedThisTurn = 0;
+  turnNum.textContent = turn;
+
+  for (let i = 0; i < 7; i++) {
+    hand.push({ name: library.shift(), isNew: true, delay: i * 35 });
+  }
+
+  btnDrawOne.disabled  = true;
+  btnUntapAll.disabled = true;
+
+  document.body.classList.add('mulligan-active');
+  mulliganBanner.classList.add('active');
+  mulliganCardsNeeded.textContent = cardsToBottom;
+  handHintEl.textContent = `⚠️ Choose ${cardsToBottom} card(s) to put on bottom of library`;
+
+  btnMulligan.innerHTML = `Mulligan (${mulliganCount + 1}) <span class="kbd-badge">M</span>`;
+  if (lblMulliganShortcut) lblMulliganShortcut.textContent = `Mulligan (${mulliganCount + 1})`;
+
+  showToast(`Mulligan #${mulliganCount}: Drew 7 cards. Return ${cardsToBottom} card(s) to bottom of library.`);
+
+  updateStats();
+  renderHand();
+  renderBoard();
+  renderGraveyard();
+  renderExile();
+}
+
+// ── BOTTOM A CARD DURING MULLIGAN ────────────────────────────────────────
+function bottomMulliganCard(idx) {
+  if (cardsToBottom <= 0) return;
+
+  const [card] = hand.splice(idx, 1);
+  if (!card) return;
+
+  library.push(card.name);
+  cardsToBottom--;
+
+  showToast(`Put ${card.name} on bottom of library. (${cardsToBottom} left)`);
+
+  if (cardsToBottom === 0) {
+    document.body.classList.remove('mulligan-active');
+    mulliganBanner.classList.remove('active');
+    btnDrawOne.disabled  = library.length === 0;
+    btnUntapAll.disabled = false;
+    handHintEl.textContent = 'Click to play · Right-click to discard';
+    showToast('Mulligan complete! You may now begin playing.');
+  } else {
+    mulliganCardsNeeded.textContent = cardsToBottom;
+  }
+
+  hand.forEach(c => { c.isNew = false; });
+  updateStats();
+  renderHand();
+}
+
+// ── DRAW ONE CARD (AUTO-UNTAP BOARD & DISABLE MULLIGAN) ──────────────────
+function drawOneCard() {
+  if (!gameStarted || !library.length || cardsToBottom > 0) return;
+
+  btnMulligan.disabled = true;
+  if (lblMulliganShortcut) lblMulliganShortcut.textContent = 'Mulligan (Locked)';
+
+  let untappedCount = 0;
+  boardCreatures.forEach(c => { if (c.tapped) { c.tapped = false; untappedCount++; } });
+  boardLands.forEach(l => { if (l.tapped) { l.tapped = false; untappedCount++; } });
+  if (untappedCount > 0) renderBoard();
+
+  hand.forEach(c => {
+    c.isNew = false;
+    c.delay = 0;
+  });
+
+  const newCard = { name: library.shift(), isNew: true, delay: 0 };
+  hand.push(newCard);
+
+  turn++;
+  turnNum.textContent = turn;
+  landsPlayedThisTurn = 0;
+  btnDrawOne.disabled = library.length === 0;
+
+  updateStats();
+  renderHand();
+  if (!library.length) showToast('Library is empty!');
+}
+
+// ── UNTAP ALL MANUAL ─────────────────────────────────────────────────────
+function untapAll() {
+  let count = 0;
+  boardCreatures.forEach(c => { if (c.tapped) { c.tapped = false; count++; } });
+  boardLands.forEach(l => { if (l.tapped) { l.tapped = false; count++; } });
+  if (count > 0) {
+    showToast(`Untapped ${count} permanent${count > 1 ? 's' : ''}.`);
+    renderBoard();
+  } else {
+    showToast('All cards are already untapped.');
+  }
+}
+
+// ── PLAY CARD FROM HAND ──────────────────────────────────────────────────
+function playCard(idx, e) {
+  if (e) e.stopPropagation();
+
+  if (cardsToBottom > 0) {
+    bottomMulliganCard(idx);
+    return;
+  }
+
+  const card = hand[idx];
+  if (!card) return;
+  const cached = cardCache[card.name];
+
+  if (cached && cached.typeLine) {
+    const type = cached.typeLine.toLowerCase();
+    if (type.includes('instant') || type.includes('sorcery')) {
+      doPlay(idx, 'graveyard');
+      showToast(`Played ${card.name} → Graveyard`);
+    } else if (type.includes('land')) {
+      doPlay(idx, 'land');
+    } else {
+      doPlay(idx, 'creature');
+    }
+  } else {
+    openZonePopup(e);
+    pendingIdx = idx;
+  }
+}
+
+function doPlay(idx, zone) {
+  if (zone === 'land' && landsPlayedThisTurn >= 1) {
+    showToast('Only 1 land per turn.');
+    return;
+  }
+
+  const [card] = hand.splice(idx, 1);
+  if (!card) return;
+
+  hand.forEach(c => { c.isNew = false; });
+
+  if (zone === 'graveyard') {
+    graveyard.unshift({ name: card.name });
+    renderGraveyard();
+  } else if (zone === 'land') {
+    boardLands.push({ name: card.name, tapped: false });
+    landsPlayedThisTurn++;
+    renderBoard();
+  } else {
+    boardCreatures.push({ name: card.name, tapped: false });
+    renderBoard();
+  }
+
+  closeAllPopups();
+  updateStats();
+  renderHand();
+}
+
+// ── DISCARD FROM HAND TO GRAVEYARD ───────────────────────────────────────
+function discardFromHand(idx, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+
+  if (cardsToBottom > 0) {
+    showToast('Please return required card(s) to bottom of library first.');
+    return;
+  }
+
+  const [card] = hand.splice(idx, 1);
+  if (!card) return;
+  hand.forEach(c => { c.isNew = false; });
+  graveyard.unshift({ name: card.name });
+  showToast(`Discarded ${card.name} to Graveyard.`);
+  updateStats();
+  renderHand();
+  renderGraveyard();
+}
+
+// ── MOVE FROM BOARD TO GRAVEYARD ─────────────────────────────────────────
+function moveToGraveyard(zone, idx, e) {
+  if (e) { e.stopPropagation(); if (e.preventDefault) e.preventDefault(); }
+  const arr = zone === 'creature' ? boardCreatures : boardLands;
+  const [card] = arr.splice(idx, 1);
+  if (!card) return;
+  graveyard.unshift({ name: card.name });
+  showToast(`Moved ${card.name} to Graveyard.`);
+  updateStats();
+  renderBoard();
+  renderGraveyard();
+}
+
+// ── GRAVEYARD INTERACTION MENU ───────────────────────────────────────────
+function onGraveyardCardClick(idx, e) {
+  if (e) e.stopPropagation();
+  const card = graveyard[idx];
+  if (!card) return;
+
+  gyPopupTitle.textContent = `${card.name}: Move To…`;
+  openMenuPopup(gyPopup, e);
+  selectedGyIdx = idx;
+}
+
+gyBtnHand.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (selectedGyIdx === null) return;
+  const [card] = graveyard.splice(selectedGyIdx, 1);
+  if (card) {
+    hand.forEach(c => { c.isNew = false; });
+    hand.push({ name: card.name, isNew: true, delay: 0 });
+    showToast(`Returned ${card.name} to Hand.`);
+  }
+  closeAllPopups();
+  updateStats();
+  renderHand();
+  renderGraveyard();
+});
+
+gyBtnBoard.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (selectedGyIdx === null) return;
+  const [card] = graveyard.splice(selectedGyIdx, 1);
+  if (card) {
+    const cached = cardCache[card.name];
+    const type = (cached?.typeLine || '').toLowerCase();
+    if (type.includes('land')) {
+      boardLands.push({ name: card.name, tapped: false });
+      showToast(`Put ${card.name} onto Battlefield (Lands).`);
+    } else {
+      boardCreatures.push({ name: card.name, tapped: false });
+      showToast(`Put ${card.name} onto Battlefield (Permanents).`);
+    }
+  }
+  closeAllPopups();
+  updateStats();
+  renderBoard();
+  renderGraveyard();
+});
+
+gyBtnExile.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (selectedGyIdx === null) return;
+  const [card] = graveyard.splice(selectedGyIdx, 1);
+  if (card) {
+    exile.unshift({ name: card.name });
+    showToast(`Exiled ${card.name}.`);
+  }
+  closeAllPopups();
+  updateStats();
+  renderGraveyard();
+  renderExile();
+});
+
+gyBtnCancel.addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeAllPopups();
+});
+
+// ── EXILE INTERACTION MENU ───────────────────────────────────────────────
+function onExileCardClick(idx, e) {
+  if (e) e.stopPropagation();
+  const card = exile[idx];
+  if (!card) return;
+
+  exilePopupTitle.textContent = `${card.name}: Move To…`;
+  openMenuPopup(exilePopup, e);
+  selectedExileIdx = idx;
+}
+
+exileBtnHand.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (selectedExileIdx === null) return;
+  const [card] = exile.splice(selectedExileIdx, 1);
+  if (card) {
+    hand.forEach(c => { c.isNew = false; });
+    hand.push({ name: card.name, isNew: true, delay: 0 });
+    showToast(`Returned ${card.name} from Exile to Hand.`);
+  }
+  closeAllPopups();
+  updateStats();
+  renderHand();
+  renderExile();
+});
+
+exileBtnGy.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (selectedExileIdx === null) return;
+  const [card] = exile.splice(selectedExileIdx, 1);
+  if (card) {
+    graveyard.unshift({ name: card.name });
+    showToast(`Moved ${card.name} from Exile to Graveyard.`);
+  }
+  closeAllPopups();
+  updateStats();
+  renderGraveyard();
+  renderExile();
+});
+
+exileBtnCancel.addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeAllPopups();
+});
+
+// ── TOP OF LIBRARY INTERACTION ───────────────────────────────────────────
+function onLibBoxClick(e) {
+  if (e) e.stopPropagation();
+  if (!library.length) {
+    showToast('Library is empty!');
+    return;
+  }
+  const topCard = library[0];
+  const cached  = cardCache[topCard];
+
+  libPopupTitle.textContent = `Top of Library (${library.length} card${library.length > 1 ? 's' : ''} left)`;
+
+  if (cached?.imageUrl) {
+    libPopupCard.innerHTML = `
+      <div class="lib-card-preview">
+        <span class="lib-card-name">${topCard}</span>
+        <img src="${cached.imageUrl}" alt="${topCard}">
+      </div>
+    `;
+  } else {
+    libPopupCard.innerHTML = `
+      <div class="lib-card-preview">
+        <span class="lib-card-name">${topCard}</span>
+        <div class="tooltip-text" style="max-width:200px; margin:0 auto; text-align:center;">${cached?.typeLine || 'Card'}</div>
+      </div>
+    `;
+  }
+
+  openMenuPopup(libPopup, e);
+}
+
+libBtnHand.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!library.length) return;
+  const card = library.shift();
+  hand.forEach(c => { c.isNew = false; });
+  hand.push({ name: card, isNew: true, delay: 0 });
+  closeAllPopups();
+  showToast(`Moved ${card} from library to hand.`);
+  updateStats();
+  renderHand();
+});
+
+libBtnTop.addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeAllPopups();
+  showToast('Card stays on top of library — will be drawn next.');
+});
+
+libBtnBottom.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!library.length) return;
+  const card = library.shift();
+  library.push(card);
+  closeAllPopups();
+  showToast(`Moved ${card} to bottom of library.`);
+  updateStats();
+});
+
+libBtnCancel.addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeAllPopups();
+});
+
+statLibBox.addEventListener('click', onLibBoxClick);
+
+// ── TAP / UNTAP FEATURE ──────────────────────────────────────────────────
+function toggleTap(zone, idx) {
+  const arr = zone === 'creature' ? boardCreatures : boardLands;
+  if (!arr[idx]) return;
+  arr[idx].tapped = !arr[idx].tapped;
+  renderBoard();
+}
+
+// ── POPUP HELPERS ────────────────────────────────────────────────────────
+function openZonePopup(e) {
+  openMenuPopup(zonePopup, e);
+}
+
+function openMenuPopup(el, e) {
+  closeAllPopups();
+  el.classList.add('open');
+  const pw = 180, ph = 160;
+  let x = (e ? e.clientX : window.innerWidth / 2) - pw - 10;
+  let y = (e ? e.clientY : window.innerHeight / 2) + 5;
+  if (x < 10) x = (e ? e.clientX : 10) + 10;
+  if (y + ph > window.innerHeight) y = window.innerHeight - ph - 10;
+  el.style.left = Math.max(10, x) + 'px';
+  el.style.top  = Math.max(10, y) + 'px';
+}
+
+function closeAllPopups() {
+  zonePopup.classList.remove('open');
+  gyPopup.classList.remove('open');
+  exilePopup.classList.remove('open');
+  libPopup.classList.remove('open');
+  pendingIdx = null;
+  selectedGyIdx = null;
+  selectedExileIdx = null;
+}
+
+popupCreature.addEventListener('click', (e) => { e.stopPropagation(); if (pendingIdx !== null) doPlay(pendingIdx, 'creature'); });
+popupLand.addEventListener('click',     (e) => { e.stopPropagation(); if (pendingIdx !== null) doPlay(pendingIdx, 'land'); });
+popupGy.addEventListener('click',       (e) => { e.stopPropagation(); if (pendingIdx !== null) doPlay(pendingIdx, 'graveyard'); });
+popupCancel.addEventListener('click',   (e) => { e.stopPropagation(); closeAllPopups(); });
+document.addEventListener('click', closeAllPopups);
+
+// ── DECK STATS PAGE OPEN / CLOSE ─────────────────────────────────────────
+function setView(view) {
+  const overlayOpen = view !== 'game';
+  statsPage.classList.toggle('active', view === 'stats');
+  deckOverviewPage.classList.toggle('active', view === 'overview');
+  compareSection.style.display = overlayOpen ? 'flex' : 'none';
+  shortcutsBox.style.display   = overlayOpen ? 'none' : '';
+  statsSection.style.display   = overlayOpen ? 'none' : (fullDeck.length ? '' : 'none');
+}
+
+function isOverlayOpen() {
+  return statsPage.classList.contains('active') ||
+         deckOverviewPage.classList.contains('active');
+}
+
+function openStatsPage() {
+  if (!fullDeck.length) {
+    showToast('Load a deck to view stats!');
+    return;
+  }
+  buildAndRenderStats();
+  setView('stats');
+}
+
+function closeStatsPage() {
+  setView('game');
+}
+
+function openDeckOverview() {
+  if (!fullDeck.length) {
+    showToast('Load a deck to view the overview!');
+    return;
+  }
+  renderDeckOverview();
+  setView('overview');
+}
+
+function closeDeckOverview() {
+  setView('game');
+}
+
+btnStats.addEventListener('click', openStatsPage);
+btnCloseStats.addEventListener('click', closeStatsPage);
+btnDeckOverview.addEventListener('click', openDeckOverview);
+btnCloseOverview.addEventListener('click', closeDeckOverview);
+
+// ── MANA SYMBOL BADGE RENDERER: (1)(R)(G) ────────────────────────────────
+function renderManaSymbolsHTML(manaCost, cmc) {
+  if (!manaCost) {
+    if (typeof cmc === 'number' && cmc > 0) {
+      return `<div class="mana-cost-container"><span class="mana-pip pip-generic">${cmc}</span></div>`;
+    }
+    return '';
+  }
+
+  const symbols = manaCost.match(/\{([^}]+)\}/g);
+  if (!symbols || !symbols.length) {
+    return `<span class="group-card-cost">${manaCost}</span>`;
+  }
+
+  let html = '<div class="mana-cost-container">';
+  symbols.forEach(raw => {
+    const sym = raw.replace(/[{}]/g, '').trim();
+
+    if (/^\d+$/.test(sym) || sym.toUpperCase() === 'X') {
+      html += `<span class="mana-pip pip-generic" title="(${sym})">${sym}</span>`;
+    } else {
+      const u = sym.toUpperCase();
+      if (['W', 'U', 'B', 'R', 'G', 'C'].includes(u)) {
+        html += `<span class="mana-pip pip-${u}" title="(${u})">${u}</span>`;
+      } else if (u.includes('/')) {
+        html += `<span class="mana-pip pip-generic" style="font-size:0.5rem; width:22px; border-radius:11px;" title="(${sym})">${sym}</span>`;
+      } else {
+        html += `<span class="mana-pip pip-generic" title="(${sym})">${sym}</span>`;
+      }
+    }
+  });
+  html += '</div>';
+  return html;
+}
+
+// ── GENERATE DONUT / PIE CHART ───────────────────────────────────────────
+function createDonutChart(items, totalCount, label) {
+  if (!totalCount || !items.length) {
+    return `
+      <div class="donut-chart" style="background: var(--donut-empty-bg);">
+        <div class="donut-hole">
+          <span class="donut-total-val">0</span>
+          <span class="donut-total-lbl">${label}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  let currentPct = 0;
+  const gradientStops = [];
+
+  items.forEach(item => {
+    const pct = (item.count / totalCount) * 100;
+    const endPct = currentPct + pct;
+    gradientStops.push(`${item.color} ${currentPct.toFixed(2)}% ${endPct.toFixed(2)}%`);
+    currentPct = endPct;
+  });
+
+  const gradientStr = `conic-gradient(${gradientStops.join(', ')})`;
+
+  return `
+    <div class="donut-chart" style="background: ${gradientStr};">
+      <div class="donut-hole">
+        <span class="donut-total-val">${totalCount}</span>
+        <span class="donut-total-lbl">${label}</span>
+      </div>
+    </div>
+  `;
+}
+
+// ── CREATURE SUBTYPES ────────────────────────────────────────────────────
+function addCreatureSubtypes(typeLine, acc, qty, cards, name) {
+  const CARD_TYPES = new Set([
+    'basic', 'legendary', 'snow', 'elite', 'world', 'ongoing', 'token', 'host', 'augment',
+    'creature', 'artifact', 'enchantment', 'planeswalker', 'land', 'instant', 'sorcery',
+    'tribal', 'dungeon', 'battle'
+  ]);
+  const parts = (typeLine || '').split(/—|–|-/);
+  if (parts.length < 2) return;
+  const subtypePart = parts.slice(1).join(' ').trim();
+  if (!subtypePart) return;
+  subtypePart.split(/\s+/).forEach(word => {
+    if (!word) return;
+    const clean = word.replace(/\/\/|,/g, '').trim();
+    if (!clean || CARD_TYPES.has(clean.toLowerCase())) return;
+    acc[clean] = (acc[clean] || 0) + qty;
+    if (cards) {
+      if (!cards[clean]) cards[clean] = [];
+      if (!cards[clean].some(c => c.name === name)) cards[clean].push({ name, qty });
+    }
+  });
+}
+
+// ── CARD ROLE CLASSIFIER ────────────────────────────────────────────────
+const CARD_ROLE_DEFS = [
+  { key: 'removal',    name: '🎯 Targeted Removal',
+    desc: 'Kills or exiles a single target — creatures, planeswalkers, artifacts, enchantments, or lands. Includes damage-to-target and fight effects.',
+    examples: 'Swords to Plowshares, Doom Blade, Lightning Bolt, Abrupt Decay, Diabolic Edict' },
+  { key: 'wipe',       name: '💥 Board Wipes',
+    desc: 'Clears many or all permanents at once — mass destroy/exile, "damage to all", or mass bounce/bypass effects.',
+    examples: 'Wrath of God, Damnation, Blasphemous Act, Supreme Verdict, Toxic Deluge' },
+  { key: 'ramp',       name: '🌱 Ramp',
+    desc: 'Gets you ahead on mana — extra lands from the library, mana dorks, mana rocks, or rituals.',
+    examples: 'Rampant Growth, Nature\'s Lore, Birds of Paradise, Sol Ring, Dark Ritual' },
+  { key: 'draw',       name: '📖 Card Draw',
+    desc: 'Adds cards to your hand — cantrips, repeatable draw triggers, or big draw spells, including looters.',
+    examples: 'Opt, Brainstorm, Ancestral Recall, Ponder, Faithless Looting, Skullclamp' },
+  { key: 'counter',    name: '⛔ Counterspells',
+    desc: 'Stops spells before they resolve — unconditional counters or type-specific ones (noncreature, instant, etc.).',
+    examples: 'Counterspell, Mana Drain, Force of Will, Negate, Dovin\'s Veto' },
+  { key: 'tutor',      name: '🔍 Tutors',
+    desc: 'Searches the library for a card into hand, top, or battlefield — restricted by type or completely open.',
+    examples: 'Demonic Tutor, Vampiric Tutor, Enlightened Tutor, Green Sun\'s Zenith, Worldly Tutor' },
+  { key: 'burn',       name: '🔥 Burn',
+    desc: 'Direct damage aimed at a player or planeswalker — reach to close games or face-damage spells.',
+    examples: 'Lightning Bolt, Lava Spike, Chain Lightning, Fireblast, Skewer the Critics' },
+  { key: 'disruption', name: '🃏 Disruption',
+    desc: 'Hand attacks (discard) and graveyard hate — strips the opponent\'s resources or exiles their graveyard.',
+    examples: 'Thoughtseize, Inquisition of Kozilek, Duress, Surgical Extraction, Rest in Peace' },
+  { key: 'protection', name: '🛡️ Protection',
+    desc: 'Hexproof, indestructible, shroud, ward, or damage prevention — shields your board or your life from harm.',
+    examples: 'Heroic Intervention, Lightning Greaves, Mother of Runes, Teferi\'s Protection' },
+  { key: 'tokens',     name: '🪙 Token Generation',
+    desc: 'Creates token creatures or non-creature tokens (treasure, clues) as go-wide threats, blockers, or mana.',
+    examples: 'Young Pyromancer, Lingering Souls, Secure the Wastes, Hordeling Outburst, Smothering Tithe' }
+];
+
+function detectCardRoles(cached) {
+  const o = ((cached?.oracleText || '') + ' ' + (cached?.typeLine || '')).toLowerCase();
+  const roles = [];
+
+  if (!o.includes('from a graveyard') && !o.includes('from graveyards') &&
+      (/(destroy|exile) .*?target .{0,30}?(creature|artifact|enchantment|permanent|land|planeswalker)s?\b/.test(o) ||
+       /deals? \d+ damage to (any target|target (creature|noncreature|planeswalker))/.test(o) ||
+       /fight target/.test(o) ||
+       /target creature.*(gets -\d+\s*\/\s*-?\d+|\bsacrifice it\b)/.test(o) ||
+       /target player(s?) (sacrifice|sacrifices) a (creature|permanent|artifact)/.test(o))) {
+    roles.push('removal');
+  }
+
+  if (/(destroy|exile) (all|each) (creatures|permanents)|deals? \d+ damage to (all|each) (creatures|nontoken)|each (creature|permanent) gets -\d+\s*\/\s*-?\d+/.test(o)) {
+    roles.push('wipe');
+  }
+
+  if (/search your library for (a|up to \d+) (basic )?land|search your library for (a|up to \d+) (plains|island|swamp|mountain|forest)|put (a|up to \d+) land (card )?(from your library )?onto the battlefield|add (\d+|one|two|three|four)? ?mana|add \{|: add|for each land you control, add/.test(o)) {
+    roles.push('ramp');
+  }
+
+  if (/draw (a|an|\d+|two|three|four|five|six|seven|x|up to \d+) cards?/.test(o)) {
+    roles.push('draw');
+  }
+
+  if (/counter (target (noncreature |nonland |creature |instant |sorcery |artifact |enchantment )*spell|any number of target spells|all spells|that spell)/.test(o)) {
+    roles.push('counter');
+  }
+
+  if (/search your library for (a|an|one|any number of|up to \d+) (card|artifact|enchantment|creature|instant|sorcery|planeswalker|permanent|dragon|spell)s?/.test(o)) {
+    roles.push('tutor');
+  }
+
+  if (/deals? \d+ damage to (any target|target (player|opponent|planeswalker)|each opponent|each player)/.test(o)) {
+    roles.push('burn');
+  }
+
+  if (/discard|exile [^.]*graveyard|remove [^.]*graveyard/.test(o)) {
+    roles.push('disruption');
+  }
+
+  if (/hexproof|indestructible|shroud|protection from|ward \{|prevent (all|\d+) damage/.test(o)) {
+    roles.push('protection');
+  }
+
+  if (/creates? (a|an|\d+|two|three|four|five|six|x|up to \d+) [\w\s/]*?token|puts? (a|an|one|two|three|four) .{0,45}?token/.test(o)) {
+    roles.push('tokens');
+  }
+
+  return roles;
+}
+
+// ── ANALYZE DECK HELPER ──────────────────────────────────────────────────
+function analyzeDeck(cardList) {
+  const counts = {};
+  cardList.forEach(name => { counts[name] = (counts[name] || 0) + 1; });
+  const uniqueNames = Object.keys(counts);
+
+  let creatureCount   = 0;
+  let landCount       = 0;
+  let instantCount    = 0;
+  let sorceryCount    = 0;
+  let artifactCount   = 0;
+  let enchantmentCount= 0;
+  let planeswalkerCnt = 0;
+  let otherCount      = 0;
+
+  const curveCounts = [0, 0, 0, 0, 0, 0, 0];
+  let totalSpellCmc = 0;
+  let totalSpells   = 0;
+
+  const spellColorPips   = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
+  let totalSpellPips     = 0;
+
+  const landColorSources = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
+  let totalLandSources   = 0;
+
+  const creatureTypes = {};
+
+  const creatureTypeCards = {};
+
+  const cardRoles = {};
+
+  const cardRoleCards = {};
+
+  const groups = {
+    'Creatures': [],
+    'Instants': [],
+    'Sorceries': [],
+    'Artifacts & Enchantments': [],
+    'Planeswalkers': [],
+    'Lands': [],
+    'Other': []
+  };
+
+  uniqueNames.forEach(name => {
+    const qty = counts[name];
+    const cached = cardCache[name] || {};
+    const type = (cached.typeLine || '').toLowerCase();
+    const cmc = typeof cached.cmc === 'number' ? cached.cmc : 0;
+    const manaCost = cached.manaCost || '';
+
+    if (type.includes('land')) {
+      landCount += qty;
+      const produced = cached.producedMana || deduceLandMana(cached.typeLine || '', cached.oracleText || '');
+      produced.forEach(c => {
+        const u = c.toUpperCase();
+        if (landColorSources[u] !== undefined) {
+          landColorSources[u] += qty;
+          totalLandSources += qty;
+        }
+      });
+      groups['Lands'].push({ name, qty, cmc, manaCost });
+    } else {
+      totalSpells += qty;
+      totalSpellCmc += (cmc * qty);
+      const bucket = Math.min(6, Math.max(0, Math.floor(cmc)));
+      curveCounts[bucket] += qty;
+
+      detectCardRoles(cached).forEach(r => {
+        cardRoles[r] = (cardRoles[r] || 0) + qty;
+        if (!cardRoleCards[r]) cardRoleCards[r] = [];
+        if (!cardRoleCards[r].some(c => c.name === name)) cardRoleCards[r].push({ name, qty });
+      });
+
+      if (manaCost) {
+        const symbols = manaCost.match(/\{([^}]+)\}/g) || [];
+        symbols.forEach(sym => {
+          const inner = sym.replace(/[{}]/g, '').toUpperCase();
+          ['W', 'U', 'B', 'R', 'G', 'C'].forEach(c => {
+            if (inner.includes(c)) {
+              spellColorPips[c] += qty;
+              totalSpellPips += qty;
+            }
+          });
+        });
+      }
+
+      let assignedGroup = 'Other';
+      if (type.includes('creature')) {
+        creatureCount += qty;
+        addCreatureSubtypes(cached.typeLine || '', creatureTypes, qty, creatureTypeCards, name);
+        assignedGroup = 'Creatures';
+      } else if (type.includes('instant')) {
+        instantCount += qty;
+        assignedGroup = 'Instants';
+      } else if (type.includes('sorcery')) {
+        sorceryCount += qty;
+        assignedGroup = 'Sorceries';
+      } else if (type.includes('artifact') || type.includes('enchantment')) {
+        if (type.includes('artifact')) artifactCount += qty;
+        if (type.includes('enchantment')) enchantmentCount += qty;
+        assignedGroup = 'Artifacts & Enchantments';
+      } else if (type.includes('planeswalker')) {
+        planeswalkerCnt += qty;
+        assignedGroup = 'Planeswalkers';
+      } else {
+        otherCount += qty;
+      }
+      groups[assignedGroup].push({ name, qty, cmc, manaCost });
+    }
+  });
+
+  const typeCounts = {
+    'Creatures': creatureCount,
+    'Lands': landCount,
+    'Instants': instantCount,
+    'Sorceries': sorceryCount,
+    'Artifacts': artifactCount,
+    'Enchantments': enchantmentCount,
+    'Planeswalkers': planeswalkerCnt,
+    'Other': otherCount
+  };
+
+  return {
+    totalCards: cardList.length,
+    uniqueCount: uniqueNames.length,
+    totalSpells,
+    landCount,
+    avgCmc: totalSpells > 0 ? (totalSpellCmc / totalSpells).toFixed(2) : '0.0',
+    typeCounts,
+    curveCounts,
+    spellColorPips,
+    totalSpellPips,
+    landColorSources,
+    totalLandSources,
+    creatureTypes,
+    creatureTypeCards,
+    cardRoles,
+    cardRoleCards,
+    groups
+  };
+}
+
+// ── DECK OVERVIEW: CLASSIFY & SORT ───────────────────────────────────────
+const PRIMARY_TYPE_ORDER = ['Creature', 'Planeswalker', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land', 'Other'];
+const COLOR_GROUP_ORDER  = ['White', 'Blue', 'Black', 'Red', 'Green', 'Multicolor', 'Colorless'];
+const COLOR_NAME_BY_KEY  = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' };
+
+function classifyPrimaryType(cached) {
+  const t = (cached?.typeLine || '').toLowerCase();
+  if (t.includes('land'))        return 'Land';
+  if (t.includes('creature'))    return 'Creature';
+  if (t.includes('planeswalker'))return 'Planeswalker';
+  if (t.includes('instant'))     return 'Instant';
+  if (t.includes('sorcery'))     return 'Sorcery';
+  if (t.includes('artifact'))    return 'Artifact';
+  if (t.includes('enchantment')) return 'Enchantment';
+  return 'Other';
+}
+
+function colorGroupOf(cached) {
+  const colors = new Set();
+  (cached?.manaCost || '').match(/\{([^}]+)\}/g)?.forEach(raw => {
+    const inner = raw.replace(/[{}]/g, '').toUpperCase();
+    ['W', 'U', 'B', 'R', 'G'].forEach(c => { if (inner.includes(c)) colors.add(c); });
+  });
+  if (!colors.size) {
+    (cached?.producedMana || deduceLandMana(cached?.typeLine || '', cached?.oracleText || ''))
+      .forEach(c => { if (['W', 'U', 'B', 'R', 'G'].includes(c)) colors.add(c); });
+  }
+  if (colors.size > 1) return 'Multicolor';
+  if (colors.size === 1) return COLOR_NAME_BY_KEY[[...colors][0]];
+  return 'Colorless';
+}
+
+function groupedOverviewCards() {
+  const counts = {};
+  fullDeck.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
+
+  const cards = Object.keys(counts).map(name => {
+    const cached = cardCache[name] || {};
+    return {
+      name,
+      qty: counts[name],
+      cmc: typeof cached.cmc === 'number' ? cached.cmc : 0,
+      manaCost: cached.manaCost || '',
+      type: classifyPrimaryType(cached),
+      color: colorGroupOf(cached)
+    };
+  });
+
+  const groups = {};
+  const groupOrder = [];
+  const push = (key, card) => {
+    if (!groups[key]) { groups[key] = []; groupOrder.push(key); }
+    groups[key].push(card);
+  };
+
+  cards.forEach(card => {
+    if (overviewSortMode === 'type')      push(card.type, card);
+    else if (overviewSortMode === 'color')push(card.color, card);
+    else if (overviewSortMode === 'cmc')  push('cmc-' + card.cmc, card);
+    else                                  push('all', card);
+  });
+
+  if (overviewSortMode === 'type') {
+    groupOrder.sort((a, b) => PRIMARY_TYPE_ORDER.indexOf(a) - PRIMARY_TYPE_ORDER.indexOf(b));
+  } else if (overviewSortMode === 'color') {
+    groupOrder.sort((a, b) => COLOR_GROUP_ORDER.indexOf(a) - COLOR_GROUP_ORDER.indexOf(b));
+  } else if (overviewSortMode === 'cmc') {
+    groupOrder.sort((a, b) => Number(a.replace('cmc-', '')) - Number(b.replace('cmc-', '')));
+  }
+
+  if (!overviewSortAsc) groupOrder.reverse();
+
+  const total = cards.reduce((s, c) => s + c.qty, 0);
+  return { cards, groups, groupOrder, total };
+}
+
+function overviewGroupLabel(key, mode) {
+  if (mode === 'cmc') return `Mana Value ${key.replace('cmc-', '')}`;
+  if (key === 'all')  return 'All Cards';
+  return key;
+}
+
+function overviewSortLabel() {
+  if (overviewSortMode === 'type')      return 'Type';
+  if (overviewSortMode === 'cmc')       return 'Mana Cost';
+  if (overviewSortMode === 'color')     return 'Color';
+  return 'Name';
+}
+
+function renderDeckOverview() {
+  const { groups, groupOrder, total } = groupedOverviewCards();
+  ovDeckGroups.innerHTML = '';
+
+  document.querySelectorAll('#ov-sort-group .seg-btn[data-mode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === overviewSortMode);
+  });
+  ovOrderBtn.textContent = overviewSortAsc ? 'Groups ↑' : 'Groups ↓';
+  ovCountLabel.textContent = `${total} cards · ${groupOrder.length} group${groupOrder.length > 1 ? 's' : ''} by ${overviewSortLabel()}`;
+
+  groupOrder.forEach(key => {
+    const list = groups[key];
+    const sorted = [...list].sort((a, b) => {
+      const cmp = a.name.localeCompare(b.name);
+      return (overviewSortMode === 'name' && !overviewSortAsc) ? -cmp : cmp;
+    });
+    const groupTotal = sorted.reduce((s, c) => s + c.qty, 0);
+
+    const box = document.createElement('div');
+    box.className = 'deck-group-box';
+
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    header.innerHTML = `<span>${overviewGroupLabel(key, overviewSortMode)}</span><span>${groupTotal}</span>`;
+    box.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'deck-overview-grid';
+
+    sorted.forEach(card => {
+      const thumb = document.createElement('div');
+      thumb.className = 'ov-thumb';
+
+      const cached = cardCache[card.name];
+      if (cached?.imageUrl) {
+        thumb.appendChild(makeCardImg(cached.imageUrl, card.name));
+      } else {
+        thumb.appendChild(makeFallback(card.name, 0, 'hand'));
+      }
+
+      if (card.qty > 1) {
+        const badge = document.createElement('div');
+        badge.className = 'ov-thumb-qty';
+        badge.textContent = card.qty;
+        thumb.appendChild(badge);
+      }
+
+      thumb.addEventListener('mouseenter', ev => showTooltip(card.name, ev));
+      thumb.addEventListener('mousemove',  moveTooltip);
+      thumb.addEventListener('mouseleave', hideTooltip);
+      grid.appendChild(thumb);
+    });
+
+    box.appendChild(grid);
+    ovDeckGroups.appendChild(box);
+  });
+}
+
+ovSortGroup.addEventListener('click', (e) => {
+  const btn = e.target.closest('.seg-btn[data-mode]');
+  if (!btn) return;
+  overviewSortMode = btn.dataset.mode;
+  overviewSortAsc  = true;
+  renderDeckOverview();
+});
+
+ovOrderBtn.addEventListener('click', () => {
+  overviewSortAsc = !overviewSortAsc;
+  renderDeckOverview();
+});
+
+// ── CALCULATE & BUILD DECK STATISTICS ────────────────────────────────────
+function buildAndRenderStats() {
+  const mainStats = analyzeDeck(fullDeck);
+  const hasCompare = compareDeck.length > 0;
+  const compStats = hasCompare ? analyzeDeck(compareDeck) : null;
+
+  // Toggle Legends
+  typeBreakdownLegend.classList.toggle('active', hasCompare);
+  manaCurveLegend.classList.toggle('active', hasCompare);
+
+  // ── 1. KPI Update (Deck Size, Unique, Spells, Lands, Avg Mana Value)
+  spTotal.textContent  = mainStats.totalCards;
+  spUnique.textContent = mainStats.uniqueCount;
+  spSpells.textContent = mainStats.totalSpells;
+  spLands.textContent  = mainStats.landCount;
+  spAvgCmc.textContent = mainStats.avgCmc;
+
+  const compKpis = [
+    { el: spCompTotal,  val: compStats?.totalCards },
+    { el: spCompUnique, val: compStats?.uniqueCount },
+    { el: spCompSpells, val: compStats?.totalSpells },
+    { el: spCompLands,  val: compStats?.landCount },
+    { el: spCompAvgCmc, val: compStats?.avgCmc }
+  ];
+
+  compKpis.forEach(item => {
+    if (hasCompare) {
+      item.el.classList.add('active');
+      const compValEl = item.el.querySelector('.comp-v');
+      if (compValEl) compValEl.textContent = item.val;
+    } else {
+      item.el.classList.remove('active');
+    }
+  });
+
+  // ── 2. Types Breakdown: Donut Chart + Scaled Overlaid Bars
+  const typeDefinitions = [
+    { key: 'Creatures',     name: 'Creatures',     color: '#4ade80' },
+    { key: 'Lands',         name: 'Lands',         color: '#fb923c' },
+    { key: 'Instants',      name: 'Instants',      color: '#38bdf8' },
+    { key: 'Sorceries',     name: 'Sorceries',     color: '#f43f5e' },
+    { key: 'Artifacts',     name: 'Artifacts',     color: '#cbd5e1' },
+    { key: 'Enchantments',  name: 'Enchantments',  color: '#c084fc' },
+    { key: 'Planeswalkers', name: 'Planeswalkers', color: '#fbbf24' },
+    { key: 'Other',         name: 'Other',         color: '#94a3b8' }
+  ];
+
+  const mainTypeList = typeDefinitions
+    .map(t => ({ ...t, count: mainStats.typeCounts[t.key] || 0 }))
+    .filter(t => t.count > 0 || (hasCompare && (compStats.typeCounts[t.key] || 0) > 0));
+
+  typeDonutContainer.innerHTML = createDonutChart(
+    mainTypeList.filter(t => t.count > 0),
+    mainStats.totalCards,
+    'Cards'
+  );
+
+  // Determine maximum count across both decks for scaling bar widths
+  let maxTypeCount = 1;
+  mainTypeList.forEach(t => {
+    const compCnt = hasCompare ? (compStats.typeCounts[t.key] || 0) : 0;
+    maxTypeCount = Math.max(maxTypeCount, t.count, compCnt);
+  });
+
+  spTypeBars.innerHTML = '';
+  mainTypeList.forEach(item => {
+    const mainCount = item.count;
+    const mainPct   = mainStats.totalCards > 0 ? ((mainCount / mainStats.totalCards) * 100).toFixed(1) : '0.0';
+    const mainBarW  = ((mainCount / maxTypeCount) * 100).toFixed(1);
+
+    const groupWrapper = document.createElement('div');
+    groupWrapper.className = 'bar-group-item';
+
+    let compBarHTML = '';
+    if (hasCompare) {
+      const compCount = compStats.typeCounts[item.key] || 0;
+      const compPct   = compStats.totalCards > 0 ? ((compCount / compStats.totalCards) * 100).toFixed(1) : '0.0';
+      const compBarW  = ((compCount / maxTypeCount) * 100).toFixed(1);
+
+      compBarHTML = `
+        <div class="comp-bar-row">
+          <span style="min-width: 48px; font-weight:700;">VS COMP:</span>
+          <div class="comp-bar-track">
+            <div class="comp-bar-fill" style="width: ${compBarW}%;"></div>
+          </div>
+          <span style="min-width: 65px; text-align:right; font-weight:600;">${compCount} (${compPct}%)</span>
+        </div>
+      `;
+    }
+
+    groupWrapper.innerHTML = `
+      <div class="bar-row">
+        <div class="bar-label-row">
+          <span class="bar-label-name">
+            <span style="width:8px; height:8px; border-radius:50%; background:${item.color}; display:inline-block;"></span>
+            <span>${item.name}</span>
+          </span>
+          <span class="bar-label-val">${mainCount} (${mainPct}%)</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: ${mainBarW}%; background: ${item.color};"></div>
+        </div>
+      </div>
+      ${compBarHTML}
+    `;
+    spTypeBars.appendChild(groupWrapper);
+  });
+
+  // ── 3. Mana Curve Histogram with Side-by-Side Dual Overlaid Bars
+  spManaCurve.innerHTML = '';
+  let maxCurveCount = Math.max(...mainStats.curveCounts, 1);
+  if (hasCompare) {
+    maxCurveCount = Math.max(maxCurveCount, ...compStats.curveCounts, 1);
+  }
+
+  ['0', '1', '2', '3', '4', '5', '6+'].forEach((lbl, i) => {
+    const mainVal = mainStats.curveCounts[i];
+    const mainHeightPct = Math.max(3, (mainVal / maxCurveCount) * 100);
+
+    const compVal = hasCompare ? compStats.curveCounts[i] : 0;
+    const compHeightPct = hasCompare ? Math.max(3, (compVal / maxCurveCount) * 100) : 0;
+
+    const col = document.createElement('div');
+    col.className = 'curve-col';
+    col.innerHTML = `
+      <div class="curve-counts-row">
+        <span class="curve-count-main">${mainVal > 0 ? mainVal : ''}</span>
+        ${hasCompare ? `<span class="curve-count-comp active" title="Comparison: ${compVal}">| ${compVal}</span>` : ''}
+      </div>
+      <div class="curve-bars-pair">
+        <div class="curve-bar" style="height: ${mainHeightPct}%;" title="Primary: ${mainVal}"></div>
+        <div class="curve-bar-comp ${hasCompare ? 'active' : ''}" style="height: ${compHeightPct}%;" title="Comparison: ${compVal}"></div>
+      </div>
+      <span class="curve-label">${lbl}</span>
+    `;
+    spManaCurve.appendChild(col);
+  });
+
+  // ── 4. Mana Needs (Spell Cost Pips)
+  const spellColorsList = [
+    { key: 'W', name: 'White', color: '#fef08a', barColor: '#eab308' },
+    { key: 'U', name: 'Blue',  color: '#38bdf8', barColor: '#0284c7' },
+    { key: 'B', name: 'Black', color: '#64748b', barColor: '#475569' },
+    { key: 'R', name: 'Red',   color: '#ef4444', barColor: '#dc2626' },
+    { key: 'G', name: 'Green', color: '#22c55e', barColor: '#16a34a' },
+    { key: 'C', name: 'Colorless', color: '#cbd5e1', barColor: '#94a3b8' }
+  ].map(c => ({ ...c, count: mainStats.spellColorPips[c.key] })).filter(c => c.count > 0);
+
+  colorDonutContainer.innerHTML = createDonutChart(spellColorsList, mainStats.totalSpellPips, 'Pips');
+
+  spColorBars.innerHTML = '';
+  if (mainStats.totalSpellPips === 0) {
+    spColorBars.innerHTML = '<div style="color:var(--muted); font-size:0.75rem; font-style:italic;">No colored mana symbols in spell costs.</div>';
+  } else {
+    spellColorsList.forEach(item => {
+      const pips = item.count;
+      const pct = ((pips / mainStats.totalSpellPips) * 100).toFixed(1);
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-label-row">
+          <span class="bar-label-name">
+            <span class="mana-pip pip-${item.key}">${item.key}</span>
+            <span>${item.name}</span>
+          </span>
+          <span class="bar-label-val">${pips} pip${pips > 1 ? 's' : ''} (${pct}%)</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: ${pct}%; background: ${item.barColor};"></div>
+        </div>
+      `;
+      spColorBars.appendChild(row);
+    });
+  }
+
+  // ── 5. Mana Sources (Land Production)
+  const landColorsList = [
+    { key: 'W', name: 'White', color: '#fef08a', barColor: '#eab308' },
+    { key: 'U', name: 'Blue',  color: '#38bdf8', barColor: '#0284c7' },
+    { key: 'B', name: 'Black', color: '#64748b', barColor: '#475569' },
+    { key: 'R', name: 'Red',   color: '#ef4444', barColor: '#dc2626' },
+    { key: 'G', name: 'Green', color: '#22c55e', barColor: '#16a34a' },
+    { key: 'C', name: 'Colorless', color: '#cbd5e1', barColor: '#94a3b8' }
+  ].map(c => ({ ...c, count: mainStats.landColorSources[c.key] })).filter(c => c.count > 0);
+
+  landDonutContainer.innerHTML = createDonutChart(landColorsList, mainStats.totalLandSources, 'Sources');
+
+  spLandBars.innerHTML = '';
+  if (mainStats.totalLandSources === 0) {
+    spLandBars.innerHTML = '<div style="color:var(--muted); font-size:0.75rem; font-style:italic;">No mana producing lands found.</div>';
+  } else {
+    landColorsList.forEach(item => {
+      const count = item.count;
+      const pct = ((count / mainStats.totalLandSources) * 100).toFixed(1);
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-label-row">
+          <span class="bar-label-name">
+            <span class="mana-pip pip-${item.key}">${item.key}</span>
+            <span>${item.name}</span>
+          </span>
+          <span class="bar-label-val">${count} source${count > 1 ? 's' : ''} (${pct}%)</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: ${pct}%; background: ${item.barColor};"></div>
+        </div>
+      `;
+      spLandBars.appendChild(row);
+    });
+  }
+
+  // ── 6. Full Deck Composition Grid (Primary Deck)
+  spDeckGroups.innerHTML = '';
+  Object.keys(mainStats.groups).forEach(groupName => {
+    const list = mainStats.groups[groupName];
+    if (!list.length) return;
+
+    list.sort((a, b) => a.cmc - b.cmc || a.name.localeCompare(b.name));
+    const groupTotal = list.reduce((acc, c) => acc + c.qty, 0);
+
+    const box = document.createElement('div');
+    box.className = 'deck-group-box';
+
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    header.innerHTML = `<span>${groupName}</span><span>${groupTotal}</span>`;
+    box.appendChild(header);
+
+    list.forEach(card => {
+      const row = document.createElement('div');
+      row.className = 'group-card-item';
+
+      const left = document.createElement('div');
+      left.className = 'group-card-left';
+      left.innerHTML = `
+        <span class="group-card-qty">${card.qty}</span>
+        <span class="group-card-title">${card.name}</span>
+      `;
+
+      const right = document.createElement('div');
+      right.innerHTML = renderManaSymbolsHTML(card.manaCost, card.cmc);
+
+      row.append(left, right);
+      row.addEventListener('mouseenter', ev => showTooltip(card.name, ev));
+      row.addEventListener('mousemove',  moveTooltip);
+      row.addEventListener('mouseleave', hideTooltip);
+      box.appendChild(row);
+    });
+
+    spDeckGroups.appendChild(box);
+  });
+
+  // ── 7. Creature Subtype Breakdown
+  renderCreatureTypes(spCreatureTypes, mainStats.creatureTypes, mainStats.creatureTypeCards);
+
+  // ── 8. Card Role Breakdown
+  renderCardRoles(spCardRoles, mainStats.cardRoles, mainStats.cardRoleCards);
+}
+
+// ── RENDER CREATURE SUBTYPE BREAKDOWN ────────────────────────────────────
+let creatureTypesSortMode = 'alpha';
+const expandedCreatureTypes = new Set();
+
+function renderCreatureTypes(container, subtypes, cards) {
+  container.innerHTML = '';
+  const names = Object.keys(subtypes);
+
+  if (!names.length) {
+    container.innerHTML = '<div class="deck-group-box"><div style="color:var(--muted); font-size:0.75rem; font-style:italic;">No creatures found in this deck.</div></div>';
+    return;
+  }
+
+  const total = names.reduce((acc, n) => acc + subtypes[n], 0);
+
+  const box = document.createElement('div');
+  box.className = 'deck-group-box';
+
+  const header = document.createElement('div');
+  header.className = 'group-header';
+
+  const hLeft = document.createElement('span');
+  hLeft.textContent = 'All Creature Subtypes';
+
+  const hRight = document.createElement('span');
+  hRight.style.cssText = 'display:flex; align-items:center; gap:8px;';
+
+  const countLabel = document.createElement('span');
+  countLabel.textContent = `${total} across ${names.length} types`;
+  hRight.appendChild(countLabel);
+
+  const sortBtn = document.createElement('button');
+  sortBtn.className = 'btn-ghost';
+  sortBtn.style.cssText = 'font-size:0.56rem; padding:2px 7px; min-width:0; letter-spacing:0.3px;';
+  sortBtn.title = 'Toggle sort';
+  sortBtn.textContent = creatureTypesSortMode === 'alpha' ? 'A–Z' : '# ↓';
+  sortBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    creatureTypesSortMode = creatureTypesSortMode === 'alpha' ? 'count' : 'alpha';
+    renderCreatureTypes(container, subtypes, cards);
+  });
+  hRight.appendChild(sortBtn);
+
+  header.append(hLeft, hRight);
+  box.appendChild(header);
+
+  if (creatureTypesSortMode === 'alpha') {
+    names.sort((a, b) => a.localeCompare(b));
+  } else {
+    names.sort((a, b) => (subtypes[b] - subtypes[a]) || a.localeCompare(b));
+  }
+
+  names.forEach(name => {
+    const listEl = document.createElement('div');
+    listEl.className = 'collapse-target sub-card-list';
+
+    (cards?.[name] || []).forEach(c => {
+      const cRow = document.createElement('div');
+      cRow.className = 'group-card-item';
+      cRow.innerHTML = `
+        <div class="group-card-left">
+          <span class="group-card-qty">${c.qty}</span>
+          <span class="group-card-title">${c.name}</span>
+        </div>
+      `;
+      cRow.addEventListener('mouseenter', ev => showTooltip(c.name, ev));
+      cRow.addEventListener('mousemove',  moveTooltip);
+      cRow.addEventListener('mouseleave', hideTooltip);
+      listEl.appendChild(cRow);
+    });
+
+    const row = document.createElement('div');
+    row.className = 'group-card-item expandable-row';
+
+    const left = document.createElement('div');
+    left.className = 'group-card-left';
+    const chev = document.createElement('span');
+    chev.className = 'chevron';
+    chev.textContent = '▸';
+    left.appendChild(chev);
+    const title = document.createElement('span');
+    title.className = 'group-card-title';
+    title.textContent = name;
+    left.appendChild(title);
+
+    const right = document.createElement('span');
+    right.className = 'group-card-qty';
+    right.textContent = subtypes[name];
+
+    row.append(left, right);
+    row.addEventListener('click', () => {
+      const open = listEl.classList.toggle('open');
+      row.classList.toggle('open', open);
+      if (open) expandedCreatureTypes.add(name);
+      else expandedCreatureTypes.delete(name);
+    });
+    box.appendChild(row);
+
+    if (expandedCreatureTypes.has(name)) {
+      row.classList.add('open');
+      listEl.classList.add('open');
+    }
+    box.appendChild(listEl);
+  });
+
+  container.appendChild(box);
+}
+
+// ── RENDER CARD ROLES ───────────────────────────────────────────────────
+const expandedRoles = new Set();
+
+function renderCardRoles(container, roles, cards) {
+  container.innerHTML = '';
+  const present = CARD_ROLE_DEFS.filter(d => roles[d.key]);
+
+  if (!present.length) {
+    container.innerHTML = '<div class="deck-group-box"><div style="color:var(--muted); font-size:0.75rem; font-style:italic;">No role classifications found. Card data loads from Scryfall.</div></div>';
+    return;
+  }
+
+  const total = present.reduce((a, d) => a + roles[d.key], 0);
+
+  const box = document.createElement('div');
+  box.className = 'deck-group-box';
+
+  const header = document.createElement('div');
+  header.className = 'group-header';
+  header.innerHTML = `<span>All Card Roles</span><span>${total} total across ${present.length} roles</span>`;
+  box.appendChild(header);
+
+  present.sort((a, b) => roles[b.key] - roles[a.key] || a.name.localeCompare(b.name));
+
+  present.forEach(d => {
+    const listEl = document.createElement('div');
+    listEl.className = 'collapse-target sub-card-list';
+
+    (cards?.[d.key] || []).forEach(c => {
+      const cRow = document.createElement('div');
+      cRow.className = 'group-card-item';
+      cRow.innerHTML = `
+        <div class="group-card-left">
+          <span class="group-card-qty">${c.qty}</span>
+          <span class="group-card-title">${c.name}</span>
+        </div>
+      `;
+      cRow.addEventListener('mouseenter', ev => showTooltip(c.name, ev));
+      cRow.addEventListener('mousemove',  moveTooltip);
+      cRow.addEventListener('mouseleave', hideTooltip);
+      listEl.appendChild(cRow);
+    });
+
+    const row = document.createElement('div');
+    row.className = 'group-card-item expandable-row';
+
+    const left = document.createElement('div');
+    left.className = 'group-card-left';
+    const chev = document.createElement('span');
+    chev.className = 'chevron';
+    chev.textContent = '▸';
+    left.appendChild(chev);
+    const title = document.createElement('span');
+    title.className = 'group-card-title';
+    title.textContent = d.name;
+    left.appendChild(title);
+
+    const right = document.createElement('span');
+    right.className = 'group-card-qty';
+    right.textContent = roles[d.key];
+
+    row.append(left, right);
+    row.addEventListener('mouseenter', ev => showRoleTooltip(d, ev));
+    row.addEventListener('mouseleave', hideTooltip);
+    row.addEventListener('click', () => {
+      const open = listEl.classList.toggle('open');
+      row.classList.toggle('open', open);
+      if (open) expandedRoles.add(d.key);
+      else expandedRoles.delete(d.key);
+    });
+    box.appendChild(row);
+
+    if (expandedRoles.has(d.key)) {
+      row.classList.add('open');
+      listEl.classList.add('open');
+    }
+    box.appendChild(listEl);
+  });
+
+  container.appendChild(box);
+}
+
+// ── ROLE HOVER TOOLTIP ──────────────────────────────────────────────────
+function showRoleTooltip(def, e) {
+  tooltipEl.innerHTML =
+    `<div class="tooltip-text" style="max-width:300px; line-height:1.5;">
+       <strong style="color:var(--accent); font-size:0.78rem;">${def.name}</strong>
+       <div style="color:var(--muted); font-size:0.65rem; margin-top:4px;">${def.desc}</div>
+       <div style="color:var(--text); font-size:0.65rem; margin-top:6px;">e.g. <span style="color:var(--muted);">${def.examples}</span></div>
+     </div>`;
+  tooltipEl.classList.add('visible');
+  const pad = 14, tw = 310;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + tw > window.innerWidth)  x = e.clientX - tw - pad;
+  if (y + 240 > window.innerHeight) y = e.clientY - 240 - pad;
+  tooltipEl.style.left = x + 'px';
+  tooltipEl.style.top  = y + 'px';
+}
+
+// ── KEYBOARD SHORTCUTS ───────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isOverlayOpen()) {
+    setView('game');
+    return;
+  }
+
+  const tag = document.activeElement ? document.activeElement.tagName : '';
+  if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+
+  const key = e.key.toUpperCase();
+
+  if (key === 'D') {
+    e.preventDefault();
+    if (!btnDrawOne.disabled && !isOverlayOpen() && cardsToBottom === 0) {
+      drawOneCard();
+    }
+  } else if (key === 'M') {
+    e.preventDefault();
+    if (!btnMulligan.disabled && !isOverlayOpen()) handleMulligan();
+  } else if (key === 'U') {
+    e.preventDefault();
+    if (!btnUntapAll.disabled && !isOverlayOpen() && cardsToBottom === 0) {
+      untapAll();
+    }
+  } else if (key === 'S') {
+    e.preventDefault();
+    if (statsPage.classList.contains('active')) closeStatsPage();
+    else if (deckOverviewPage.classList.contains('active')) openStatsPage();
+    else openStatsPage();
+  } else if (key === 'O') {
+    e.preventDefault();
+    if (deckOverviewPage.classList.contains('active')) closeDeckOverview();
+    else if (statsPage.classList.contains('active')) openDeckOverview();
+    else openDeckOverview();
+  } else if (key === 'N') {
+    e.preventDefault();
+    if (fullDeck.length >= 40) newGame();
+  }
+});
+
+// ── SCRYFALL FETCH QUEUE ─────────────────────────────────────────────────
+const queue = [];
+let draining = false;
+
+function fetchCardData(name) {
+  if (name in cardCache) return;
+  cardCache[name] = null;
+  queue.push(name);
+  if (!draining) drainQueue();
+}
+
+async function drainQueue() {
+  draining = true;
+  while (queue.length) {
+    const name = queue.shift();
+    try {
+      const r = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}`);
+      if (!r.ok) throw 0;
+      const d = await r.json();
+      const imageUrl = d.image_uris?.normal || d.image_uris?.small || d.card_faces?.[0]?.image_uris?.normal || null;
+
+      const typeLine = d.type_line || '';
+      const oracleText = d.oracle_text || '';
+      const producedMana = d.produced_mana || deduceLandMana(typeLine, oracleText);
+
+      cardCache[name] = {
+        imageUrl,
+        typeLine,
+        cmc: typeof d.cmc === 'number' ? d.cmc : 0,
+        manaCost: d.mana_cost || '',
+        producedMana,
+        oracleText
+      };
+
+      if (imageUrl) swapImages(name, imageUrl);
+    } catch {
+      cardCache[name] = { imageUrl: null, typeLine: '', cmc: 0, manaCost: '', producedMana: [] };
+    }
+    await new Promise(r => setTimeout(r, 90));
+  }
+  draining = false;
+  if (statsPage.classList.contains('active')) {
+    buildAndRenderStats();
+  }
+  if (deckOverviewPage.classList.contains('active')) {
+    renderDeckOverview();
+  }
+}
+
+function swapImages(name, url) {
+  document.querySelectorAll(`[data-card="${CSS.escape(name)}"]`).forEach(el => {
+    if (el.querySelector('img')) return;
+    const badge   = el.querySelector('.badge-new');
+    const tapHint = el.querySelector('.tap-hint');
+    const bottomHint = el.querySelector('.card-bottom-hint');
+    const gyBtn   = el.querySelector('.card-gy-btn');
+    el.innerHTML  = '';
+    const img = document.createElement('img');
+    img.src = url; img.alt = name; img.loading = 'lazy';
+    el.appendChild(img);
+    if (badge)      el.appendChild(badge);
+    if (tapHint)    el.appendChild(tapHint);
+    if (bottomHint) el.appendChild(bottomHint);
+    if (gyBtn)      el.appendChild(gyBtn);
+
+    el.addEventListener('mouseenter', ev => showTooltip(name, ev));
+    el.addEventListener('mousemove',  moveTooltip);
+    el.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+// ── RENDER CARD HELPERS ──────────────────────────────────────────────────
+const EMOJIS = ['⚔️','🏞️','💀','⚡','✨','🛡️','🔥','💧','🌲','☀️'];
+
+function makeFallback(name, i, size) {
+  const face = document.createElement('div');
+  face.className = 'card-face';
+  const h = document.createElement('div'); h.className = 'cf-header'; h.textContent = name;
+  const a = document.createElement('div'); a.className = 'cf-art';
+  const em = document.createElement('span');
+  em.textContent = EMOJIS[i % EMOJIS.length];
+  em.style.fontSize = size === 'board' ? '1.4rem' : '1.8rem';
+  a.appendChild(em);
+  const n = document.createElement('div'); n.className = 'cf-name'; n.textContent = name;
+  face.append(h, a, n);
+  return face;
+}
+
+function makeCardImg(url, name) {
+  const img = document.createElement('img');
+  img.src = url; img.alt = name; img.loading = 'lazy';
+  return img;
+}
+
+// ── RENDER HAND ──────────────────────────────────────────────────────────
+function renderHand() {
+  handCardsEl.innerHTML = '';
+  if (!hand.length) {
+    const e = document.createElement('div');
+    e.className = 'zone-empty';
+    e.textContent = gameStarted ? 'Hand is empty.' : 'Load a deck (min 40 cards) to begin.';
+    handCardsEl.appendChild(e);
+    return;
+  }
+
+  hand.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'hand-card' + (card.isNew ? ' is-dealing' : '');
+    el.dataset.card = card.name;
+    if (card.isNew && card.delay) {
+      el.style.animationDelay = `${card.delay}ms`;
+    }
+
+    const cached = cardCache[card.name];
+    el.appendChild(cached?.imageUrl ? makeCardImg(cached.imageUrl, card.name) : makeFallback(card.name, i, 'hand'));
+
+    if (card.isNew && !gameStarted) {
+      const b = document.createElement('div'); b.className = 'badge-new'; b.textContent = 'New';
+      el.appendChild(b);
+    }
+
+    const bottomHint = document.createElement('div');
+    bottomHint.className = 'card-bottom-hint';
+    bottomHint.textContent = '⬇ Bottom Card';
+    el.appendChild(bottomHint);
+
+    el.addEventListener('click',       ev => playCard(i, ev));
+    el.addEventListener('contextmenu', ev => discardFromHand(i, ev));
+    el.addEventListener('mouseenter',  ev => showTooltip(card.name, ev));
+    el.addEventListener('mousemove',   moveTooltip);
+    el.addEventListener('mouseleave',  hideTooltip);
+    handCardsEl.appendChild(el);
+  });
+}
+
+// ── RENDER BOARD ─────────────────────────────────────────────────────────
+function renderBoard() {
+  renderZone(zCreaturesEl, boardCreatures, 'creature');
+  renderZone(zLandsEl,     boardLands,     'land');
+}
+
+function renderZone(container, cards, zone) {
+  container.innerHTML = '';
+  cards.forEach((card, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'board-card-wrapper' + (card.tapped ? ' tapped' : '');
+
+    const el = document.createElement('div');
+    el.className = 'board-card' + (card.tapped ? ' tapped' : '');
+    el.dataset.card = card.name;
+
+    const cached = cardCache[card.name];
+    el.appendChild(cached?.imageUrl ? makeCardImg(cached.imageUrl, card.name) : makeFallback(card.name, i, 'board'));
+
+    const hint = document.createElement('div');
+    hint.className = 'tap-hint';
+    hint.textContent = card.tapped ? 'Untap' : 'Tap';
+    el.appendChild(hint);
+
+    const gyBtn = document.createElement('button');
+    gyBtn.className = 'card-gy-btn';
+    gyBtn.title = 'Send to Graveyard';
+    gyBtn.innerHTML = '💀';
+    gyBtn.addEventListener('click', ev => moveToGraveyard(zone, i, ev));
+    el.appendChild(gyBtn);
+
+    el.addEventListener('click', () => toggleTap(zone, i));
+    el.addEventListener('contextmenu', ev => moveToGraveyard(zone, i, ev));
+    el.addEventListener('mouseenter',  ev => showTooltip(card.name, ev));
+    el.addEventListener('mousemove',   moveTooltip);
+    el.addEventListener('mouseleave',  hideTooltip);
+
+    wrapper.appendChild(el);
+    container.appendChild(wrapper);
+  });
+}
+
+// ── RENDER GRAVEYARD ─────────────────────────────────────────────────────
+function renderGraveyard() {
+  gyCardsEl.innerHTML = '';
+  if (!graveyard.length) {
+    const e = document.createElement('div');
+    e.className = 'pz-empty gy-empty-color';
+    e.textContent = 'Graveyard is empty.';
+    gyCardsEl.appendChild(e);
+    return;
+  }
+
+  graveyard.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'side-card gy-card-item';
+    el.title = 'Click for move options (Hand, Board, Exile)';
+
+    const cached = cardCache[card.name];
+    if (cached?.imageUrl) {
+      const img = document.createElement('img');
+      img.className = 'side-card-img';
+      img.src = cached.imageUrl;
+      img.alt = card.name;
+      img.loading = 'lazy';
+      el.appendChild(img);
+    } else {
+      const dummy = document.createElement('div');
+      dummy.className = 'side-card-img';
+      dummy.style.display = 'flex';
+      dummy.style.alignItems = 'center';
+      dummy.style.justifyContent = 'center';
+      dummy.style.fontSize = '0.9rem';
+      dummy.textContent = '💀';
+      el.appendChild(dummy);
+    }
+
+    const info = document.createElement('div');
+    info.className = 'side-card-info';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'side-card-name';
+    nameEl.textContent = card.name;
+
+    const typeEl = document.createElement('div');
+    typeEl.className = 'side-card-type';
+    typeEl.textContent = cached?.typeLine || 'Card';
+
+    const action = document.createElement('div');
+    action.className = 'side-card-action-hint';
+    action.textContent = '⚡ Click for options';
+
+    info.append(nameEl, typeEl, action);
+    el.appendChild(info);
+
+    el.addEventListener('click',      (ev) => onGraveyardCardClick(i, ev));
+    el.addEventListener('mouseenter', ev => showTooltip(card.name, ev));
+    el.addEventListener('mousemove',  moveTooltip);
+    el.addEventListener('mouseleave', hideTooltip);
+
+    gyCardsEl.appendChild(el);
+  });
+}
+
+// ── RENDER EXILE ─────────────────────────────────────────────────────────
+function renderExile() {
+  exileCardsEl.innerHTML = '';
+  if (!exile.length) {
+    const e = document.createElement('div');
+    e.className = 'pz-empty exile-empty-color';
+    e.textContent = 'Exile zone is empty.';
+    exileCardsEl.appendChild(e);
+    return;
+  }
+
+  exile.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'side-card exile-card-item';
+    el.title = 'Click to return from exile';
+
+    const cached = cardCache[card.name];
+    if (cached?.imageUrl) {
+      const img = document.createElement('img');
+      img.className = 'side-card-img';
+      img.src = cached.imageUrl;
+      img.alt = card.name;
+      img.loading = 'lazy';
+      el.appendChild(img);
+    } else {
+      const dummy = document.createElement('div');
+      dummy.className = 'side-card-img';
+      dummy.style.display = 'flex';
+      dummy.style.alignItems = 'center';
+      dummy.style.justifyContent = 'center';
+      dummy.style.fontSize = '0.9rem';
+      dummy.textContent = '🌀';
+      el.appendChild(dummy);
+    }
+
+    const info = document.createElement('div');
+    info.className = 'side-card-info';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'side-card-name';
+    nameEl.textContent = card.name;
+
+    const typeEl = document.createElement('div');
+    typeEl.className = 'side-card-type';
+    typeEl.textContent = cached?.typeLine || 'Card';
+
+    const action = document.createElement('div');
+    action.className = 'side-card-action-hint';
+    action.textContent = '↩ Click to return';
+
+    info.append(nameEl, typeEl, action);
+    el.appendChild(info);
+
+    el.addEventListener('click',      (ev) => onExileCardClick(i, ev));
+    el.addEventListener('mouseenter', ev => showTooltip(card.name, ev));
+    el.addEventListener('mousemove',  moveTooltip);
+    el.addEventListener('mouseleave', hideTooltip);
+
+    exileCardsEl.appendChild(el);
+  });
+}
+
+// ── UPDATE STATS ─────────────────────────────────────────────────────────
+function updateStats() {
+  statTotal.textContent = totalCards;
+  statLib.textContent   = library.length;
+  statHand.textContent  = hand.length;
+  statBoard.textContent = boardCreatures.length + boardLands.length;
+  statGy.textContent    = graveyard.length;
+  statExile.textContent = exile.length;
+
+  cntHand.textContent      = hand.length;
+  cntCreatures.textContent = boardCreatures.length;
+  cntLands.textContent     = boardLands.length;
+  cntGy.textContent        = graveyard.length;
+  cntExile.textContent     = exile.length;
+}
+
+// ── TOOLTIP ──────────────────────────────────────────────────────────────
+function showTooltip(name, e) {
+  const cached = cardCache[name];
+  tooltipEl.innerHTML = cached?.imageUrl
+    ? `<img src="${cached.imageUrl}" alt="${name}">`
+    : `<div class="tooltip-text"><strong>${name}</strong><br><span style="color:var(--muted);font-size:0.65rem;">${cached?.typeLine || 'Card'}</span></div>`;
+  tooltipEl.classList.add('visible');
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  const pad = 14, tw = 235;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + tw  > window.innerWidth)   x = e.clientX - tw - pad;
+  if (y + 320 > window.innerHeight)  y = e.clientY - 320 - pad;
+  tooltipEl.style.left = x + 'px';
+  tooltipEl.style.top  = y + 'px';
+}
+function hideTooltip() { tooltipEl.classList.remove('visible'); }
+
+// ── TOAST ────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+}
+
+// ── CLEAR ALL ────────────────────────────────────────────────────────────
+function clearAll() {
+  fullDeck = []; library = []; hand = [];
+  boardCreatures = []; boardLands = []; graveyard = []; exile = [];
+  cardCache = { ...CARD_PRESETS };
+  turn = 0; totalCards = 0; landsPlayedThisTurn = 0; gameStarted = false;
+  resetMulliganState();
+
+  statsSection.style.display = 'none';
+  decklistEl.value     = '';
+  btnClear.disabled    = true;
+  btnNewGame.disabled  = true;
+  btnDrawOne.disabled  = true;
+  btnUntapAll.disabled = true;
+  btnStats.disabled    = true;
+  btnDeckOverview.disabled = true;
+  btnMulligan.disabled = true;
+  btnLoad.textContent  = 'Load Deck & Draw';
+  turnNum.textContent  = '—';
+
+  setView('game');
+  updateStats();
+  renderHand();
+  renderBoard();
+  renderGraveyard();
+  renderExile();
+}
+
+// ── EVENT LISTENERS ──────────────────────────────────────────────────────
+btnLoad.addEventListener('click',     loadDeck);
+btnSample.addEventListener('click',   () => { decklistEl.value = SAMPLE; loadDeck(); });
+btnClear.addEventListener('click',    clearAll);
+btnMulligan.addEventListener('click', handleMulligan);
+btnDrawOne.addEventListener('click',  drawOneCard);
+btnUntapAll.addEventListener('click', untapAll);
+btnNewGame.addEventListener('click',  newGame);
+decklistEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    loadDeck();
+  }
+});
+
+// Comparison Deck Listeners
+btnLoadCompare.addEventListener('click',   loadComparisonDeck);
+btnSampleCompare.addEventListener('click', () => { compareDecklistEl.value = SAMPLE_COMPARE; loadComparisonDeck(); });
+btnClearCompare.addEventListener('click',  clearComparisonDeck);
+compareDecklistEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    loadComparisonDeck();
+  }
+});
+
+// ── THEME TOGGLE (DARK / LIGHT) ──────────────────────────────────────────
+const btnTheme = $('btn-theme');
+
+function applyTheme(light) {
+  document.body.classList.toggle('light', light);
+  btnTheme.innerHTML = light ? '🌙 Dark Mode' : '☀️ Light Mode';
+  localStorage.setItem('mtg-theme', light ? 'light' : 'dark');
+}
+
+btnTheme.addEventListener('click', () => {
+  applyTheme(!document.body.classList.contains('light'));
+});
+
+if (localStorage.getItem('mtg-theme') === 'light') {
+  applyTheme(true);
+}
+</script>
 </body>
 </html>
