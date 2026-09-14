@@ -738,7 +738,7 @@
   <aside class="sidebar">
     <div class="app-title">
       <h1>Grand Sealed<br>Magic</h1>
-      <p>v12 Visualize a limited card pool</p>
+      <p>v13 Visualize a limited card pool</p>
     </div>
 
     <details class="panel" id="poolPanel" open>
@@ -944,6 +944,8 @@
     ];
 
     const CARD_TYPES = ['Creature', 'Instant', 'Sorcery', 'Enchantment', 'Artifact', 'Land', 'Planeswalker', 'Battle'];
+
+    const WUBRG = { W: 0, U: 1, B: 2, R: 3, G: 4 };
 
     const COLOR_META = {
       W:        { label: 'White',     color: '#f4efe0', chip: '#e5dca8', letter: 'W' },
@@ -1250,9 +1252,22 @@
       return (src && src.colors) ? src.colors.slice() : [];
     }
 
+    function wubrgVal(s) {
+      let v = 0;
+      for (const ch of s) v = v * 5 + (WUBRG[ch] ?? 0);
+      return v;
+    }
+
     function colorKey(card) {
+      if ((card.type_line || '').includes('Land')) return 'Land';
       const cols = frontFaceColors(card);
-      if (cols.length > 1) return 'Multi';
+      const selColors = state.colorFilter.filter(c => c !== 'C');
+      if (cols.length > 1) {
+        if (selColors.length >= 2) {
+          return cols.slice().sort((a, b) => WUBRG[a] - WUBRG[b]).join('');
+        }
+        return 'Multi';
+      }
       if (cols.length === 1) return cols[0];
       return 'Colorless';
     }
@@ -1282,8 +1297,30 @@
       return 'unknown';
     }
 
+    function comboMeta(key) {
+      if (!/^[WUBRG]{2,}$/.test(key)) return null;
+      const parts = key.split('').map(c => COLOR_META[c]);
+      return {
+        label: parts.map(p => p.label).join(' + '),
+        color: COLOR_META.Multi.color,
+        grad: 'conic-gradient(from 0deg, ' +
+          key.split('').map((c, i) => COLOR_META[c].chip + ' ' + (i * 100 / key.length) + '% ' + ((i + 1) * 100 / key.length) + '%').join(', ') + ')'
+      };
+    }
+
+    function groupBarBg(group, key) {
+      if (group === 'color') {
+        const combo = comboMeta(key);
+        return combo ? combo.grad : (COLOR_META[key] ? COLOR_META[key].color : 'var(--accent)');
+      }
+      return 'var(--accent)';
+    }
+
     function groupLabel(group, key) {
-      if (group === 'color') return COLOR_META[key] ? COLOR_META[key].label : key;
+      if (group === 'color') {
+        const combo = comboMeta(key);
+        return combo ? combo.label : (COLOR_META[key] ? COLOR_META[key].label : key);
+      }
       if (group === 'rarity') return RARITY_META[key] ? RARITY_META[key].label : key;
       if (group === 'cmc') return key === '7' ? '7+' : key;
       if (group === 'set') return setFullName(key);
@@ -1291,7 +1328,10 @@
     }
 
     function groupAccent(group, key) {
-      if (group === 'color') return COLOR_META[key] ? COLOR_META[key].color : 'var(--accent)';
+      if (group === 'color') {
+        const combo = comboMeta(key);
+        return combo ? combo.color : (COLOR_META[key] ? COLOR_META[key].color : 'var(--accent)');
+      }
       if (group === 'rarity') return RARITY_META[key] ? RARITY_META[key].color : 'var(--accent)';
       return 'var(--accent)';
     }
@@ -1299,7 +1339,7 @@
     function groupOrder(group, entries) {
       const keys = [...new Set(entries.map(groupKey))];
       const start = {
-        color: ['W', 'U', 'B', 'G', 'R', 'Multi', 'Colorless'],
+        color: ['W', 'U', 'B', 'G', 'R', 'Multi', 'Colorless', 'Land'],
         cmc: ['0', '1', '2', '3', '4', '5', '6', '7'],
         type: CARD_TYPES,
         rarity: ['common', 'uncommon', 'rare', 'mythic', 'special']
@@ -1307,7 +1347,15 @@
       const ordered = [];
       for (const k of start || []) if (keys.includes(k)) ordered.push(k);
       let rest = keys.filter(k => !(start || []).includes(k));
-      if (group === 'set') {
+      if (group === 'color') {
+        rest.sort((a, b) => a.length - b.length || wubrgVal(a) - wubrgVal(b));
+        if (rest.length) {
+          let insertAt = ordered.indexOf('Colorless');
+          if (insertAt < 0) insertAt = ordered.indexOf('Land');
+          if (insertAt < 0) insertAt = ordered.length;
+          ordered.splice(insertAt, 0, ...rest);
+        }
+      } else if (group === 'set') {
         const rel = new Map();
         for (const e of entries) {
           const k = groupKey(e);
@@ -1330,8 +1378,13 @@
           return (RARITY_ORDER[a.card.rarity] ?? 9) - (RARITY_ORDER[b.card.rarity] ?? 9) ||
                  a.name.localeCompare(b.name);
         case 'color': {
-          const order = { W: 0, U: 1, B: 2, G: 3, R: 4, Multi: 5, Colorless: 6 };
-          return (order[colorKey(a.card)] ?? 9) - (order[colorKey(b.card)] ?? 9) ||
+          const order = { W: 0, U: 1, B: 2, G: 3, R: 4, Multi: 5, Colorless: 6, Land: 7 };
+          const v = k => {
+            if (order[k] !== undefined) return order[k];
+            if (k && k.length >= 2) return 5;
+            return 9;
+          };
+          return v(colorKey(a.card)) - v(colorKey(b.card)) ||
                  a.name.localeCompare(b.name);
         }
         case 'set':
@@ -1344,6 +1397,31 @@
       }
     }
 
+    function passesColorFilter(card) {
+      const cols = card.colors || [];
+      const selected = state.colorFilter.filter(c => c !== 'C');
+      const wantC = state.colorFilter.includes('C');
+      const isLand = (card.type_line || '').includes('Land');
+
+      if (isLand && state.group === 'color') {
+        const identity = card.color_identity || [];
+        if (!selected.length) return wantC ? identity.length === 0 : true;
+        return identity.some(col => selected.includes(col));
+      }
+
+      if (selected.length >= 2) {
+        if (cols.length > 1) return cols.every(col => selected.includes(col));
+        if (cols.length === 1) return selected.includes(cols[0]);
+        return wantC;
+      }
+      if (selected.length === 1) {
+        if (!cols.length) return wantC;
+        return cols.includes(selected[0]);
+      }
+      if (!cols.length) return wantC;
+      return false;
+    }
+
     function matchesSearch(entry) {
       const c = entry.card;
       const q = state.search.trim().toLowerCase();
@@ -1354,8 +1432,7 @@
         if (!hay.includes(q)) return false;
       }
       if (state.colorFilter.length) {
-        const cols = c.colors || [];
-        if (!state.colorFilter.some(col => col === 'C' ? !cols.length : cols.includes(col))) return false;
+        if (!passesColorFilter(c)) return false;
       }
       if (state.rarityFilter.length && !state.rarityFilter.includes(c.rarity)) return false;
       if (state.typeFilter.length) {
@@ -1416,7 +1493,7 @@
         head.className = 'group-head';
         const bar = document.createElement('div');
         bar.className = 'gbar';
-        bar.style.background = groupAccent(state.group, key);
+        bar.style.background = groupBarBg(state.group, key);
         head.appendChild(bar);
 
         if (state.group === 'set') {
