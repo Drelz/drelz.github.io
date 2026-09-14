@@ -5,26 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Grand Sealed Magic</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%94%AE%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../shared/style.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg:           #0c0e17;
-      --sidebar-bg:   #10121d;
-      --surface:      #181b2c;
-      --surface2:     #21253c;
-      --border:       #272c4e;
-      --accent:       #c89b3c;
-      --accent2:      #8b6914;
-      --accent-glow:  rgba(200, 155, 60, 0.25);
-      --compare:      #38bdf8;
-      --compare-glow: rgba(56, 189, 248, 0.25);
-      --text:         #e8e0d0;
-      --muted:        #6b7092;
-      --danger:       #e0533f;
-      --ok:           #6fae5a;
-      --radius:       10px;
-    }
+    /* Base palette (dark + light) now comes from ../shared/style.css. */
 
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -1788,22 +1773,28 @@
       enrichLinkedCards();
     }
 
+    function patchCardMeta(card, real) {
+      const src = (real.colors && real.colors.length) ? real
+        : (real.card_faces && real.card_faces.length ? real.card_faces[0] : real);
+      card.colors = (src.colors || []).slice();
+      card.color_identity = (real.color_identity || src.color_identity || src.colors || []).slice();
+      card.cmc = real.cmc != null ? real.cmc : (src.cmc != null ? src.cmc : 0);
+      card.mana_cost = real.mana_cost || src.mana_cost || (real.card_faces && real.card_faces[0] ? real.card_faces[0].mana_cost || '' : '') || '';
+      card.type_line = (src.type_line || card.type_line || real.type_line || '');
+      card.rarity = real.rarity || card.rarity;
+      card.set_name = real.set_name || card.set_name;
+      card.oracle_text = real.oracle_text || (real.card_faces && real.card_faces[0] ? real.card_faces[0].oracle_text || '' : '') || '';
+      card.collector_number = real.collector_number || '';
+      card.power = real.power != null ? real.power : (real.card_faces && real.card_faces[0] ? real.card_faces[0].power : undefined);
+      card.toughness = real.toughness != null ? real.toughness : (real.card_faces && real.card_faces[0] ? real.card_faces[0].toughness : undefined);
+      card.userFuzzy = card.userFuzzy || real.userFuzzy;
+      card.enriched = true;
+      rememberSetMeta(real);
+    }
+
     function patchLinkedMeta(entry, real) {
       const stub = entry.card;
-      stub.colors = (real.colors || []).slice();
-      stub.color_identity = (real.color_identity || real.colors || []).slice();
-      stub.cmc = real.cmc || 0;
-      stub.mana_cost = real.mana_cost || '';
-      stub.type_line = real.type_line || stub.type_line;
-      stub.rarity = real.rarity || stub.rarity;
-      stub.set_name = real.set_name || stub.set_name;
-      stub.oracle_text = real.oracle_text || '';
-      stub.collector_number = real.collector_number || '';
-      stub.power = real.power;
-      stub.toughness = real.toughness;
-      stub.userFuzzy = stub.userFuzzy || real.userFuzzy;
-      stub.enriched = true;
-      rememberSetMeta(real);
+      patchCardMeta(stub, real);
     }
 
     async function enrichLinkedCards() {

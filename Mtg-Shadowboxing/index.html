@@ -4,23 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MTG Shadowboxing</title>
+  <link rel="stylesheet" href="../shared/style.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:           #0c0e17;
-      --sidebar-bg:   #10121d;
-      --surface:      #181b2c;
-      --surface2:     #21253c;
-      --border:       #272c4e;
-      --accent:       #c89b3c;
-      --accent2:      #8b6914;
-      --accent-glow:  rgba(200, 155, 60, 0.25);
-      --compare:      #38bdf8;
-      --compare2:     #0284c7;
-      --compare-glow: rgba(56, 189, 248, 0.25);
-      --text:         #e8e0d0;
-      --muted:        #6b7092;
+      /* Base design tokens (--bg … --muted) come from ../shared/style.css. */
 
       /* Right zones */
       --gy-bg:        #12101b;
@@ -49,19 +38,7 @@
     }
 
     body.light {
-      --bg:            #eceef4;
-      --sidebar-bg:    #e2e5ef;
-      --surface:       #ffffff;
-      --surface2:      #f1f3f9;
-      --border:        #c8cede;
-      --accent:        #a8760e;
-      --accent2:       #8a6410;
-      --accent-glow:   rgba(168, 118, 14, 0.22);
-      --compare:       #0284c7;
-      --compare2:      #0369a1;
-      --compare-glow:  rgba(2, 132, 199, 0.22);
-      --text:          #232734;
-      --muted:         #5d6273;
+      /* Base light tokens now come from ../shared/style.css. */
 
       /* Right zones */
       --gy-bg:         #ece6f6;

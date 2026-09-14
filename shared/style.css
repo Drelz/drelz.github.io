@@ -1,0 +1,151 @@
+﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   drelz.github.io â€” SHARED FOUNDATION
+   Unified design tokens (gold palette) + reset/base + common components.
+   Load first in <head>; app-specific CSS stays in each app's own file/style.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ DESIGN TOKENS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+:root {
+  --bg:           #0c0e17;
+  --sidebar-bg:   #10121d;
+  --surface:      #181b2c;
+  --surface2:     #21253c;
+  --border:       #272c4e;
+  --accent:       #c89b3c;
+  --accent2:      #8b6914;
+  --accent-glow:  rgba(200, 155, 60, 0.25);
+  --compare:      #38bdf8;
+  --compare2:     #0284c7;
+  --compare-glow: rgba(56, 189, 248, 0.25);
+  --text:         #e8e0d0;
+  --muted:        #6b7092;
+  --ok:           #6fae5a;
+  --err:          #e0533f;
+
+  /* Aliases kept for app-compatibility (older/local class names):
+     Image-Retriever uses --panel; Grand-Sealed uses --surface3. */
+  --panel:        var(--surface);
+  --danger:       var(--err);
+  --surface3:     #2a2f52;
+  /* (real --accent-glow defined above; no-op line removed) */
+
+  --radius:       10px;
+}
+
+body.light {
+  --bg:           #eceef4;
+  --sidebar-bg:   #e2e5ef;
+  --surface:      #ffffff;
+  --surface2:     #f1f3f9;
+  --border:       #c8cede;
+  --accent:       #a8760e;
+  --accent2:      #8a6410;
+  --accent-glow:  rgba(168, 118, 14, 0.22);
+  --compare:      #0284c7;
+  --compare2:     #0369a1;
+  --compare-glow: rgba(2, 132, 199, 0.22);
+  --text:         #232734;
+  --muted:        #5d6273;
+  --ok:           #2e7d32;
+  --err:          #c62828;
+}
+
+/* â”€â”€ RESET / BASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--surface2); }
+
+button { cursor: pointer; border: none; }
+button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* â”€â”€ COMMON COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+/* Badges */
+.kbd-badge, .kbd {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 0.62rem;
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(63, 191, 111, 0.15);
+  color: var(--ok);
+  flex-shrink: 0;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(50px);
+  background: var(--surface2);
+  border: 1px solid var(--accent2);
+  color: var(--accent);
+  padding: 8px 20px;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  transition: transform 0.22s, opacity 0.22s;
+  opacity: 0;
+  z-index: 300;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* Tooltip */
+.tooltip {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.tooltip.visible { opacity: 1; }
+.tooltip img { width: 230px; border-radius: 11px; box-shadow: 0 18px 48px rgba(0,0,0,0.85); display: block; }
+.tooltip-text {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  max-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+/* Site footer */
+.site-footer {
+  margin-top: auto;
+  padding: 1rem 20px 2rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+  width: 100%;
+}

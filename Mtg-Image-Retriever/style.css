@@ -1,13 +1,4 @@
-:root {
-  --bg: #1b1e26;
-  --panel: #262b36;
-  --border: #3a4150;
-  --text: #e8eaf0;
-  --muted: #9aa3b2;
-  --accent: #d63c3c;
-  --ok: #3fbf6f;
-  --err: #e05a5a;
-}
+﻿/* Base palette (gold) comes from ../shared/style.css via index.html link. */
 
 * { box-sizing: border-box; }
 
@@ -67,7 +58,7 @@ textarea {
 textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(214, 60, 60, 0.25);
+  box-shadow: 0 0 0 2px rgba(200, 155, 60, 0.25);
 }
 
 button {
@@ -82,7 +73,7 @@ button {
   cursor: pointer;
 }
 
-button:hover { background: #c23333; }
+button:hover { background: #b0833a; }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 #status {
