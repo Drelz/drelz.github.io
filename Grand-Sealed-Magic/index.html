@@ -337,6 +337,8 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    #cardTip img { width: 360px; }
+
     /* ── MAIN AREA ───────────────────────────────────────────── */
 
     .main {
@@ -738,7 +740,7 @@
   <aside class="sidebar">
     <div class="app-title">
       <h1>Grand Sealed<br>Magic</h1>
-      <p>v13 Visualize a limited card pool</p>
+      <p>v14 Visualize a limited card pool</p>
     </div>
 
     <details class="panel" id="poolPanel" open>
@@ -869,6 +871,8 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="tooltip" id="cardTip"></div>
 
   <script>
     const $ = sel => document.querySelector(sel);
@@ -1571,7 +1575,36 @@
       col.appendChild(cap);
 
       col.addEventListener('click', () => openModal(entry));
+      col.addEventListener('mouseenter', e => showCardTip(entry, e));
+      col.addEventListener('mousemove', e => moveCardTip(e));
+      col.addEventListener('mouseleave', hideCardTip);
       return col;
+    }
+
+    function showCardTip(entry, e) {
+      const img = cardImageLarge(entry.card);
+      if (!img) return;
+      const tip = $('#cardTip');
+      tip.innerHTML = '<img src="' + img + '" alt="' + entry.card.name.replace(/"/g, '&quot;') + '">';
+      tip.classList.add('visible');
+      moveCardTip(e);
+    }
+
+    function moveCardTip(e) {
+      const tip = $('#cardTip');
+      const pad = 18;
+      const w = 372, h = 522;
+      let x = e.clientX + pad;
+      let y = e.clientY - h / 2;
+      if (x + w > window.innerWidth - 8) x = e.clientX - w - pad;
+      x = Math.max(8, x);
+      y = Math.max(8, Math.min(window.innerHeight - h - 8, y));
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+    }
+
+    function hideCardTip() {
+      $('#cardTip').classList.remove('visible');
     }
 
     function placeholderNode(card) {
