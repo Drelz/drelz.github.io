@@ -1259,11 +1259,17 @@
       return cost.match(re) || [];
     }
 
+    function frontFaceColors(card) {
+      const src = (card.colors && card.colors.length) ? card
+        : (card.card_faces && card.card_faces.length ? card.card_faces[0] : null);
+      return (src && src.colors) ? src.colors.slice() : [];
+    }
+
     function colorKey(card) {
-      const cols = card.colors || [];
+      const cols = frontFaceColors(card);
       if (cols.length > 1) return 'Multi';
       if (cols.length === 1) return cols[0];
-      return card.type_line && card.type_line.includes('Land') ? 'Colorless' : 'Colorless';
+      return 'Colorless';
     }
 
     function cmcKey(card) {
