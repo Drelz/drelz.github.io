@@ -98,6 +98,31 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
   flex-shrink: 0;
 }
 
+/* Golden accent button — shared look (Grand Sealed Magic / Shadowboxing / Image-Retriever) */
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #0c0e17;
+  background: linear-gradient(180deg, #d9ac52, var(--accent) 60%, var(--accent2));
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--accent-glow);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.btn-accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(200, 155, 60, 0.4);
+}
+.btn-accent:active { transform: translateY(0); }
+.btn-accent:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
 /* Toast */
 .toast {
   position: fixed;

@@ -66,14 +66,10 @@ button {
   padding: 0.6rem 1.6rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
-  background: var(--accent);
-  border: none;
   border-radius: 6px;
   cursor: pointer;
 }
 
-button:hover { background: #b0833a; }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 #status {
@@ -175,10 +171,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   margin: 0 0 0.75rem;
   padding: 0.45rem 1.1rem;
   font-size: 0.82rem;
-  background: #8a6a2f;
 }
-
-#copy-not-found:hover { background: #a07c35; }
 
 #not-found-output {
   font-family: ui-monospace, Consolas, monospace;

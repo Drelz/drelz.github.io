@@ -280,7 +280,7 @@
     .f-chip.rarity-chip[data-rarity="rare"]     { background: #c89b3c; color: #1c1403; border-color: #ddbb6c; }
     .f-chip.rarity-chip[data-rarity="mythic"]   { background: #b8432c; color: #f7e6dd; border-color: #d7673f; }
     .f-chip.rarity-chip.active {
-      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px currentColor;
+      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text);
     }
 
     .stats { display: flex; flex-direction: column; gap: 7px; }
@@ -985,6 +985,8 @@
       failedLookup: []
     };
 
+    let removedBasics = 0;
+
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 
     function parseCsvLine(line) {
@@ -1221,6 +1223,19 @@
       return ['W', 'U', 'B', 'R', 'G'];
     }
 
+    const BASIC_LAND_NAMES = new Set([
+      'plains', 'island', 'swamp', 'mountain', 'forest', 'wastes',
+      'snow-covered plains', 'snow-covered island', 'snow-covered swamp',
+      'snow-covered mountain', 'snow-covered forest'
+    ]);
+
+    function isBasicLand(card) {
+      if (Array.isArray(card.supertypes) && card.supertypes.includes('Basic')) return true;
+      const tl = (card.type_line || '').toLowerCase();
+      if (/^basic\b/.test(tl) || /\bbasic land\b/.test(tl)) return true;
+      return BASIC_LAND_NAMES.has(norm(card.name));
+    }
+
     function cardImage(card) {
       const face = card.card_faces && card.card_faces.length ? card.card_faces[0] : null;
       const uris = face ? face.image_uris : card.image_uris;
@@ -1360,14 +1375,7 @@
           ordered.splice(insertAt, 0, ...rest);
         }
       } else if (group === 'set') {
-        const rel = new Map();
-        for (const e of entries) {
-          const k = groupKey(e);
-          if (!rel.has(k) || (e.card.released_at && rel.get(k) > e.card.released_at)) {
-            rel.set(k, e.card.released_at || '9999');
-          }
-        }
-        rest.sort((a, b) => (rel.get(a) || '9999').localeCompare(rel.get(b) || '9999') || a.localeCompare(b));
+        rest.sort((a, b) => setFullName(a).localeCompare(setFullName(b)) || a.localeCompare(b));
       } else {
         rest.sort();
       }
@@ -1769,6 +1777,7 @@
     }
 
     function addEntry(card, qty) {
+      if (isBasicLand(card)) { removedBasics++; return; }
       rememberSetMeta(card);
       const existing = state.cards.find(e => e.card.id === card.id);
       if (existing) existing.qty += qty;
@@ -1786,6 +1795,7 @@
       state.cards = [];
       state.unresolved = [];
       state.failedLookup = [];
+      removedBasics = 0;
       $('#unresolved').style.display = 'none';
       $('#groupsBox').innerHTML = '';
       $('#summary').innerHTML = '';
@@ -1875,6 +1885,7 @@
         els.savedPanel.open = false;
         const fuzzy = state.cards.filter(e => e.card.userFuzzy).length;
         toast('Loaded ' + state.cards.length + ' unique cards' +
+          (removedBasics ? ' · skipped ' + removedBasics + ' basic ' + (removedBasics === 1 ? 'land' : 'lands') : '') +
           (fuzzy ? ' · ' + fuzzy + ' fuzzy-matched' : '') +
           (state.unresolved.length ? ' · ' + state.unresolved.length + ' unresolved' : '') + '.');
       } else {
