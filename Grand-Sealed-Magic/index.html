@@ -725,7 +725,8 @@
       flex-shrink: 0;
     }
     .pick-item:hover .pick-x { color: #e05555; }
-    .pick-actions { padding: 8px; border-top: 1px solid var(--border); }
+    .pick-actions { display: flex; gap: 8px; padding: 8px; border-top: 1px solid var(--border); }
+    .pick-actions .btn { flex: 1; min-width: 0; }
 
     /* ── MODAL ───────────────────────────────────────────────── */
 
@@ -1014,7 +1015,8 @@
       <div class="pick-empty">Click the <b>+</b> on a card to build your selection.</div>
     </div>
     <div class="pick-actions">
-      <button class="btn ghost full" id="pickCopyBtn">Copy CSV</button>
+      <button class="btn ghost" id="pickCopyBtn">Copy CSV</button>
+      <button class="btn ghost" id="pickStatsBtn">Deck Stats</button>
     </div>
   </aside>
 
@@ -1070,6 +1072,7 @@
       pickCount: $('#pickCount'),
       pickList: $('#pickList'),
       pickCopyBtn: $('#pickCopyBtn'),
+      pickStatsBtn: $('#pickStatsBtn'),
       toast: $('#toast')
     };
 
@@ -1774,14 +1777,30 @@
       }
     }
 
-    function copySelection() {
-      if (!state.selected.length) { toast('Select some cards first.'); return; }
-      const csv = state.selected.map(e => {
+    function selectionCSV() {
+      return state.selected.map(e => {
         const name = e.card.name || e.name;
         return (name.includes(',') || name.includes('"')
           ? '"' + name.replace(/"/g, '""') + '"'
           : name) + ',' + (e.card.set || '').toUpperCase();
       }).join('\n');
+    }
+
+    function openInDeckStats() {
+      if (!state.selected.length) { toast('Select some cards first.'); return; }
+      const csv = selectionCSV();
+      try { localStorage.setItem('gds_deck', csv); } catch (e) { /* ignore */ }
+      let query = '';
+      try {
+        const enc = encodeURIComponent(csv);
+        if (enc.length < 8000) query = '?deck=' + enc;
+      } catch (e) { /* ignore */ }
+      window.open('../Mtg-Deck-Stats/' + query, '_blank');
+    }
+
+    function copySelection() {
+      if (!state.selected.length) { toast('Select some cards first.'); return; }
+      const csv = selectionCSV();
       const done = () => toast('Copied ' + state.selected.length + ' card' + (state.selected.length > 1 ? 's' : '') + ' as CSV.');
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(csv).then(done, () => toast('Copy failed.'));
@@ -2317,6 +2336,7 @@
       els.loadFileBtn.addEventListener('click', loadSelectedPoolFile);
       els.browseBtn.addEventListener('click', browseLocalFile);
       els.pickCopyBtn.addEventListener('click', copySelection);
+      els.pickStatsBtn.addEventListener('click', openInDeckStats);
       els.filePicker.addEventListener('change', () => {
         const file = els.filePicker.files && els.filePicker.files[0];
         if (!file) return;

@@ -2036,6 +2036,12 @@
     }
 
     function restoreState() {
+      const inUrl = new URLSearchParams(location.search).get('deck');
+      if (inUrl) {
+        els.deckText.value = inUrl;
+        loadDeck();
+        return;
+      }
       try {
         const t = localStorage.getItem('gds_deck');
         if (t) els.deckText.value = t;
