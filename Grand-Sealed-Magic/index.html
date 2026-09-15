@@ -538,7 +538,7 @@
     .tcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .tcard .qty {
       position: absolute;
-      top: 6px; left: 6px;
+      top: 6px; left: 34px;
       background: linear-gradient(180deg, #d9ac52, var(--accent));
       color: #0c0e17;
       font-size: 0.7rem;
@@ -585,6 +585,114 @@
       color: var(--muted);
       word-break: break-word;
     }
+    .tcard .add-btn {
+      position: absolute;
+      top: 5px; left: 5px;
+      width: 23px; height: 23px;
+      border-radius: 50%;
+      background: #1e7d37;
+      color: #fff;
+      border: 1px solid #3cad52;
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+      z-index: 3;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      transition: transform 0.12s, background 0.12s;
+      user-select: none;
+    }
+    .tcard .add-btn:hover { background: #2a9a44; transform: scale(1.12); }
+    .tcard .add-btn.selected { background: #145c27; border-color: #2a9a44; }
+
+    /* ── RIGHT PANEL: SELECTED CARDS ─────────────────────────── */
+
+    .right-sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .pick-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pick-title h2 {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .pick-count {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .pick-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .pick-empty {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-style: italic;
+      text-align: center;
+      margin-top: 20px;
+      padding: 0 10px;
+      line-height: 1.5;
+    }
+    .pick-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 8px 6px 10px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .pick-item:hover { border-color: var(--accent); background: var(--surface); }
+    .pick-item .p-name {
+      color: var(--text);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pick-item .p-cost { color: var(--accent); font-weight: 700; }
+    .pick-item .pick-x {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .pick-item:hover .pick-x { color: #e05555; }
 
     /* ── MODAL ───────────────────────────────────────────────── */
 
@@ -724,6 +832,7 @@
     @media (max-width: 900px) {
       body { flex-direction: column; overflow: auto; }
       .sidebar { width: 100%; max-height: none; border-right: none; border-bottom: 1px solid var(--border); }
+      .right-sidebar { width: 100%; max-height: 38vh; border-left: none; border-top: 1px solid var(--border); }
       .main { overflow: visible; }
       .modal { flex-direction: column; }
       .modal .art { width: 100%; max-width: 280px; margin: 0 auto; }
@@ -863,6 +972,16 @@
     </div>
   </main>
 
+  <aside class="right-sidebar">
+    <div class="pick-title">
+      <h2>Selected Cards</h2>
+      <span class="pick-count" id="pickCount">0</span>
+    </div>
+    <div class="pick-list" id="pickList">
+      <div class="pick-empty">Click the <b>+</b> on a card to build your selection.</div>
+    </div>
+  </aside>
+
   <div class="overlay" id="overlay">
     <div class="modal-wrap">
       <button class="close" id="closeBtn">✕</button>
@@ -912,6 +1031,8 @@
       overlay: $('#overlay'),
       modal: $('#modal'),
       closeBtn: $('#closeBtn'),
+      pickCount: $('#pickCount'),
+      pickList: $('#pickList'),
       toast: $('#toast')
     };
 
@@ -982,6 +1103,7 @@
       colorFilter: [],
       rarityFilter: [],
       typeFilter: [],
+      selected: [],
       failedLookup: []
     };
 
@@ -1535,12 +1657,85 @@
       renderStats();
     }
 
+    function pickCostText(card) {
+      const cost = card.mana_cost ||
+        (card.card_faces && card.card_faces.length ? card.card_faces[0].mana_cost || '' : '');
+      return cost ? cost.replace(/\{/g, '(').replace(/\}/g, ')') : '';
+    }
+
+    function selectToggle(entry) {
+      const id = entry.card.id;
+      const i = state.selected.findIndex(s => s.card.id === id);
+      if (i >= 0) state.selected.splice(i, 1);
+      else state.selected.push(entry);
+      renderSelection();
+      const btn = document.querySelector('.tcard .add-btn[data-id="' + CSS.escape(id) + '"]');
+      if (btn) {
+        const sel = state.selected.some(s => s.card.id === id);
+        btn.classList.toggle('selected', sel);
+        btn.textContent = sel ? '\u2713' : '+';
+        btn.title = sel ? 'Remove from selection' : 'Add to selection';
+      }
+    }
+
+    function renderSelection() {
+      els.pickCount.textContent = state.selected.length;
+      const list = els.pickList;
+      list.innerHTML = '';
+      if (!state.selected.length) {
+        const d = document.createElement('div');
+        d.className = 'pick-empty';
+        d.innerHTML = 'Click the <b>+</b> on a card to build your selection.';
+        list.appendChild(d);
+        return;
+      }
+      for (const e of state.selected) {
+        const name = e.card.name || e.name;
+        const cost = pickCostText(e.card);
+        const row = document.createElement('div');
+        row.className = 'pick-item';
+        row.title = name + (cost ? ' ' + cost : '');
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'p-name';
+        nameEl.textContent = name;
+        if (cost) {
+          nameEl.textContent += ' ';
+          const c = document.createElement('span');
+          c.className = 'p-cost';
+          c.textContent = cost;
+          nameEl.appendChild(c);
+        }
+        row.appendChild(nameEl);
+
+        const x = document.createElement('button');
+        x.className = 'pick-x';
+        x.textContent = '\u00d7';
+        x.title = 'Remove';
+        x.addEventListener('click', ev => { ev.stopPropagation(); selectToggle(e); });
+        row.appendChild(x);
+
+        row.addEventListener('click', () => selectToggle(e));
+        list.appendChild(row);
+      }
+    }
+
     function cardNode(entry) {
       const col = document.createElement('figure');
       col.className = 'tcard';
 
       const frame = document.createElement('div');
       frame.className = 'frame';
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-btn';
+      addBtn.dataset.id = entry.card.id;
+      const sel = state.selected.some(s => s.card.id === entry.card.id);
+      addBtn.classList.toggle('selected', sel);
+      addBtn.textContent = sel ? '\u2713' : '+';
+      addBtn.title = sel ? 'Remove from selection' : 'Add to selection';
+      addBtn.addEventListener('click', ev => { ev.stopPropagation(); selectToggle(entry); });
+      frame.appendChild(addBtn);
 
       const img = cardImage(entry.card);
       if (img) {
@@ -1784,7 +1979,13 @@
       state.cards = [];
       state.unresolved = [];
       state.failedLookup = [];
+      state.colorFilter = [];
+      state.rarityFilter = [];
+      state.typeFilter = [];
+      state.selected = [];
       removedBasics = 0;
+      syncFilterChips();
+      renderSelection();
       $('#unresolved').style.display = 'none';
       $('#groupsBox').innerHTML = '';
       $('#summary').innerHTML = '';
@@ -2001,9 +2202,6 @@
       try {
         localStorage.setItem('gsm_pool', els.poolText.value);
         localStorage.setItem('gsm_file', els.poolFileSel.value);
-        localStorage.setItem('gsm_colors', JSON.stringify(state.colorFilter));
-        localStorage.setItem('gsm_rarities', JSON.stringify(state.rarityFilter));
-        localStorage.setItem('gsm_types', JSON.stringify(state.typeFilter));
       } catch (e) { /* ignore */ }
     }
 
@@ -2011,12 +2209,6 @@
       try {
         const t = localStorage.getItem('gsm_pool');
         if (t) els.poolText.value = t;
-        const cf = localStorage.getItem('gsm_colors');
-        if (cf) { const v = JSON.parse(cf); if (Array.isArray(v)) state.colorFilter = v; }
-        const rf = localStorage.getItem('gsm_rarities');
-        if (rf) { const v = JSON.parse(rf); if (Array.isArray(v)) state.rarityFilter = v; }
-        const tf = localStorage.getItem('gsm_types');
-        if (tf) { const v = JSON.parse(tf); if (Array.isArray(v)) state.typeFilter = v; }
         state.search = els.searchBox.value;
         if (t && t.trim()) setTimeout(loadPool, 80);
       } catch (e) { /* ignore */ }
@@ -2106,6 +2298,7 @@
     }
 
     render();
+    renderSelection();
     initEvents();
     initPoolFiles();
     restoreState();
