@@ -450,20 +450,25 @@
     .empty p { font-size: 0.78rem; color: var(--muted); max-width: 420px; line-height: 1.6; }
 
     .loader-center {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 600;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 90px 20px;
     }
     .loader-center #loader {
-      width: min(420px, 100%);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px 20px;
-      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+      width: min(420px, calc(100vw - 40px));
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 12px 16px;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+      animation: fade 0.18s ease;
     }
-    .loader-center .bar { height: 8px; }
+    .loader-center .bar { height: 6px; }
+    .loader-center .loader-row { margin-top: 0; }
 
     .groups { display: flex; flex-direction: column; gap: 30px; }
 
@@ -538,7 +543,7 @@
     .tcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .tcard .qty {
       position: absolute;
-      top: 6px; left: 34px;
+      top: 6px; left: 38px;
       background: linear-gradient(180deg, #d9ac52, var(--accent));
       color: #0c0e17;
       font-size: 0.7rem;
@@ -588,12 +593,12 @@
     .tcard .add-btn {
       position: absolute;
       top: 5px; left: 5px;
-      width: 23px; height: 23px;
+      width: 28px; height: 28px;
       border-radius: 50%;
       background: #1e7d37;
       color: #fff;
       border: 1px solid #3cad52;
-      font-size: 0.95rem;
+      font-size: 1.1rem;
       font-weight: 800;
       line-height: 1;
       display: flex;
@@ -603,11 +608,13 @@
       cursor: pointer;
       z-index: 3;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-      transition: transform 0.12s, background 0.12s;
+      transition: transform 0.12s, background 0.12s, opacity 0.12s;
       user-select: none;
+      opacity: 0;
     }
+    .tcard:hover .add-btn { opacity: 1; }
     .tcard .add-btn:hover { background: #2a9a44; transform: scale(1.12); }
-    .tcard .add-btn.selected { background: #145c27; border-color: #2a9a44; }
+    .tcard .add-btn.selected { opacity: 1; background: #145c27; border-color: #2a9a44; }
 
     /* ── RIGHT PANEL: SELECTED CARDS ─────────────────────────── */
 
@@ -717,6 +724,7 @@
       flex-shrink: 0;
     }
     .pick-item:hover .pick-x { color: #e05555; }
+    .pick-actions { padding: 8px; border-top: 1px solid var(--border); }
 
     /* ── MODAL ───────────────────────────────────────────────── */
 
@@ -1004,6 +1012,9 @@
     <div class="pick-list" id="pickList">
       <div class="pick-empty">Click the <b>+</b> on a card to build your selection.</div>
     </div>
+    <div class="pick-actions">
+      <button class="btn ghost full" id="pickCopyBtn">Copy CSV</button>
+    </div>
   </aside>
 
   <div class="overlay" id="overlay">
@@ -1057,6 +1068,7 @@
       closeBtn: $('#closeBtn'),
       pickCount: $('#pickCount'),
       pickList: $('#pickList'),
+      pickCopyBtn: $('#pickCopyBtn'),
       toast: $('#toast')
     };
 
@@ -1761,6 +1773,29 @@
       }
     }
 
+    function copySelection() {
+      if (!state.selected.length) { toast('Select some cards first.'); return; }
+      const csv = state.selected.map(e => {
+        const name = e.card.name || e.name;
+        return (name.includes(',') || name.includes('"')
+          ? '"' + name.replace(/"/g, '""') + '"'
+          : name) + ',' + (e.card.set || '').toUpperCase();
+      }).join('\n');
+      const done = () => toast('Copied ' + state.selected.length + ' card' + (state.selected.length > 1 ? 's' : '') + ' as CSV.');
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(csv).then(done, () => toast('Copy failed.'));
+        return;
+      }
+      const ta = document.createElement('textarea');
+      ta.value = csv;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e2) { toast('Copy failed.'); }
+      document.body.removeChild(ta);
+    }
+
     function cardNode(entry) {
       const col = document.createElement('figure');
       col.className = 'tcard';
@@ -2280,6 +2315,7 @@
       els.emptySampleBtn.addEventListener('click', loadSample);
       els.loadFileBtn.addEventListener('click', loadSelectedPoolFile);
       els.browseBtn.addEventListener('click', browseLocalFile);
+      els.pickCopyBtn.addEventListener('click', copySelection);
       els.filePicker.addEventListener('change', () => {
         const file = els.filePicker.files && els.filePicker.files[0];
         if (!file) return;
