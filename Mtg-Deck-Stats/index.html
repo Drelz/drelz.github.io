@@ -64,6 +64,21 @@
       margin-top: 3px;
       letter-spacing: 0.5px;
     }
+    .app-title .home-link {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .app-title .home-link:hover { border-color: var(--accent); }
 
     .panel {
       background: var(--surface);
@@ -661,6 +676,7 @@
     <div class="app-title">
       <h1>MTG<br>Deck Stats</h1>
       <p>v1 · Deck analysis extracted from Shadowboxing</p>
+      <a class="home-link" href="../">← Front Page</a>
     </div>
 
     <div class="panel">
