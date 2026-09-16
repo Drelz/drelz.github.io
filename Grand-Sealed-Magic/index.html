@@ -349,7 +349,11 @@
       pointer-events: none;
       transition: opacity 0.2s, transform 0.2s;
       z-index: 1000;
-      max-width: 80vw;
+      width: min(max-content, 80vw, 520px);
+      height: fit-content;
+      align-self: flex-start;
+      white-space: normal;
+      text-align: center;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
