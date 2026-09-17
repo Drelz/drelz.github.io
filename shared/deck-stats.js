@@ -42,9 +42,8 @@ const CARD_ROLE_DEFS = [
 
 // ── UTILITY ────────────────────────────────────────────────────────────
 
-function norm(s) {
-  return s.replace(/[\u2019\u2018]/g, "'").replace(/^A-/, '').replace(/\*+$/g, '').trim().toLowerCase();
-}
+// Re-exported from shared style.css normalization; kept for standalone use
+const normalizeCardName = s => s.replace(/[\u2019\u2018]/g, "'").replace(/^A-/, '').replace(/\*+$/g, '').trim().toLowerCase();
 
 // ── LAND MANA DEDUCTION ────────────────────────────────────────────────
 
