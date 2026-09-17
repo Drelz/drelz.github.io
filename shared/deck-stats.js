@@ -4,41 +4,11 @@
 // duplicated across Mtg-Deck-Stats, Mtg-Shadowboxing, and Grand-Sealed-Magic.
 // All three apps now import from this single source.
 // Functions are defined at global scope so browser HTML files can use them.
-
-// ── CARD ROLE DEFINITIONS ─────────────────────────────────────────────
-
-const CARD_ROLE_DEFS = [
-  { key: 'removal',    name: 'Targeted Removal',
-    desc: 'Kills or exiles a single target — creatures, planeswalkers, artifacts, enchantments, or lands. Includes damage-to-target and fight effects.',
-    examples: 'Swords to Plowshares, Doom Blade, Lightning Bolt, Abrupt Decay, Diabolic Edict' },
-  { key: 'wipe',       name: 'Board Wipes',
-    desc: 'Clears many or all permanents at once — mass destroy/exile, "damage to all", or mass bounce/bypass effects.',
-    examples: 'Wrath of God, Damnation, Blasphemous Act, Supreme Verdict, Toxic Deluge' },
-  { key: 'ramp',       name: 'Ramp',
-    desc: 'Gets you ahead on mana — extra lands from the library, mana dorks, mana rocks, or rituals.',
-    examples: 'Rampant Growth, Nature\'s Lore, Birds of Paradise, Sol Ring, Dark Ritual' },
-  { key: 'draw',       name: 'Card Draw',
-    desc: 'Adds cards to your hand — cantrips, repeatable draw triggers, or big draw spells, including looters.',
-    examples: 'Opt, Brainstorm, Ancestral Recall, Ponder, Faithless Looting, Skullclamp' },
-  { key: 'counter',    name: 'Counterspells',
-    desc: 'Stops spells before they resolve — unconditional counters or type-specific ones (noncreature, instant, etc.).',
-    examples: 'Counterspell, Mana Drain, Force of Will, Negate, Dovin\'s Veto' },
-  { key: 'tutor',      name: 'Tutors',
-    desc: 'Searches the library for a card into hand, top, or battlefield — restricted by type or completely open.',
-    examples: 'Demonic Tutor, Vampiric Tutor, Enlightened Tutor, Green Sun\'s Zenith, Worldly Tutor' },
-  { key: 'burn',       name: 'Burn',
-    desc: 'Direct damage aimed at a player or planeswalker — reach to close games or face-damage spells.',
-    examples: 'Lightning Bolt, Lava Spike, Chain Lightning, Fireblast, Skewer the Critics' },
-  { key: 'disruption', name: 'Disruption',
-    desc: 'Hand attacks (discard) and graveyard hate — strips the opponent\'s resources or exiles their graveyard.',
-    examples: 'Thoughtseize, Inquisition of Kozilek, Duress, Surgical Extraction, Rest in Peace' },
-  { key: 'protection', name: 'Protection',
-    desc: 'Hexproof, indestructible, shroud, ward, or damage prevention — shields your board or your life from harm.',
-    examples: 'Heroic Intervention, Lightning Greaves, Mother of Runes, Teferi\'s Protection' },
-  { key: 'tokens',     name: 'Token Generation',
-    desc: 'Creates token creatures or non-creature tokens (treasure, clues) as go-wide threats, blockers, or mana.',
-    examples: 'Young Pyromancer, Lingering Souls, Secure the Wastes, Hordeling Outburst, Smothering Tithe' }
-];
+//
+// NOTE: keep top-level const/let/class names namespaced (DECKSTATS_* or
+// generic-but-unique) — the apps declare their own globals too, and a
+// duplicate const/let/class declaration across two classic <script> tags
+// throws a SyntaxError that kills the app's entire inline script.
 
 // ── UTILITY ────────────────────────────────────────────────────────────
 
@@ -82,7 +52,7 @@ function deduceLandMana(typeLine, oracleText) {
 
 // ── CREATURE SUBTYPES ───────────────────────────────────────────────────
 
-const CARD_TYPES = new Set([
+const DECKSTATS_CARD_TYPES = new Set([
   'basic', 'legendary', 'snow', 'elite', 'world', 'ongoing', 'token', 'host', 'augment',
   'creature', 'artifact', 'enchantment', 'planeswalker', 'land', 'instant', 'sorcery',
   'tribal', 'dungeon', 'battle'
@@ -96,7 +66,7 @@ function addCreatureSubtypes(typeLine, acc, qty, cards, name) {
   subtypePart.split(/\s+/).forEach(word => {
     if (!word) return;
     const clean = word.replace(/\/\/|,/g, '').trim();
-    if (!clean || CARD_TYPES.has(clean.toLowerCase())) return;
+    if (!clean || DECKSTATS_CARD_TYPES.has(clean.toLowerCase())) return;
     acc[clean] = (acc[clean] || 0) + qty;
     if (cards) {
       if (!cards[clean]) cards[clean] = [];

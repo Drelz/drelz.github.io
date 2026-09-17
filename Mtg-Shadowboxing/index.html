@@ -1433,6 +1433,8 @@
   </style>
 </head>
 <body>
+  <script src="../shared/deck-stats.js"></script>
+
 <!-- ── LEFT SIDEBAR ─────────────────────────────────────────────────────── -->
 <aside class="sidebar">
 
@@ -1450,11 +1452,6 @@
       <button class="btn-secondary" id="btn-sample">Load Sample Burn</button>
       <button class="btn-ghost"     id="btn-clear" disabled>Clear</button>
     </div>
-  </div>
-
-  <div class="s-section">
-    <div class="s-label">Action Log</div>
-    <div class="status-log" id="status-log"></div>
   </div>
 
   <div class="s-section" id="stats-section" style="display:none">
@@ -1515,6 +1512,11 @@
     <div class="shortcut-row"><span>Deck Stats Page</span><span class="kbd-badge">S</span></div>
     <div class="shortcut-row"><span>Deck Overview Page</span><span class="kbd-badge">O</span></div>
     <div class="shortcut-row"><span>New Game</span><span class="kbd-badge">N</span></div>
+  </div>
+
+  <div class="s-section">
+    <div class="s-label">Action Log</div>
+    <div class="status-log" id="status-log"></div>
   </div>
 
   <div style="margin-top:auto;">
@@ -2253,12 +2255,6 @@ function loadDeck() {
 // ── LOAD COMPARISON DECK ─────────────────────────────────────────────────
 function loadComparisonDeck() {
   log('Load Comparison pressed');
-  if (typeof analyzeDeck !== 'function') {
-    const msg = 'Comparison temporarily disabled — will be re-enabled after the apps are stable';
-    log(msg, true);
-    showToast(msg);
-    return;
-  }
   const { cards } = parseDecklist(compareDecklistEl.value);
 
   if (cards.length === 0) {
@@ -2798,11 +2794,6 @@ function isOverlayOpen() {
 }
 
 function openStatsPage() {
-  if (typeof analyzeDeck !== 'function') {
-    log('Deck Stats temporarily disabled — will be re-enabled after the apps are stable', true);
-    showToast('Deck Stats temporarily disabled');
-    return;
-  }
   if (!fullDeck.length) {
     showToast('Load a deck to view stats!');
     return;
@@ -2816,11 +2807,6 @@ function closeStatsPage() {
 }
 
 function openDeckOverview() {
-  if (typeof analyzeDeck !== 'function') {
-    log('Deck Overview temporarily disabled — will be re-enabled after the apps are stable', true);
-    showToast('Deck Overview temporarily disabled');
-    return;
-  }
   if (!fullDeck.length) {
     showToast('Load a deck to view the overview!');
     return;
@@ -3178,14 +3164,35 @@ ovOrderBtn.addEventListener('click', () => {
 });
 
 // ── CALCULATE & BUILD DECK STATISTICS ────────────────────────────────────
-function buildAndRenderStats() {
-  if (typeof analyzeDeck !== 'function') {
-    log('Deck stats (shared/deck-stats.js) not loaded — feature temporarily disabled', true);
-    return;
+// analyzeDeck expects [{name, qty, card}] entries shaped like Scryfall cards
+// (type_line / mana_cost / oracle_text / produced_mana / cmc). Convert the
+// deck's raw card-name list into that shape from the (camelCase) card cache.
+function toAnalyzeEntries(names) {
+  const map = new Map();
+  for (const raw of names) {
+    const key = raw.toLowerCase();
+    if (!map.has(key)) map.set(key, { name: raw, qty: 0 });
+    map.get(key).qty++;
   }
-  const mainStats = analyzeDeck(fullDeck);
+  return [...map.values()].map(e => {
+    const c = cardCache[e.name] || {};
+    return {
+      name: e.name,
+      qty: e.qty,
+      card: Object.assign({}, c, {
+        type_line: c.type_line || c.typeLine || '',
+        mana_cost: c.mana_cost || c.manaCost || '',
+        oracle_text: c.oracle_text || c.oracleText || '',
+        produced_mana: c.produced_mana || c.producedMana || []
+      })
+    };
+  });
+}
+
+function buildAndRenderStats() {
+  const mainStats = analyzeDeck(toAnalyzeEntries(fullDeck));
   const hasCompare = compareDeck.length > 0;
-  const compStats = hasCompare ? analyzeDeck(compareDeck) : null;
+  const compStats = hasCompare ? analyzeDeck(toAnalyzeEntries(compareDeck)) : null;
 
   // Toggle Legends
   typeBreakdownLegend.classList.toggle('active', hasCompare);
