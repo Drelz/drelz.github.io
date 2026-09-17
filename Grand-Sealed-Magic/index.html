@@ -171,6 +171,20 @@
       padding: 7px 10px;
     }
     .btn.ghost:hover { border-color: var(--compare); box-shadow: 0 0 0 1px var(--compare-glow); }
+    .btn.btn-disabled { opacity: 0.5; pointer-events: none; }
+
+    #filePicker {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      border: 0;
+      white-space: nowrap;
+    }
 
     .loader-row { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
     .bar {
@@ -928,10 +942,11 @@
       <div style="display:flex; gap:8px; margin-top:8px;">
         <button class="btn full" id="loadFileBtn">Load Pool File</button>
       </div>
-      <button class="btn ghost full" id="browseBtn" style="margin-top:8px;">Browse local file…</button>
-      <input type="file" id="filePicker" accept=".txt,.csv,text/plain,text/csv" style="display:none;">
+      <label class="btn ghost full" id="browseBtn" for="filePicker" style="margin-top:8px; cursor:pointer;">Browse local file…</label>
+      <input type="file" id="filePicker" accept=".txt,.csv,text/plain,text/csv">
       <p class="hint-text">
         Place .txt/.csv pools next to <code>index.html</code> and list them in <code>pools.json</code> to load them from the dropdown.
+        Opening directly from disk (<code>file://</code>)? Use <b>Browse local file…</b>.
       </p>
     </details>
 
@@ -2046,7 +2061,7 @@
       $('#loadBtn').disabled = on;
       $('#sampleBtn').disabled = on;
       $('#loadFileBtn').disabled = on;
-      $('#browseBtn').disabled = on;
+      els.browseBtn.classList.toggle('btn-disabled', on);
       if (on) {
         $('#barFill').style.width = '0%';
         $('#loaderN').textContent = '0 / ' + total;
@@ -2255,33 +2270,46 @@
       if (!state.loading) loadPool();
     }
 
+    const DEFAULT_POOLS = [
+      { name: 'Andreas', file: 'Andreas.csv' },
+      { name: 'Lars', file: 'Lars.csv' },
+      { name: 'Frederik', file: 'Frederik.csv' },
+      { name: 'Morten', file: 'Morten.csv' },
+      { name: 'Sample sealed pool', file: 'sample-sealed-pool.txt' }
+    ];
+
+    function populatePoolSelect(pools) {
+      const sel = els.poolFileSel;
+      sel.innerHTML = '';
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'Select a pool…';
+      sel.appendChild(opt);
+      for (const p of (pools || [])) {
+        if (!p || !p.file) continue;
+        const o = document.createElement('option');
+        o.value = p.file;
+        o.textContent = (p.name || p.file) + '  ·  ' + p.file;
+        sel.appendChild(o);
+      }
+      const savedFile = localStorage.getItem('gsm_file');
+      if (savedFile && [...sel.options].some(o => o.value === savedFile)) {
+        sel.value = savedFile;
+      } else {
+        sel.value = '';
+      }
+    }
+
     function initPoolFiles() {
       fetchWithTimeout('pools.json', {}, 6000).then(res => {
         return (res && res.ok) ? res.json() : null;
       }).then(manifest => {
-        const sel = els.poolFileSel;
-        sel.innerHTML = '';
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = 'Select a pool…';
-        sel.appendChild(opt);
-        if (manifest && Array.isArray(manifest.pools)) {
-          for (const p of manifest.pools) {
-            if (!p || !p.file) continue;
-            const o = document.createElement('option');
-            o.value = p.file;
-            o.textContent = (p.name || p.file) + '  ·  ' + p.file;
-            sel.appendChild(o);
-          }
-        }
-        const savedFile = localStorage.getItem('gsm_file');
-        if (savedFile && [...sel.options].some(o => o.value === savedFile)) {
-          sel.value = savedFile;
-        } else {
-          sel.value = '';
-        }
-        if (sel.value && !localStorage.getItem('gsm_pool')) loadSelectedPoolFile();
-      }).catch(() => { /* no manifest — keep the select placeholder */ });
+        const pools = (manifest && Array.isArray(manifest.pools)) ? manifest.pools : DEFAULT_POOLS;
+        populatePoolSelect(pools);
+        if (els.poolFileSel.value && !localStorage.getItem('gsm_pool')) loadSelectedPoolFile();
+      }).catch(() => {
+        populatePoolSelect(DEFAULT_POOLS);
+      });
     }
 
     function loadSelectedPoolFile() {
@@ -2290,23 +2318,18 @@
       if (!file) { loadSample(); return false; }
       els.loadFileBtn.disabled = true;
       fetchWithTimeout(file, {}, 20000).then(res => {
-        if (res && res.ok) return res.text();
-        return null;
+        return (res && res.ok) ? res.text() : null;
       }).then(text => {
         if (text) {
           populatePoolText(text);
           toast('Loaded pool file: ' + file);
+        } else {
+          toast('Could not read "' + file + '" directly — open via a web server, or use Browse local file…');
         }
-      }).catch(() => {
-        toast('Could not load "' + file + '" — place it in the same folder as index.html.');
       }).finally(() => {
         els.loadFileBtn.disabled = false;
       });
       return true;
-    }
-
-    function browseLocalFile() {
-      els.filePicker.click();
     }
 
     function populatePoolText(text) {
@@ -2355,7 +2378,6 @@
       els.sampleBtn.addEventListener('click', loadSample);
       els.emptySampleBtn.addEventListener('click', loadSample);
       els.loadFileBtn.addEventListener('click', loadSelectedPoolFile);
-      els.browseBtn.addEventListener('click', browseLocalFile);
       els.pickCopyBtn.addEventListener('click', copySelection);
       els.pickStatsBtn.addEventListener('click', openInDeckStats);
       els.filePicker.addEventListener('change', () => {
