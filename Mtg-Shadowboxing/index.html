@@ -1405,6 +1405,7 @@
   </style>
 </head>
 <body>
+  <script src="../shared/deck-stats.js"></script>
 
 <!-- ── LEFT SIDEBAR ─────────────────────────────────────────────────────── -->
 <aside class="sidebar">
@@ -2924,149 +2925,7 @@ function detectCardRoles(cached) {
   return roles;
 }
 
-// ── ANALYZE DECK HELPER ──────────────────────────────────────────────────
-function analyzeDeck(cardList) {
-  const counts = {};
-  cardList.forEach(name => { counts[name] = (counts[name] || 0) + 1; });
-  const uniqueNames = Object.keys(counts);
-
-  let creatureCount   = 0;
-  let landCount       = 0;
-  let instantCount    = 0;
-  let sorceryCount    = 0;
-  let artifactCount   = 0;
-  let enchantmentCount= 0;
-  let planeswalkerCnt = 0;
-  let otherCount      = 0;
-
-  const curveCounts = [0, 0, 0, 0, 0, 0, 0];
-  let totalSpellCmc = 0;
-  let totalSpells   = 0;
-
-  const spellColorPips   = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
-  let totalSpellPips     = 0;
-
-  const landColorSources = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
-  let totalLandSources   = 0;
-
-  const creatureTypes = {};
-
-  const creatureTypeCards = {};
-
-  const cardRoles = {};
-
-  const cardRoleCards = {};
-
-  const groups = {
-    'Creatures': [],
-    'Instants': [],
-    'Sorceries': [],
-    'Artifacts & Enchantments': [],
-    'Planeswalkers': [],
-    'Lands': [],
-    'Other': []
-  };
-
-  uniqueNames.forEach(name => {
-    const qty = counts[name];
-    const cached = cardCache[name] || {};
-    const type = (cached.typeLine || '').toLowerCase();
-    const cmc = typeof cached.cmc === 'number' ? cached.cmc : 0;
-    const manaCost = cached.manaCost || '';
-
-    if (type.includes('land')) {
-      landCount += qty;
-      const produced = cached.producedMana || deduceLandMana(cached.typeLine || '', cached.oracleText || '');
-      produced.forEach(c => {
-        const u = c.toUpperCase();
-        if (landColorSources[u] !== undefined) {
-          landColorSources[u] += qty;
-          totalLandSources += qty;
-        }
-      });
-      groups['Lands'].push({ name, qty, cmc, manaCost });
-    } else {
-      totalSpells += qty;
-      totalSpellCmc += (cmc * qty);
-      const bucket = Math.min(6, Math.max(0, Math.floor(cmc)));
-      curveCounts[bucket] += qty;
-
-      detectCardRoles(cached).forEach(r => {
-        cardRoles[r] = (cardRoles[r] || 0) + qty;
-        if (!cardRoleCards[r]) cardRoleCards[r] = [];
-        if (!cardRoleCards[r].some(c => c.name === name)) cardRoleCards[r].push({ name, qty });
-      });
-
-      if (manaCost) {
-        const symbols = manaCost.match(/\{([^}]+)\}/g) || [];
-        symbols.forEach(sym => {
-          const inner = sym.replace(/[{}]/g, '').toUpperCase();
-          ['W', 'U', 'B', 'R', 'G', 'C'].forEach(c => {
-            if (inner.includes(c)) {
-              spellColorPips[c] += qty;
-              totalSpellPips += qty;
-            }
-          });
-        });
-      }
-
-      let assignedGroup = 'Other';
-      if (type.includes('creature')) {
-        creatureCount += qty;
-        addCreatureSubtypes(cached.typeLine || '', creatureTypes, qty, creatureTypeCards, name);
-        assignedGroup = 'Creatures';
-      } else if (type.includes('instant')) {
-        instantCount += qty;
-        assignedGroup = 'Instants';
-      } else if (type.includes('sorcery')) {
-        sorceryCount += qty;
-        assignedGroup = 'Sorceries';
-      } else if (type.includes('artifact') || type.includes('enchantment')) {
-        if (type.includes('artifact')) artifactCount += qty;
-        if (type.includes('enchantment')) enchantmentCount += qty;
-        assignedGroup = 'Artifacts & Enchantments';
-      } else if (type.includes('planeswalker')) {
-        planeswalkerCnt += qty;
-        assignedGroup = 'Planeswalkers';
-      } else {
-        otherCount += qty;
-      }
-      groups[assignedGroup].push({ name, qty, cmc, manaCost });
-    }
-  });
-
-  const typeCounts = {
-    'Creatures': creatureCount,
-    'Lands': landCount,
-    'Instants': instantCount,
-    'Sorceries': sorceryCount,
-    'Artifacts': artifactCount,
-    'Enchantments': enchantmentCount,
-    'Planeswalkers': planeswalkerCnt,
-    'Other': otherCount
-  };
-
-  return {
-    totalCards: cardList.length,
-    uniqueCount: uniqueNames.length,
-    totalSpells,
-    landCount,
-    avgCmc: totalSpells > 0 ? (totalSpellCmc / totalSpells).toFixed(2) : '0.0',
-    typeCounts,
-    curveCounts,
-    spellColorPips,
-    totalSpellPips,
-    landColorSources,
-    totalLandSources,
-    creatureTypes,
-    creatureTypeCards,
-    cardRoles,
-    cardRoleCards,
-    groups
-  };
-}
-
-// ── DECK OVERVIEW: CLASSIFY & SORT ───────────────────────────────────────
+// ── CALCULATE & BUILD DECK STATISTICS ────────────────────────────────────
 const PRIMARY_TYPE_ORDER = ['Creature', 'Planeswalker', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land', 'Other'];
 const COLOR_GROUP_ORDER  = ['White', 'Blue', 'Black', 'Red', 'Green', 'Multicolor', 'Colorless'];
 const COLOR_NAME_BY_KEY  = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' };
