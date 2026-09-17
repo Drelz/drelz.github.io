@@ -1355,6 +1355,34 @@
     }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
+    /* ── ACTION LOG ───────────────────────────────────────────────── */
+    .status-log {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 150px;
+      overflow-y: auto;
+      background: var(--surface2);
+      border: 1px solid var(--card-bdr, rgba(128,140,160,0.25));
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-family: 'Cascadia Mono', Consolas, 'Courier New', monospace;
+      font-size: 0.70rem;
+      line-height: 1.35;
+      color: var(--muted, #9aa7b8);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status-log .log-t {
+      color: var(--accent2, #7d90c1);
+      margin-right: 4px;
+    }
+    .status-log .log-err {
+      color: #ff6b6b;
+    }
+    .status-log::-webkit-scrollbar { width: 6px; }
+    .status-log::-webkit-scrollbar-thumb { background: var(--accent2, #7d90c1); border-radius: 3px; }
+
     /* ── LIGHT THEME OVERRIDES ───────────────────────────────────────── */
     body.light .btn-secondary:hover:not(:disabled) { background: #d9deec; }
     body.light .kbd-badge             { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.18); color: var(--accent2); }
@@ -1405,8 +1433,6 @@
   </style>
 </head>
 <body>
-  <script src="../shared/deck-stats.js"></script>
-
 <!-- ── LEFT SIDEBAR ─────────────────────────────────────────────────────── -->
 <aside class="sidebar">
 
@@ -1424,6 +1450,11 @@
       <button class="btn-secondary" id="btn-sample">Load Sample Burn</button>
       <button class="btn-ghost"     id="btn-clear" disabled>Clear</button>
     </div>
+  </div>
+
+  <div class="s-section">
+    <div class="s-label">Action Log</div>
+    <div class="status-log" id="status-log"></div>
   </div>
 
   <div class="s-section" id="stats-section" style="display:none">
@@ -1957,6 +1988,9 @@ let selectedExileIdx  = null;
 
 // ── DOM REFERENCES ───────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
+
+window.addEventListener('error', (e) => log('ERR ' + (e.message || 'Unknown error'), true));
+window.addEventListener('unhandledrejection', (e) => log('ERR ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)), true));
 const decklistEl             = $('decklist');
 const btnLoad                = $('btn-load');
 const btnSample              = $('btn-sample');
@@ -2072,6 +2106,7 @@ let overviewSortAsc  = true;
 
 const tooltipEl              = $('tooltip');
 const toastEl                = $('toast');
+const statusLogEl            = $('status-log');
 
 // ── SAMPLE DECKS ─────────────────────────────────────────────────────────
 const SAMPLE = `4 Goblin Guide
@@ -2109,14 +2144,23 @@ function parseDecklist(text) {
   const cards = [], seen = new Set();
   for (const raw of text.split('\n')) {
     const line = raw.trim();
-    if (!line || line.startsWith('//') || line.startsWith('#')) continue;
+    if (!line) continue;
+    if (line.startsWith('//') || line.startsWith('#') || line.startsWith('SB:')
+        || line.toLowerCase().startsWith('sideboard')) continue;
     const m = line.match(/^(\d+)\s*[xX]?\s+(.+)$/);
-    if (!m) continue;
-    const qty  = Math.min(parseInt(m[1], 10), 100);
-    const name = m[2].trim();
-    if (!name || qty < 1) continue;
-    seen.add(name);
-    for (let i = 0; i < qty; i++) cards.push(name);
+    if (m) {
+      const qty  = Math.min(parseInt(m[1], 10), 100);
+      const name = m[2].replace(/\s+\((set)\)?\s*$/, '').trim();
+      if (!name || qty < 1) continue;
+      seen.add(name);
+      for (let i = 0; i < qty; i++) cards.push(name);
+    } else {
+      // No leading quantity: treat a bare card-name line as 1 copy.
+      if (line.length > 2 && !/^\d+$/.test(line) && !line.startsWith('*')) {
+        seen.add(line);
+        cards.push(line);
+      }
+    }
   }
   return { cards, uniqueCount: seen.size };
 }
@@ -2167,10 +2211,20 @@ function deduceLandMana(typeLine, oracleText) {
 
 // ── LOAD PRIMARY DECK ────────────────────────────────────────────────────
 function loadDeck() {
+  log('Load Deck & Draw pressed');
   const { cards } = parseDecklist(decklistEl.value);
 
+  if (cards.length === 0) {
+    const msg = 'Nothing to load: paste a decklist in the sidebar (e.g. "4 Goblin Guide" or a bare card-name list)';
+    log(msg, true);
+    showToast(msg);
+    return;
+  }
+
   if (cards.length < 40) {
-    showToast(`Deck has only ${cards.length} cards. Minimum deck size is 40!`);
+    const msg = `Deck has only ${cards.length} cards. Minimum deck size is 40!`;
+    log(msg, true);
+    showToast(msg);
     return;
   }
 
@@ -2192,15 +2246,25 @@ function loadDeck() {
     if (!cardCache[name]) fetchCardData(name);
   });
 
+  log(`Loaded ${totalCards} cards, drew 7-card opening hand`);
   showToast(`Loaded ${totalCards} cards & drew 7-card opening hand!`);
 }
 
 // ── LOAD COMPARISON DECK ─────────────────────────────────────────────────
 function loadComparisonDeck() {
+  log('Load Comparison pressed');
+  if (typeof analyzeDeck !== 'function') {
+    const msg = 'Comparison temporarily disabled — will be re-enabled after the apps are stable';
+    log(msg, true);
+    showToast(msg);
+    return;
+  }
   const { cards } = parseDecklist(compareDecklistEl.value);
 
   if (cards.length === 0) {
-    showToast('Comparison decklist is empty. Paste cards first!');
+    const msg = 'Comparison decklist is empty. Paste cards first!';
+    log(msg, true);
+    showToast(msg);
     return;
   }
 
@@ -2215,6 +2279,7 @@ function loadComparisonDeck() {
   });
 
   buildAndRenderStats();
+  log(`Comparison deck loaded (${compareDeck.length} cards)`);
   showToast(`Comparison deck loaded (${compareDeck.length} cards)!`);
 }
 
@@ -2227,12 +2292,17 @@ function clearComparisonDeck() {
   compareBadge.innerHTML = `<span>⚪ No comparison deck loaded</span>`;
 
   buildAndRenderStats();
+  log('Cleared comparison deck');
   showToast('Cleared comparison deck.');
 }
 
 // ── NEW GAME ─────────────────────────────────────────────────────────────
 function newGame() {
-  if (fullDeck.length < 40) return;
+  if (fullDeck.length < 40) {
+    log('New Game ignored: load a deck first', true);
+    return;
+  }
+  log('New Game pressed: reshuffled & drew fresh 7-card hand');
   resetMulliganState();
   executeInitialHand();
   showToast('New game! Reset mulligan & drew fresh 7-card hand.');
@@ -2281,8 +2351,12 @@ function executeInitialHand() {
 
 // ── LONDON MULLIGAN ──────────────────────────────────────────────────────
 function handleMulligan() {
-  if (fullDeck.length < 40) return;
+  if (fullDeck.length < 40) {
+    log('Mulligan ignored: load a deck first', true);
+    return;
+  }
 
+  log('Mulligan pressed: drew 7, return ' + (mulliganCount + 1) + ' card(s) to bottom');
   mulliganCount++;
   cardsToBottom = mulliganCount;
 
@@ -2332,6 +2406,7 @@ function bottomMulliganCard(idx) {
   library.push(card.name);
   cardsToBottom--;
 
+  log(`Put ${card.name} on bottom (${cardsToBottom} left)`);
   showToast(`Put ${card.name} on bottom of library. (${cardsToBottom} left)`);
 
   if (cardsToBottom === 0) {
@@ -2352,8 +2427,12 @@ function bottomMulliganCard(idx) {
 
 // ── DRAW ONE CARD (AUTO-UNTAP BOARD & DISABLE MULLIGAN) ──────────────────
 function drawOneCard() {
-  if (!gameStarted || !library.length || cardsToBottom > 0) return;
+  if (!gameStarted || !library.length || cardsToBottom > 0) {
+    log(cardsToBottom > 0 ? 'Draw ignored: mulligan still in progress' : 'Draw ignored: no library or game not started', true);
+    return;
+  }
 
+  log('Draw Card pressed');
   btnMulligan.disabled = true;
   if (lblMulliganShortcut) lblMulliganShortcut.textContent = 'Mulligan (Locked)';
 
@@ -2377,7 +2456,8 @@ function drawOneCard() {
 
   updateStats();
   renderHand();
-  if (!library.length) showToast('Library is empty!');
+  if (!library.length) { log('Drew → ' + newCard.name + ' (LIBRARY NOW EMPTY)', true); showToast('Library is empty!'); }
+  else { log('Drew → ' + newCard.name); }
 }
 
 // ── UNTAP ALL MANUAL ─────────────────────────────────────────────────────
@@ -2386,9 +2466,11 @@ function untapAll() {
   boardCreatures.forEach(c => { if (c.tapped) { c.tapped = false; count++; } });
   boardLands.forEach(l => { if (l.tapped) { l.tapped = false; count++; } });
   if (count > 0) {
+    log(`Untap All pressed: untapped ${count} permanent${count > 1 ? 's' : ''}`);
     showToast(`Untapped ${count} permanent${count > 1 ? 's' : ''}.`);
     renderBoard();
   } else {
+    log('Untap All pressed: nothing was tapped', true);
     showToast('All cards are already untapped.');
   }
 }
@@ -2716,6 +2798,11 @@ function isOverlayOpen() {
 }
 
 function openStatsPage() {
+  if (typeof analyzeDeck !== 'function') {
+    log('Deck Stats temporarily disabled — will be re-enabled after the apps are stable', true);
+    showToast('Deck Stats temporarily disabled');
+    return;
+  }
   if (!fullDeck.length) {
     showToast('Load a deck to view stats!');
     return;
@@ -2729,6 +2816,11 @@ function closeStatsPage() {
 }
 
 function openDeckOverview() {
+  if (typeof analyzeDeck !== 'function') {
+    log('Deck Overview temporarily disabled — will be re-enabled after the apps are stable', true);
+    showToast('Deck Overview temporarily disabled');
+    return;
+  }
   if (!fullDeck.length) {
     showToast('Load a deck to view the overview!');
     return;
@@ -3087,6 +3179,10 @@ ovOrderBtn.addEventListener('click', () => {
 
 // ── CALCULATE & BUILD DECK STATISTICS ────────────────────────────────────
 function buildAndRenderStats() {
+  if (typeof analyzeDeck !== 'function') {
+    log('Deck stats (shared/deck-stats.js) not loaded — feature temporarily disabled', true);
+    return;
+  }
   const mainStats = analyzeDeck(fullDeck);
   const hasCompare = compareDeck.length > 0;
   const compStats = hasCompare ? analyzeDeck(compareDeck) : null;
@@ -3938,8 +4034,21 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
 }
 
+// ── ACTION LOG (PERSISTENT ON-SCREEN FEEDBACK) ───────────────────────────
+function log(msg, isErr) {
+  if (!statusLogEl) { console.log(msg); return; }
+  const t = new Date();
+  const ts = [t.getHours(), t.getMinutes(), t.getSeconds()]
+    .map(n => String(n).padStart(2, '0')).join(':');
+  const line = document.createElement('div');
+  line.innerHTML = `<span class="log-t">[${ts}]</span><span class="${isErr ? 'log-err' : ''}">${msg}</span>`;
+  statusLogEl.prepend(line);
+  while (statusLogEl.children.length > 14) statusLogEl.lastChild.remove();
+}
+
 // ── CLEAR ALL ────────────────────────────────────────────────────────────
 function clearAll() {
+  log('Clear pressed: reset table');
   fullDeck = []; library = []; hand = [];
   boardCreatures = []; boardLands = []; graveyard = []; exile = [];
   cardCache = { ...CARD_PRESETS };
