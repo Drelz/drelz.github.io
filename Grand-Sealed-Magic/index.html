@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="build-cache-bust" content="2026-09-15" />
+  <meta name="build-cache-bust" content="2026-09-17" />
   <title>Grand Sealed Magic</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%94%AE%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="../shared/style.css">
@@ -2301,7 +2301,7 @@
     }
 
     function initPoolFiles() {
-      fetchWithTimeout('pools.json', {}, 6000).then(res => {
+      fetchWithTimeout('pools.json?t=' + Date.now(), {}, 6000).then(res => {
         return (res && res.ok) ? res.json() : null;
       }).then(manifest => {
         const pools = (manifest && Array.isArray(manifest.pools)) ? manifest.pools : DEFAULT_POOLS;
@@ -2317,7 +2317,7 @@
       const file = els.poolFileSel.value;
       if (!file) { loadSample(); return false; }
       els.loadFileBtn.disabled = true;
-      fetchWithTimeout(file, {}, 20000).then(res => {
+      fetchWithTimeout(file + (file.indexOf('?') < 0 ? '?t=' : '&t=') + Date.now(), {}, 20000).then(res => {
         return (res && res.ok) ? res.text() : null;
       }).then(text => {
         if (text) {
