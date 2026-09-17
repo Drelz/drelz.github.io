@@ -6,6 +6,9 @@ A small selection of mtg-related apps.
 ## Grand Sealed Magic
 Load a custom deck pool and search the cards, see their stats and create decks.
 
+## Mtg-Deck-Stats
+Load a decklist and see various information about it. Number of different cards theirs, their mana cost and curve, color distrubtion etc.
+
 ## Mtg-Image-Retriever
 Paste a list of cards, and retrieve additional information from scryfall-api about the cards.
 
