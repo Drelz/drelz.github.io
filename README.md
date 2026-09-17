@@ -1,7 +1,14 @@
+# Drelz
+A small selection of mtg-related apps. 
+
+# Grand Sealed Magic
+Load a custom deck pool and search the cards, see their stats and create decks.
+
+# Mtg-Image-Retriever
+Paste a list of cards, and retrieve additional information from scryfall-api about the cards.
+
 # Mtg-Shadowboxing
+Load a deck list and have a shadowboxing match. It supports rough magic gameplay.
 
-A simple webapp to load a deck list and have a shadowboxing match. It supports rough magic gameplay, and includes deck stats.
 
-<img width="1219" height="807" alt="billede" src="https://github.com/user-attachments/assets/905967eb-ecce-4c52-aea9-16e1deef9341" />
-
-<img width="1213" height="801" alt="billede" src="https://github.com/user-attachments/assets/2f70e7e0-d85a-401b-b49a-068de94ee1f5" />
+<img width="705" height="624" alt="drelz-main" src="https://github.com/user-attachments/assets/35de91a6-0303-4a9b-b3ec-bbe6f6d5fa72" />
