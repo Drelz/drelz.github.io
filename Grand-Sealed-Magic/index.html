@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../shared/style.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --card-min: 150px; }
 
     /* Base palette (dark + light) now comes from ../shared/style.css. */
 
@@ -437,6 +438,23 @@
       padding: 7px 10px;
       outline: none;
     }
+    .size-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .size-toggle button {
+      background: var(--surface);
+      border: none;
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 7px 11px;
+      transition: color 0.12s, background 0.12s;
+    }
+    .size-toggle button + button { border-left: 1px solid var(--border); }
+    .size-toggle button:hover { color: var(--text); }
+    .size-toggle button.active { color: var(--accent); background: var(--surface2); }
     .chip-summary {
       font-size: 0.7rem;
       color: var(--muted);
@@ -554,7 +572,7 @@
 
     .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
       gap: 14px;
       align-items: start;
     }
@@ -906,7 +924,6 @@
       .m-title .m-cost { margin-left: 8px; }
     }
     @media (max-width: 480px) {
-      .card-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
       .topbar h2 span { display: none; }
     }
   </style>
@@ -1008,6 +1025,12 @@
         <h2><span id="topTitle">By Set</span> <span id="topSub"></span> <span id="groupCheck"></span></h2>
         <div class="spacer"></div>
         <div class="chip-summary" id="summary"></div>
+        <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Card size</label>
+        <div class="size-toggle" id="sizeToggle">
+          <button type="button" data-size="small">Small</button>
+          <button type="button" data-size="normal" class="active">Normal</button>
+          <button type="button" data-size="large">Large</button>
+        </div>
         <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Sort</label>
         <select id="sortSel">
           <option value="set" selected>Set</option>
@@ -2428,6 +2451,20 @@
         saveState();
         render();
       });
+
+      const CARD_SIZES = { small: '90px', normal: '150px', large: '300px' };
+      function applyCardSize(size) {
+        if (!CARD_SIZES[size]) size = 'normal';
+        document.documentElement.style.setProperty('--card-min', CARD_SIZES[size]);
+        document.querySelectorAll('#sizeToggle button').forEach(b =>
+          b.classList.toggle('active', b.dataset.size === size));
+        try { localStorage.setItem('gsm-card-size', size); } catch (e) {}
+      }
+      document.querySelectorAll('#sizeToggle button').forEach(b =>
+        b.addEventListener('click', () => applyCardSize(b.dataset.size)));
+      let savedSize = 'normal';
+      try { savedSize = localStorage.getItem('gsm-card-size') || 'normal'; } catch (e) {}
+      applyCardSize(savedSize);
 
       els.closeBtn.addEventListener('click', closeModal);
       els.overlay.addEventListener('click', e => {
