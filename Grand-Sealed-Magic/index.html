@@ -642,16 +642,18 @@
       color: var(--muted);
       word-break: break-word;
     }
-    .tcard .add-btn {
+    .tcard .info-btn {
       position: absolute;
       top: 5px; left: 5px;
       width: 28px; height: 28px;
       border-radius: 50%;
-      background: #1e7d37;
+      background: rgba(18, 20, 28, 0.85);
       color: #fff;
-      border: 1px solid #3cad52;
-      font-size: 1.1rem;
-      font-weight: 800;
+      border: 1px solid var(--border);
+      font-size: 1rem;
+      font-weight: 700;
+      font-style: italic;
+      font-family: Georgia, 'Times New Roman', serif;
       line-height: 1;
       display: flex;
       align-items: center;
@@ -660,13 +662,36 @@
       cursor: pointer;
       z-index: 3;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-      transition: transform 0.12s, background 0.12s, opacity 0.12s;
+      transition: transform 0.12s, background 0.12s, opacity 0.12s, color 0.12s, border-color 0.12s;
       user-select: none;
       opacity: 0;
     }
-    .tcard:hover .add-btn { opacity: 1; }
-    .tcard .add-btn:hover { background: #2a9a44; transform: scale(1.12); }
-    .tcard .add-btn.selected { opacity: 1; background: #145c27; border-color: #2a9a44; }
+    .tcard:hover .info-btn { opacity: 1; }
+    .tcard .info-btn:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.12); }
+
+    .tcard .sel-badge {
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: #1e7d37;
+      color: #fff;
+      border: 1px solid #3cad52;
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.12s;
+    }
+    .tcard.selected .sel-badge { opacity: 1; }
+    .tcard.selected .frame {
+      box-shadow: 0 0 0 3px #2a9a44, 0 6px 18px rgba(0, 0, 0, 0.45);
+    }
 
     /* ── RIGHT PANEL: SELECTED CARDS ─────────────────────────── */
 
@@ -888,22 +913,23 @@
     }
     .m-tag b { color: var(--text); font-weight: 600; }
 
-    .modal .close {
+    .modal-wrap .close {
       position: absolute;
       top: 12px; right: 12px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 50%;
-      width: 30px; height: 30px;
+      width: 42px; height: 42px;
       color: var(--text);
-      font-size: 0.9rem;
+      font-size: 1.35rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: border-color 0.12s, color 0.12s;
+      z-index: 5;
+      transition: border-color 0.12s, color 0.12s, background 0.12s;
     }
-    .modal .close:hover { border-color: var(--accent); color: var(--accent); }
-    .modal-wrap { position: relative; width: 100%; }
+    .modal-wrap .close:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+    .modal-wrap { position: relative; width: min(780px, 100%); margin: 0 auto; }
 
     .flash {
       animation: flash 1.4s ease-out;
@@ -1776,13 +1802,8 @@
       if (i >= 0) state.selected.splice(i, 1);
       else state.selected.push(entry);
       renderSelection();
-      const btn = document.querySelector('.tcard .add-btn[data-id="' + CSS.escape(id) + '"]');
-      if (btn) {
-        const sel = state.selected.some(s => s.card.id === id);
-        btn.classList.toggle('selected', sel);
-        btn.textContent = sel ? '\u2713' : '+';
-        btn.title = sel ? 'Remove from selection' : 'Add to selection';
-      }
+      const card = document.querySelector('.tcard[data-id="' + CSS.escape(id) + '"]');
+      if (card) card.classList.toggle('selected', state.selected.some(s => s.card.id === id));
     }
 
     function renderSelection() {
@@ -1878,19 +1899,24 @@
     function cardNode(entry) {
       const col = document.createElement('figure');
       col.className = 'tcard';
+      col.dataset.id = entry.card.id;
+      if (state.selected.some(s => s.card.id === entry.card.id)) col.classList.add('selected');
 
       const frame = document.createElement('div');
       frame.className = 'frame';
 
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.dataset.id = entry.card.id;
-      const sel = state.selected.some(s => s.card.id === entry.card.id);
-      addBtn.classList.toggle('selected', sel);
-      addBtn.textContent = sel ? '\u2713' : '+';
-      addBtn.title = sel ? 'Remove from selection' : 'Add to selection';
-      addBtn.addEventListener('click', ev => { ev.stopPropagation(); selectToggle(entry); });
-      frame.appendChild(addBtn);
+      const infoBtn = document.createElement('button');
+      infoBtn.className = 'info-btn';
+      infoBtn.dataset.id = entry.card.id;
+      infoBtn.textContent = 'i';
+      infoBtn.title = 'Card details';
+      infoBtn.addEventListener('click', ev => { ev.stopPropagation(); openModal(entry); });
+      frame.appendChild(infoBtn);
+
+      const selBadge = document.createElement('span');
+      selBadge.className = 'sel-badge';
+      selBadge.textContent = '\u2713';
+      frame.appendChild(selBadge);
 
       const img = cardImage(entry.card);
       if (img) {
@@ -1921,7 +1947,7 @@
       col.appendChild(frame);
       col.appendChild(cap);
 
-      col.addEventListener('click', () => openModal(entry));
+      col.addEventListener('click', () => selectToggle(entry));
       col.addEventListener('mouseenter', e => showCardTip(entry, e));
       col.addEventListener('mousemove', e => moveCardTip(e));
       col.addEventListener('mouseleave', hideCardTip);
