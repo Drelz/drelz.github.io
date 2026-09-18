@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="build-cache-bust" content="2026-09-17" />
+  <meta name="build-cache-bust" content="2026-09-18" />
   <title>Grand Sealed Magic</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%94%AE%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="../shared/style.css">
@@ -1802,6 +1802,7 @@
       if (i >= 0) state.selected.splice(i, 1);
       else state.selected.push(entry);
       renderSelection();
+      saveSelection();
       const card = document.querySelector('.tcard[data-id="' + CSS.escape(id) + '"]');
       if (card) card.classList.toggle('selected', state.selected.some(s => s.card.id === id));
     }
@@ -1866,10 +1867,45 @@
       }).join('\n');
     }
 
+    function saveSelection() {
+      try {
+        localStorage.setItem('gsm_selection', state.selected.length ? selectionCSV() : '');
+      } catch (e) { /* ignore */ }
+    }
+
+    function restoreSelection() {
+      try {
+        if (sessionStorage.getItem('gsm_return_sel') !== '1') return;
+        sessionStorage.removeItem('gsm_return_sel');
+        const raw = localStorage.getItem('gsm_selection');
+        if (!raw || !raw.trim()) return;
+        const wanted = new Set();
+        for (const line of raw.split(/\r?\n/)) {
+          const f = parseCsvLine(line.trim());
+          const n = norm((f[0] || '').replace(/^"|"$/g, '').trim());
+          if (n) wanted.add(n);
+        }
+        for (const e of state.cards) {
+          if (!wanted.has(norm(e.card.name || e.name))) continue;
+          if (state.selected.some(s => s.card.id === e.card.id)) continue;
+          state.selected.push(e);
+        }
+        if (state.selected.length) {
+          renderSelection();
+          render();
+        }
+      } catch (e) { /* ignore */ }
+    }
+
     function openInDeckStats() {
       if (!state.selected.length) { toast('Select some cards first.'); return; }
       const csv = selectionCSV();
-      try { localStorage.setItem('gds_deck', csv); } catch (e) { /* ignore */ }
+      try {
+        localStorage.setItem('gds_deck', csv);
+        localStorage.setItem('gsm_selection', csv);
+        sessionStorage.setItem('gds_auto', '1');
+        sessionStorage.setItem('gsm_return_sel', '1');
+      } catch (e) { /* ignore */ }
       let query = '';
       try {
         const enc = encodeURIComponent(csv);
@@ -2262,6 +2298,7 @@
       } else {
         toast('Could not load any cards.');
       }
+      restoreSelection();
       enrichLinkedCards();
     }
 
