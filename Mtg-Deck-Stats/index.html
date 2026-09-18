@@ -99,6 +99,42 @@
       gap: 6px;
     }
 
+    .panel summary {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+    }
+    .panel summary::-webkit-details-marker {
+      display: none;
+    }
+    .panel summary::after {
+      content: '▸';
+      margin-left: auto;
+      font-size: 0.62rem;
+      color: var(--muted);
+      transition: transform 0.15s;
+    }
+    .panel[open] summary::after {
+      content: '▾';
+    }
+    .panel summary .hint {
+      margin-left: auto;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--muted);
+      font-size: 0.62rem;
+    }
+
     #deckText {
       width: 100%;
       height: 190px;
@@ -682,8 +718,8 @@
       <a class="btn full" href="../Grand-Sealed-Magic/" style="margin-top:10px;">← Back to Grand Sealed Magic</a>
     </div>
 
-    <div class="panel">
-      <h2>Decklist <span class="hint">CSV</span></h2>
+    <details class="panel" id="deckPanel" open>
+      <summary>Decklist <span class="hint">CSV</span></summary>
       <textarea id="deckText" spellcheck="false" placeholder="4 Lightning Bolt,M11&#10;4 Goblin Guide,ZEN&#10;16 Mountain,USG"></textarea>
       <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
         <button class="btn full" id="loadBtn">Analyze Deck</button>
@@ -695,7 +731,7 @@
         <code>"Name",SET,https://…png</code> also work. Lines starting with <code>#</code> are ignored.
         Card data &amp; art load live from Scryfall.
       </p>
-    </div>
+    </details>
 
     <div class="panel">
       <h2>Deck Summary</h2>
@@ -876,6 +912,7 @@
       deckText: $('#deckText'),
       loadBtn: $('#loadBtn'),
       sampleBtn: $('#sampleBtn'),
+      deckPanel: $('#deckPanel'),
       emptySampleBtn: $('#emptySampleBtn'),
       loader: $('#loader'),
       barFill: $('#barFill'),
@@ -1144,6 +1181,7 @@
       buildAndRenderStats();
       renderDeckOverview();
       $('#statsPanel').style.display = '';
+      els.deckPanel.open = false;
 
       if (state.unresolved.length) {
         els.unresolvedChips.innerHTML = '';
