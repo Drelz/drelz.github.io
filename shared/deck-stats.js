@@ -41,7 +41,7 @@ function deduceLandMana(typeLine, oracleText) {
     ['W', 'U', 'B', 'R', 'G'].forEach(c => res.add(c));
   }
 
-  if (o && oracleText.includes('{' + c + '}')) {
+  if (o.includes('{')) {
     ['W', 'U', 'B', 'R', 'G', 'C'].forEach(c => {
       if (oracleText.includes('{' + c + '}')) res.add(c);
     });
