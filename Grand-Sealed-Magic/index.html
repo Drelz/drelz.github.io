@@ -959,9 +959,9 @@
 
   <aside class="sidebar">
     <div class="app-title">
+      <a class="drelz-logo" href="../" title="Front Page"><img src="../drelz-logo.png" alt="Drelz"></a>
       <h1>Grand Sealed<br>Magic</h1>
       <p>v15 Visualize a limited card pool</p>
-      <a class="home-link" href="../">← Front Page</a>
     </div>
 
     <details class="panel" id="poolPanel" open>
@@ -1870,15 +1870,16 @@
     function saveSelection() {
       try {
         localStorage.setItem('gsm_selection', state.selected.length ? selectionCSV() : '');
+        localStorage.setItem('gsm_selection_pool', els.poolText.value);
       } catch (e) { /* ignore */ }
     }
 
     function restoreSelection() {
       try {
-        if (sessionStorage.getItem('gsm_return_sel') !== '1') return;
-        sessionStorage.removeItem('gsm_return_sel');
+        if (sessionStorage.getItem('gsm_return_sel') === '1') sessionStorage.removeItem('gsm_return_sel');
         const raw = localStorage.getItem('gsm_selection');
         if (!raw || !raw.trim()) return;
+        if (localStorage.getItem('gsm_selection_pool') !== els.poolText.value) return;
         const wanted = new Set();
         for (const line of raw.split(/\r?\n/)) {
           const f = parseCsvLine(line.trim());
@@ -1897,14 +1898,120 @@
       } catch (e) { /* ignore */ }
     }
 
+    function trimCard(card) {
+      if (!card) return null;
+      const out = {
+        id: card.id,
+        name: card.name,
+        set: card.set,
+        set_name: card.set_name,
+        colors: (card.colors || []).slice(),
+        color_identity: (card.color_identity || []).slice(),
+        cmc: card.cmc,
+        mana_cost: card.mana_cost || '',
+        type_line: card.type_line || '',
+        oracle_text: card.oracle_text || '',
+        rarity: card.rarity || '',
+        collector_number: card.collector_number || '',
+        artist: card.artist || '',
+        released_at: card.released_at || '',
+        produced_mana: (card.produced_mana || []).slice(),
+        supertypes: (card.supertypes || []).slice(),
+        image_uris: card.image_uris || null,
+        power: card.power,
+        toughness: card.toughness,
+        userFuzzy: !!card.userFuzzy,
+        userPng: !!card.userPng,
+        enriched: !!card.enriched
+      };
+      if (card.prices && card.prices.usd) out.prices = { usd: card.prices.usd };
+      if (card.card_faces) {
+        out.card_faces = card.card_faces.map(f => ({
+          name: f.name,
+          mana_cost: f.mana_cost || '',
+          oracle_text: f.oracle_text || '',
+          power: f.power,
+          toughness: f.toughness,
+          colors: (f.colors || []).slice(),
+          image_uris: f.image_uris || null
+        }));
+      }
+      return out;
+    }
+
+    function cacheCards() {
+      try {
+        localStorage.setItem('gsm_cards_v1', JSON.stringify({
+          poolText: els.poolText.value,
+          ts: Date.now(),
+          cards: state.cards.map(e => ({ name: e.name, qty: e.qty, card: trimCard(e.card) })),
+          unresolved: state.unresolved,
+          failedLookup: state.failedLookup,
+          removedBasics
+        }));
+      } catch (e) { /* ignore */ }
+    }
+
+    function restoreCachedPool() {
+      try {
+        const raw = localStorage.getItem('gsm_cards_v1');
+        if (!raw) return false;
+        const cache = JSON.parse(raw);
+        if (!cache || !Array.isArray(cache.cards) || !cache.cards.length) return false;
+        if (cache.poolText !== els.poolText.value) return false;
+        const entries = [];
+        for (const c of cache.cards) {
+          if (!c || !c.card || !c.card.id) return false;
+          if (!c.card.image_uris && (!c.card.card_faces || !c.card.card_faces[0] || !c.card.card_faces[0].image_uris)) return false;
+          entries.push({ name: c.name, qty: c.qty, card: c.card });
+        }
+        if (!entries.length) return false;
+        state.cards = entries;
+        state.unresolved = cache.unresolved || [];
+        state.failedLookup = cache.failedLookup || [];
+        removedBasics = cache.removedBasics || 0;
+        state.selected = [];
+        render();
+        syncFilterChips();
+        updateGroupCheck();
+        renderUnresolvedBanner();
+        restoreSelection();
+        els.poolPanel.open = false;
+        els.savedPanel.open = false;
+        toast('Loaded ' + state.cards.length + ' unique cards from cache.');
+        return true;
+      } catch (e) { /* ignore */ }
+      return false;
+    }
+
+    function renderUnresolvedBanner() {
+      if (state.unresolved.length) {
+        els.unresolvedChips.innerHTML = '';
+        for (const u of state.unresolved) {
+          const chip = document.createElement('button');
+          chip.className = 'chip';
+          chip.textContent = (u.qty > 1 ? u.qty + 'x ' : '') + u.name;
+          chip.title = 'Click to search this name';
+          chip.addEventListener('click', () => {
+            $('#searchBox').value = u.name;
+            state.search = u.name;
+            render();
+          });
+          els.unresolvedChips.appendChild(chip);
+        }
+        $('#unresolved').style.display = 'flex';
+      } else {
+        $('#unresolved').style.display = 'none';
+      }
+    }
+
     function openInDeckStats() {
       if (!state.selected.length) { toast('Select some cards first.'); return; }
       const csv = selectionCSV();
       try {
         localStorage.setItem('gds_deck', csv);
-        localStorage.setItem('gsm_selection', csv);
+        saveSelection();
         sessionStorage.setItem('gds_auto', '1');
-        sessionStorage.setItem('gsm_return_sel', '1');
       } catch (e) { /* ignore */ }
       let query = '';
       try {
@@ -2268,23 +2375,7 @@
       state.cards.sort(compareEntries);
       saveState();
       updateGroupCheck();
-
-      if (state.unresolved.length) {
-        $('#unresolvedChips').innerHTML = '';
-        for (const u of state.unresolved) {
-          const chip = document.createElement('button');
-          chip.className = 'chip';
-          chip.textContent = (u.qty > 1 ? u.qty + 'x ' : '') + u.name;
-          chip.title = 'Click to search this name';
-          chip.addEventListener('click', () => {
-            $('#searchBox').value = u.name;
-            state.search = u.name;
-            render();
-          });
-          $('#unresolvedChips').appendChild(chip);
-        }
-        $('#unresolved').style.display = 'flex';
-      }
+      renderUnresolvedBanner();
 
       render();
       if (state.cards.length) {
@@ -2348,6 +2439,8 @@
         render();
         saveState();
         updateGroupCheck();
+        renderSelection();
+        cacheCards();
       }
     }
 
@@ -2436,7 +2529,7 @@
         const t = localStorage.getItem('gsm_pool');
         if (t) els.poolText.value = t;
         state.search = els.searchBox.value;
-        if (t && t.trim()) setTimeout(loadPool, 80);
+        if (t && t.trim() && !restoreCachedPool()) setTimeout(loadPool, 80);
       } catch (e) { /* ignore */ }
       syncFilterChips();
     }

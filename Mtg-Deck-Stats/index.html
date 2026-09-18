@@ -139,6 +139,7 @@
     .btn:active { transform: translateY(0); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .btn.full { width: 100%; }
+    a.btn { text-decoration: none; }
 
     .btn.ghost {
       color: var(--compare);
@@ -675,12 +676,10 @@
 
   <aside class="sidebar">
     <div class="app-title">
+      <a class="drelz-logo" href="../" title="Front Page"><img src="../drelz-logo.png" alt="Drelz"></a>
       <h1>MTG<br>Deck Stats</h1>
       <p>v2 · Deck analysis extracted from Shadowboxing (shared analysis)</p>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <a class="home-link" href="../Grand-Sealed-Magic/" style="margin-top:0;">← Back to Sealed Pool</a>
-        <a class="home-link" href="../" style="margin-top:0;">Front Page</a>
-      </div>
+      <a class="btn full" href="../Grand-Sealed-Magic/" style="margin-top:10px;">← Back to Grand Sealed Magic</a>
     </div>
 
     <div class="panel">

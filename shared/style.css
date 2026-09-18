@@ -123,6 +123,29 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
 .btn-accent:active { transform: translateY(0); }
 .btn-accent:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+/* Wordmark logo — Drelz brand as a clickable link back to the front page */
+.drelz-logo {
+  display: inline-block;
+  line-height: 0;
+  text-decoration: none;
+  margin-bottom: 12px;
+}
+.drelz-logo img {
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.drelz-logo:hover img {
+  border-color: var(--accent);
+  box-shadow: 0 4px 18px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
 /* Toast */
 .toast {
   position: fixed;
