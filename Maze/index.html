@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hedgehog Maze</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(#cdeffd 0%, #b6e3c8 60%, #a5d8a0 100%);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 10px; min-height: 100vh; overflow: hidden;
+  }
+  .wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 640px; width: 100%; }
+
+  header { text-align: center; margin-bottom: 2px; }
+  h1 { font-size: clamp(20px, 4.5vw, 28px); color: #4a3520; letter-spacing: 1px; }
+  button {
+    font-family: inherit; font-size: 15px; font-weight: 700;
+    border: none; border-radius: 14px; cursor: pointer;
+    background: #7a5c43; color: #fff8e7; padding: 8px 14px;
+    box-shadow: 0 3px 0 #5c4430;
+    transition: transform .06s ease, box-shadow .06s ease;
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 0 0 #5c4430; }
+  button.active { background: #e08a3c; box-shadow: 0 3px 0 #a85f1f; }
+  .star-pill {
+    background: #e8c360; color: #6b4a21; font-weight: 800; font-size: 17px;
+    padding: 7px 10px; border-radius: 12px; text-align: center;
+    box-shadow: inset 0 0 0 2px #d4ae45;
+  }
+  #soundBtn, #newBtn { font-size: 15px; }
+  button.data-size { padding: 9px 10px; }
+
+  .panel {
+    background: #fff8e7; border-radius: 18px; padding: 14px;
+    box-shadow: inset 0 0 0 3px #d9c48f, 0 6px 16px rgba(60, 40, 10, .18);
+    display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+    width: clamp(128px, 20vw, 156px);
+    align-self: center;
+  }
+  .panel .star-pill { width: 100%; }
+
+  .board-holder { position: relative; }
+  .grid {
+    display: grid; background: #3d6b28; border-radius: 12px;
+    padding: 5px; gap: 2px;
+    box-shadow: inset 0 0 0 3px #2c4d1b, 0 8px 22px rgba(30, 60, 20, .25);
+  }
+  .tile {
+    border-radius: 7px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tile.grass {
+    background:
+      radial-gradient(circle at 26% 22%, rgba(255,255,255,.22) 0 9%, transparent 10%),
+      radial-gradient(circle at 72% 66%, rgba(255,255,255,.14) 0 8%, transparent 9%),
+      radial-gradient(circle at 64% 20%, rgba(255,255,255,.14) 0 7%, transparent 8%),
+      linear-gradient(#86cf50, #66ad39);
+    box-shadow: inset 0 0 5px rgba(38, 84, 22, .35);
+  }
+  .tile.path {
+    background: linear-gradient(#f7e9c6, #efdcb4);
+    box-shadow: inset 0 2px 3px rgba(120, 90, 40, .12);
+  }
+  .tile.goal { box-shadow: inset 0 0 0 3px rgba(232, 165, 82, .75); }
+  .tile.start { box-shadow: inset 0 0 0 3px rgba(120, 205, 120, .6); }
+  .tile-emoji { font-size: calc(var(--cell) * .56); line-height: 1; z-index: 1; }
+  .tile-emoji.goal-emoji { font-size: calc(var(--cell) * .62); }
+  .star-item { animation: pop .3s ease; }
+  @keyframes pop { 0% { transform: scale(0); } 70% { transform: scale(1.3); } 100% { transform: scale(1); } }
+  .star-item.collected { animation: collect .45s ease forwards; }
+  @keyframes collect { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(0) rotate(180deg); opacity: 0; } }
+
+  #player {
+    position: absolute; z-index: 5; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    transition: left .18s ease, top .18s ease;
+    will-change: left, top;
+    font-size: calc(var(--cell) * .72); line-height: 1;
+  }
+  #player.bump { animation: bump .18s ease; }
+  #sprite { display: block; transition: transform .15s ease; }
+  @keyframes bump { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-7%,0); } 75% { transform: translate(6%,0); } }
+
+  .game-row { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 2vw, 20px); }
+  .pad {
+    display: grid; grid-template-columns: repeat(3, var(--padbtn, 60px));
+    grid-template-rows: repeat(2, var(--padbtn, 60px)); gap: 8px;
+    align-self: center;
+  }
+  .pad button {
+    font-size: calc(var(--padbtn, 60px) * .46); padding: 0;
+    border-radius: 20px; background: #5b8a3c; box-shadow: 0 4px 0 #3f6427;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pad button:active { transform: translateY(4px); box-shadow: 0 0 0 #3f6427; }
+  .pad .up { grid-column: 2; grid-row: 1; }
+  .pad .l { grid-column: 1; grid-row: 2; }
+  .pad .d { grid-column: 2; grid-row: 2; }
+  .pad .r { grid-column: 3; grid-row: 2; }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(60, 40, 20, .55);
+    display: none; align-items: center; justify-content: center; z-index: 50; opacity: 0;
+    transition: opacity .25s ease;
+  }
+  .overlay.show { display: flex; opacity: 1; }
+  .card {
+    background: #fff8e7; border-radius: 22px; padding: 26px 30px; text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,.35); border: 3px solid #8d6e63;
+    transform: scale(.8); transition: transform .25s ease; max-width: 90vw;
+  }
+  .overlay.show .card { transform: scale(1); }
+  .card h2 { font-size: clamp(30px, 8vw, 44px); color: #7a5c43; margin-bottom: 6px; }
+  .card .score { font-size: 22px; color: #4a3520; font-weight: 800; margin: 8px 0 18px; }
+  .card .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  .confetti { position: fixed; top: -20px; width: 10px; height: 16px; z-index: 60; pointer-events: none; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🦔 Hedgehog Maze</h1>
+  </header>
+
+  <div class="game-row">
+    <div class="panel" id="diffRow">
+      <span class="star-pill">⭐ <span id="have">0</span>/<span id="total">0</span></span>
+      <button class="data-size active" data-size="9">Easy</button>
+      <button class="data-size" data-size="11">Medium</button>
+      <button class="data-size" data-size="13">Hard</button>
+      <button id="newBtn">🔄 New Maze</button>
+      <button id="soundBtn">🔊</button>
+    </div>
+    <div class="board-holder" id="holder">
+      <div class="grid" id="grid"></div>
+      <div id="player"><span id="sprite">🦔</span></div>
+    </div>
+    <div class="pad" id="pad">
+      <button class="up" data-dir="up">▲</button>
+      <button class="l" data-dir="left">◀</button>
+      <button class="d" data-dir="down">▼</button>
+      <button class="r" data-dir="right">▶</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="winOverlay">
+  <div class="card">
+    <h2>YAY! 🎉</h2>
+    <div class="score">You found your way home!<br>⭐ <span id="finalStars">0</span> stars</div>
+    <div class="btn-row">
+      <button id="againBtn">🔄 New Maze</button>
+      <button id="stayBtn">Keep Exploring</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var GRASS = 1, PATH = 0;
+  var GAP = 2, PAD = 5;
+  var SIZES = { "9": 9, "11": 11, "13": 13 };
+  var LOOP_CHANCE = 0.25;
+
+  var state = {
+    rows: 9, cols: 9, pw: 4, ph: 4,
+    cell: 0, step: 0, r: 0, c: 0,
+    startR: 1, startC: 1, goalR: 7, goalC: 7,
+    world: null, stars: {}, starTotal: 0, starHave: 0
+  };
+  var muted = false;
+  var audioCtx = null;
+  var facingRight = false;
+
+  var gridEl = document.getElementById("grid");
+  var holderEl = document.getElementById("holder");
+  var playerEl = document.getElementById("player");
+  var spriteEl = document.getElementById("sprite");
+  var panelEl = document.getElementById("diffRow");
+  var padEl = document.getElementById("pad");
+  var haveEl = document.getElementById("have");
+  var totalEl = document.getElementById("total");
+  var winOverlay = document.getElementById("winOverlay");
+  var finalStarsEl = document.getElementById("finalStars");
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(function () {});
+  }
+
+  function beep(freq, delay, dur, type, vol) {
+    if (muted || !audioCtx) return;
+    var t0 = audioCtx.currentTime + delay;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(vol || 0.25, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+
+  function sStar() { beep(880, 0, .09, "sine", .22); beep(1318, .1, .14, "sine", .22); }
+  function sWall() { beep(150, 0, .08, "square", .1); }
+  function sMove() { beep(340, 0, .03, "sine", .05); }
+  function sWin() { [523, 659, 784, 1046].forEach(function (f, i) { beep(f, i * 0.14, .22, "sine", .22); }); }
+  function sClick() { beep(500, 0, .05, "sine", .12); }
+
+  function makeMaze(rows, cols) {
+    var m = [];
+    var r, c;
+    for (r = 0; r < rows; r++) {
+      m.push([]);
+      for (c = 0; c < cols; c++) m[r].push({ n: 1, e: 1, s: 1, w: 1, v: 0 });
+    }
+    var DIRS = { n: [-1, 0, "s"], e: [0, 1, "w"], s: [1, 0, "n"], w: [0, -1, "e"] };
+    var order = ["n", "e", "s", "w"];
+    var stack = [[0, 0]];
+    m[0][0].v = 1;
+    while (stack.length) {
+      var cur = stack[stack.length - 1];
+      var rr = cur[0], cc = cur[1];
+      var nb = order.slice();
+      for (var i = nb.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = nb[i]; nb[i] = nb[j]; nb[j] = t; }
+      var moved = false;
+      for (i = 0; i < nb.length; i++) {
+        var d = nb[i], dref = DIRS[d];
+        var nr = rr + dref[0], nc = cc + dref[1];
+        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols || m[nr][nc].v) continue;
+        m[rr][cc][d] = 0;
+        m[nr][nc][dref[2]] = 0;
+        m[nr][nc].v = 1;
+        stack.push([nr, nc]);
+        moved = true;
+        break;
+      }
+      if (!moved) stack.pop();
+    }
+    return m;
+  }
+
+  function addLoops(maze, rows, cols, chance) {
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        if (c < cols - 1 && maze[r][c].e === 1 && Math.random() < chance) {
+          maze[r][c].e = 0;
+          maze[r][c + 1].w = 0;
+        }
+        if (r < rows - 1 && maze[r][c].s === 1 && Math.random() < chance) {
+          maze[r][c].s = 0;
+          maze[r + 1][c].n = 0;
+        }
+      }
+    }
+  }
+
+  function computeCell() {
+    var padBtn = Math.round(Math.min(64, Math.max(46, Math.min(window.innerWidth * 0.055, 64))));
+    document.documentElement.style.setProperty("--padbtn", padBtn + "px");
+    var panelW = panelEl.offsetWidth || 140;
+    var padW = padEl.offsetWidth || 196;
+    var availW = Math.min(window.innerWidth - 20 - panelW - padW - 48, 1100);
+    var availH = window.innerHeight - 64;
+    var avail = Math.max(160, Math.min(availW, availH));
+    var inner = avail - 2 * PAD - (state.cols - 1) * GAP;
+    var cell = Math.floor(inner / state.cols);
+    if (cell < 16) cell = 16;
+    if (cell > 160) cell = 160;
+    return cell;
+  }
+
+  function buildWorld() {
+    var cols = state.cols, rows = state.rows;
+    state.pw = Math.floor((cols - 1) / 2);
+    state.ph = Math.floor((rows - 1) / 2);
+
+    var maze = makeMaze(state.ph, state.pw);
+    addLoops(maze, state.ph, state.pw, LOOP_CHANCE);
+
+    var world = [];
+    for (var r = 0; r < rows; r++) {
+      world.push(new Array(cols).fill(GRASS));
+    }
+    for (var pr = 0; pr < state.ph; pr++) {
+      for (var pc = 0; pc < state.pw; pc++) {
+        var wr = 1 + 2 * pr, wc = 1 + 2 * pc;
+        world[wr][wc] = PATH;
+        if (maze[pr][pc].e === 0) world[wr][wc + 1] = PATH;
+        if (maze[pr][pc].s === 0) world[wr + 1][wc] = PATH;
+      }
+    }
+    state.world = world;
+    state.startR = 1; state.startC = 1;
+    state.goalR = 1 + 2 * (state.ph - 1);
+    state.goalC = 1 + 2 * (state.pw - 1);
+    state.r = state.startR; state.c = state.startC;
+  }
+
+  function placeStars() {
+    var pathCells = [];
+    for (var r = 0; r < state.rows; r++) {
+      for (var c = 0; c < state.cols; c++) {
+        if (state.world[r][c] === PATH) pathCells.push(r * state.cols + c);
+      }
+    }
+    for (var i = pathCells.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = pathCells[i]; pathCells[i] = pathCells[j]; pathCells[j] = t;
+    }
+    var startIdx = state.startR * state.cols + state.startC;
+    var goalIdx = state.goalR * state.cols + state.goalC;
+    var target = state.pw * state.ph <= 16 ? 3 : state.pw * state.ph <= 25 ? 4 : 6;
+
+    state.stars = {};
+    var placed = 0;
+    for (i = 0; i < pathCells.length && placed < target; i++) {
+      var p = pathCells[i];
+      if (p === startIdx || p === goalIdx) continue;
+      state.stars[p] = true;
+      placed++;
+    }
+    state.starTotal = placed;
+    state.starHave = 0;
+  }
+
+  function buildBoard() {
+    buildWorld();
+    placeStars();
+    state.cell = computeCell();
+    state.step = state.cell + GAP;
+
+    var cols = state.cols, rows = state.rows;
+    gridEl.style.gridTemplateColumns = "repeat(" + cols + ", " + state.cell + "px)";
+    gridEl.style.gridTemplateRows = "repeat(" + rows + ", " + state.cell + "px)";
+    var boardW = cols * state.cell + (cols - 1) * GAP + 2 * PAD;
+    var boardH = rows * state.cell + (rows - 1) * GAP + 2 * PAD;
+    holderEl.style.width = boardW + "px";
+    holderEl.style.height = boardH + "px";
+    holderEl.style.setProperty("--cell", state.cell + "px");
+    playerEl.style.width = state.cell + "px";
+    playerEl.style.height = state.cell + "px";
+    playerEl.style.transition = "none";
+    facingRight = false;
+    applyFacing();
+    positionPlayer(true);
+
+    gridEl.innerHTML = "";
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var tile = document.createElement("div");
+        tile.className = state.world[r][c] === GRASS ? "tile grass" : "tile path";
+
+        var idx = r * cols + c;
+        if (idx === startIdx()) tile.classList.add("start");
+        if (idx === goalIdx()) {
+          tile.classList.add("goal");
+          var goalEmoji = document.createElement("div");
+          goalEmoji.className = "tile-emoji goal-emoji";
+          goalEmoji.textContent = "🛖";
+          tile.appendChild(goalEmoji);
+        }
+        if (state.stars[idx]) {
+          var star = document.createElement("div");
+          star.className = "tile-emoji star-item";
+          star.textContent = "⭐";
+          star.dataset.idx = idx;
+          tile.appendChild(star);
+        }
+        gridEl.appendChild(tile);
+      }
+    }
+
+    haveEl.textContent = "0";
+    totalEl.textContent = state.starTotal;
+    requestAnimationFrame(function () { playerEl.style.transition = "left .18s ease, top .18s ease"; });
+  }
+
+  function startIdx() { return state.startR * state.cols + state.startC; }
+  function goalIdx() { return state.goalR * state.cols + state.goalC; }
+
+  function positionPlayer(instant) {
+    var left = state.c * state.step + PAD;
+    var top = state.r * state.step + PAD;
+    if (instant) { playerEl.style.transition = "none"; }
+    playerEl.style.left = left + "px";
+    playerEl.style.top = top + "px";
+    if (instant) { requestAnimationFrame(function () { playerEl.style.transition = "left .18s ease, top .18s ease"; }); }
+  }
+
+  var moveBy = { up: [-1, 0], right: [0, 1], down: [1, 0], left: [0, -1] };
+
+  function isOpen(r, c) {
+    return state.world[r][c] === PATH;
+  }
+
+  function applyFacing() {
+    spriteEl.style.transform = facingRight ? "scaleX(-1)" : "scaleX(1)";
+  }
+
+  function faceDirection(dir) {
+    if (dir === "right") facingRight = true;
+    else if (dir === "left") facingRight = false;
+    else facingRight = !facingRight;
+    applyFacing();
+  }
+
+  function move(dir) {
+    if (winOverlay.classList.contains("show")) return;
+    ensureAudio();
+    var d = moveBy[dir];
+    var nr = state.r + d[0], nc = state.c + d[1];
+    if (nr < 0 || nr >= state.rows || nc < 0 || nc >= state.cols || !isOpen(nr, nc)) {
+      playerEl.classList.remove("bump");
+      void playerEl.offsetWidth;
+      playerEl.classList.add("bump");
+      sWall();
+      return;
+    }
+    state.r = nr; state.c = nc;
+    positionPlayer(false);
+    sMove();
+
+    var idx = nr * state.cols + nc;
+    if (state.stars[idx]) {
+      delete state.stars[idx];
+      state.starHave++;
+      haveEl.textContent = state.starHave;
+      sStar();
+      var starEl = gridEl.querySelector('.star-item[data-idx="' + idx + '"]');
+      if (starEl) starEl.classList.add("collected");
+    }
+
+    if (idx === goalIdx()) {
+      setTimeout(win, 300);
+    }
+  }
+
+  function win() {
+    finalStarsEl.textContent = state.starHave;
+    sWin();
+    winOverlay.classList.add("show");
+    setTimeout(confetti, 200);
+  }
+
+  function confetti() {
+    var colors = ["#ff8fa3", "#ffd166", "#06d6a0", "#8ecae6", "#c77dff", "#ffb703", "#ef476f"];
+    for (var i = 0; i < 90; i++) {
+      var el = document.createElement("div");
+      el.className = "confetti";
+      el.style.left = (Math.random() * 100) + "vw";
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.animation = "fall " + (2 + Math.random() * 3) + "s " + (Math.random() * 1.5) + "s ease-in forwards";
+      document.body.appendChild(el);
+      (function (e) { setTimeout(function () { e.remove(); }, 6000); })(el);
+    }
+  }
+  var confettiKey = document.createElement("style");
+  confettiKey.textContent = "@keyframes fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(115vh) rotate(760deg); opacity: .2; } }";
+  document.head.appendChild(confettiKey);
+
+  document.addEventListener("keydown", function (e) {
+    var map = { ArrowUp: "up", ArrowRight: "right", ArrowDown: "down", ArrowLeft: "left" };
+    if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
+  });
+
+  padEl.addEventListener("pointerdown", function (e) {
+    var btn = e.target.closest("button[data-dir]");
+    if (btn) { e.preventDefault(); move(btn.dataset.dir); }
+  });
+
+  document.getElementById("newBtn").addEventListener("click", function () { sClick(); buildBoard(); });
+  document.getElementById("againBtn").addEventListener("click", function () { winOverlay.classList.remove("show"); sClick(); buildBoard(); });
+  document.getElementById("stayBtn").addEventListener("click", function () { winOverlay.classList.remove("show"); sClick(); });
+
+  document.getElementById("soundBtn").addEventListener("click", function () {
+    ensureAudio();
+    muted = !muted;
+    this.textContent = muted ? "🔇" : "🔊";
+    if (!muted) sClick();
+  });
+
+  document.getElementById("diffRow").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-size]");
+    if (!btn) return;
+    sClick();
+    state.rows = state.cols = SIZES[btn.dataset.size];
+    document.querySelectorAll("#diffRow button").forEach(function (b) { b.classList.remove("active"); });
+    btn.classList.add("active");
+    winOverlay.classList.remove("show");
+    buildBoard();
+  });
+
+  window.addEventListener("resize", function () { buildBoard(); });
+  window.addEventListener("load", function () { buildBoard(); });
+})();
+</script>
+</body>
+</html>
