@@ -172,6 +172,13 @@
       padding: 7px 10px;
     }
     .btn.ghost:hover { border-color: var(--compare); box-shadow: 0 0 0 1px var(--compare-glow); }
+    .btn.danger {
+      color: #fff;
+      background: linear-gradient(180deg, #e05c48, var(--err) 60%, #9c3329);
+      border: 1px solid var(--err);
+      box-shadow: 0 4px 16px rgba(224, 83, 63, 0.25);
+    }
+    .btn.danger:hover { box-shadow: 0 8px 22px rgba(224, 83, 63, 0.45); }
     .btn.btn-disabled { opacity: 0.5; pointer-events: none; }
 
     #filePicker {
@@ -727,6 +734,12 @@
       font-weight: 700;
       color: var(--accent);
     }
+    .pick-title .pick-clear {
+      margin-left: auto;
+      font-size: 0.58rem;
+      padding: 3px 8px;
+      letter-spacing: 0.8px;
+    }
     .pick-list {
       flex: 1;
       overflow-y: auto;
@@ -844,6 +857,30 @@
     }
     .modal .art img { width: 100%; display: block; }
     .modal .info { flex: 1; min-width: 0; }
+    .modal .confirm {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 4px;
+      text-align: center;
+    }
+    .modal .confirm h3 {
+      font-size: 1rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .modal .confirm p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 340px;
+    }
+    .modal .confirm p b { color: var(--text); }
+    .modal .confirm-actions { display: flex; gap: 10px; }
+    .modal .confirm-actions .btn { min-width: 110px; }
 
     .m-title {
       display: flex;
@@ -1095,6 +1132,7 @@
     <div class="pick-title">
       <h2>Selected Cards</h2>
       <span class="pick-count" id="pickCount">0</span>
+      <button class="btn ghost pick-clear" id="pickClearBtn">Clear</button>
     </div>
     <div class="pick-list" id="pickList">
       <div class="pick-empty">Click the <b>+</b> on a card to build your selection.</div>
@@ -1158,6 +1196,7 @@
       pickList: $('#pickList'),
       pickCopyBtn: $('#pickCopyBtn'),
       pickStatsBtn: $('#pickStatsBtn'),
+      pickClearBtn: $('#pickClearBtn'),
       toast: $('#toast')
     };
 
@@ -1874,6 +1913,33 @@
       } catch (e) { /* ignore */ }
     }
 
+    function askClearSelection() {
+      if (!state.selected.length) { toast('Nothing to clear.'); return; }
+      $('#modal').innerHTML =
+        '<div class="confirm">' +
+          '<h3>Clear selection?</h3>' +
+          '<p>This removes all <b>' + state.selected.length + '</b> selected card' + (state.selected.length === 1 ? '' : 's') + ' from the list.</p>' +
+          '<div class="confirm-actions">' +
+            '<button class="btn ghost" id="confirmNo">Cancel</button>' +
+            '<button class="btn danger" id="confirmYes">Clear</button>' +
+          '</div>' +
+        '</div>';
+      $('#overlay').classList.add('open');
+      $('#confirmNo').addEventListener('click', closeModal);
+      $('#confirmYes').addEventListener('click', () => {
+        closeModal();
+        clearSelection();
+        toast('Selection cleared.');
+      });
+    }
+
+    function clearSelection() {
+      state.selected = [];
+      document.querySelectorAll('.tcard.selected').forEach(el => el.classList.remove('selected'));
+      renderSelection();
+      saveSelection();
+    }
+
     function restoreSelection() {
       try {
         if (sessionStorage.getItem('gsm_return_sel') === '1') sessionStorage.removeItem('gsm_return_sel');
@@ -2559,6 +2625,7 @@
       els.loadFileBtn.addEventListener('click', loadSelectedPoolFile);
       els.pickCopyBtn.addEventListener('click', copySelection);
       els.pickStatsBtn.addEventListener('click', openInDeckStats);
+      els.pickClearBtn.addEventListener('click', askClearSelection);
       els.filePicker.addEventListener('change', () => {
         const file = els.filePicker.files && els.filePicker.files[0];
         if (!file) return;
