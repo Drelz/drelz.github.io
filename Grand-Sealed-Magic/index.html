@@ -803,6 +803,16 @@
       white-space: nowrap;
     }
     .pick-item .p-cost { color: var(--accent); font-weight: 700; }
+    .pick-item .pick-qty {
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 5px;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
     .pick-item .pick-x {
       background: transparent;
       border: none;
@@ -816,6 +826,29 @@
     .pick-item:hover .pick-x { color: #e05555; }
     .pick-actions { display: flex; gap: 8px; padding: 8px; border-top: 1px solid var(--border); }
     .pick-actions .btn { flex: 1; min-width: 0; }
+    .pick-lands {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .pick-lands-label {
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .pick-lands-chips { display: flex; gap: 5px; }
+    .pick-lands-chips .color-chip {
+      width: 24px; height: 24px;
+      font-size: 0.66rem;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    .pick-lands-chips .color-chip:hover { transform: scale(1.12); }
+    .pick-lands-chips .color-chip:active { transform: scale(0.96); }
 
     /* ── MODAL ───────────────────────────────────────────────── */
 
@@ -1141,6 +1174,17 @@
       <button class="btn ghost" id="pickCopyBtn">Copy CSV</button>
       <button class="btn ghost" id="pickStatsBtn">Deck Stats</button>
     </div>
+    <div class="pick-lands">
+      <span class="pick-lands-label">Add basic land</span>
+      <span class="pick-lands-chips" id="pickLands">
+        <button class="color-chip" data-color="W" title="Add Plains">W</button>
+        <button class="color-chip" data-color="U" title="Add Island">U</button>
+        <button class="color-chip" data-color="B" title="Add Swamp">B</button>
+        <button class="color-chip" data-color="R" title="Add Mountain">R</button>
+        <button class="color-chip" data-color="G" title="Add Forest">G</button>
+        <button class="color-chip" data-color="C" title="Add Wastes">C</button>
+      </span>
+    </div>
   </aside>
 
   <div class="overlay" id="overlay">
@@ -1197,6 +1241,7 @@
       pickCopyBtn: $('#pickCopyBtn'),
       pickStatsBtn: $('#pickStatsBtn'),
       pickClearBtn: $('#pickClearBtn'),
+      pickLands: $('#pickLands'),
       toast: $('#toast')
     };
 
@@ -1554,7 +1599,8 @@
     function frontFaceColors(card) {
       const src = (card.colors && card.colors.length) ? card
         : (card.card_faces && card.card_faces.length ? card.card_faces[0] : null);
-      return (src && src.colors) ? src.colors.slice() : [];
+      if (!src) return [];
+      return (src.colors && src.colors.length ? src.colors : (src.color_indicator || [])).slice();
     }
 
     function wubrgVal(s) {
@@ -1685,7 +1731,7 @@
     }
 
     function passesColorFilter(card) {
-      const cols = card.colors || [];
+      const cols = frontFaceColors(card);
       const selected = state.colorFilter.filter(c => c !== 'C');
       const wantC = state.colorFilter.includes('C');
       const isLand = (card.type_line || '').includes('Land');
@@ -1835,6 +1881,53 @@
       return 'Colorless';
     }
 
+    const BASIC_LAND_COLORS = { W: 'Plains', U: 'Island', B: 'Swamp', R: 'Mountain', G: 'Forest', C: 'Wastes' };
+    const BASIC_LAND_BY_NAME = {};
+    for (const c in BASIC_LAND_COLORS) BASIC_LAND_BY_NAME[BASIC_LAND_COLORS[c].toLowerCase()] = c;
+
+    const basicLandCards = {};
+
+    async function basicLandCard(color) {
+      if (basicLandCards[color]) return basicLandCards[color];
+      const name = BASIC_LAND_COLORS[color];
+      const real = await scry('https://api.scryfall.com/cards/named?exact=' + encodeURIComponent(name));
+      const stub = {
+        id: 'basic-' + color,
+        name,
+        set: real ? real.set : '',
+        set_name: real ? real.set_name : '',
+        colors: color === 'C' ? [] : [color],
+        color_identity: color === 'C' ? [] : [color],
+        cmc: 0,
+        mana_cost: '',
+        type_line: 'Basic Land \u2014 ' + name,
+        oracle_text: '',
+        rarity: real ? real.rarity : 'common',
+        image_uris: real ? real.image_uris : null
+      };
+      basicLandCards[color] = stub;
+      return stub;
+    }
+
+    async function addBasicLand(color, count = 1) {
+      const card = await basicLandCard(color);
+      const existing = state.selected.find(s => s.card.id === card.id);
+      if (existing) existing.selQty = (existing.selQty || 1) + count;
+      else state.selected.push({ name: card.name, qty: 1, card, selQty: count });
+      renderSelection();
+      saveSelection();
+    }
+
+    function selectClick(e) {
+      if (e.selQty && e.selQty > 1) {
+        e.selQty--;
+        renderSelection();
+        saveSelection();
+        return;
+      }
+      selectToggle(e);
+    }
+
     function selectToggle(entry) {
       const id = entry.card.id;
       const i = state.selected.findIndex(s => s.card.id === id);
@@ -1847,7 +1940,7 @@
     }
 
     function renderSelection() {
-      els.pickCount.textContent = state.selected.length;
+      els.pickCount.textContent = selectionTotal();
       const list = els.pickList;
       list.innerHTML = '';
       if (!state.selected.length) {
@@ -1885,6 +1978,13 @@
         }
         row.appendChild(nameEl);
 
+        if (e.selQty && e.selQty > 1) {
+          const q = document.createElement('span');
+          q.className = 'pick-qty';
+          q.textContent = '\u00d7' + e.selQty;
+          row.appendChild(q);
+        }
+
         const x = document.createElement('button');
         x.className = 'pick-x';
         x.textContent = '\u00d7';
@@ -1892,18 +1992,28 @@
         x.addEventListener('click', ev => { ev.stopPropagation(); selectToggle(e); });
         row.appendChild(x);
 
-        row.addEventListener('click', () => selectToggle(e));
+        row.addEventListener('click', () => selectClick(e));
+        row.addEventListener('mouseenter', ev => showCardTip(e, ev));
+        row.addEventListener('mousemove', moveCardTip);
+        row.addEventListener('mouseleave', hideCardTip);
         list.appendChild(row);
       }
     }
 
+    function selectionTotal() {
+      return state.selected.reduce((s, e) => s + (e.selQty || 1), 0);
+    }
+
     function selectionCSV() {
-      return state.selected.map(e => {
+      const lines = [];
+      for (const e of state.selected) {
         const name = e.card.name || e.name;
-        return (name.includes(',') || name.includes('"')
+        const base = (name.includes(',') || name.includes('"')
           ? '"' + name.replace(/"/g, '""') + '"'
           : name) + ',' + (e.card.set || '').toUpperCase();
-      }).join('\n');
+        for (let i = 0, n = e.selQty || 1; i < n; i++) lines.push(base);
+      }
+      return lines.join('\n');
     }
 
     function saveSelection() {
@@ -1915,10 +2025,11 @@
 
     function askClearSelection() {
       if (!state.selected.length) { toast('Nothing to clear.'); return; }
+      const total = selectionTotal();
       $('#modal').innerHTML =
         '<div class="confirm">' +
           '<h3>Clear selection?</h3>' +
-          '<p>This removes all <b>' + state.selected.length + '</b> selected card' + (state.selected.length === 1 ? '' : 's') + ' from the list.</p>' +
+          '<p>This removes all <b>' + total + '</b> selected card' + (total === 1 ? '' : 's') + ' from the list.</p>' +
           '<div class="confirm-actions">' +
             '<button class="btn ghost" id="confirmNo">Cancel</button>' +
             '<button class="btn danger" id="confirmYes">Clear</button>' +
@@ -1947,16 +2058,21 @@
         if (!raw || !raw.trim()) return;
         if (localStorage.getItem('gsm_selection_pool') !== els.poolText.value) return;
         const wanted = new Set();
+        const landCounts = {};
         for (const line of raw.split(/\r?\n/)) {
           const f = parseCsvLine(line.trim());
           const n = norm((f[0] || '').replace(/^"|"$/g, '').trim());
-          if (n) wanted.add(n);
+          if (!n) continue;
+          const c = BASIC_LAND_BY_NAME[n.replace(/^snow[- ]/, '')];
+          if (c) landCounts[c] = (landCounts[c] || 0) + 1;
+          else wanted.add(n);
         }
         for (const e of state.cards) {
           if (!wanted.has(norm(e.card.name || e.name))) continue;
           if (state.selected.some(s => s.card.id === e.card.id)) continue;
           state.selected.push(e);
         }
+        for (const c in landCounts) addBasicLand(c, landCounts[c]);
         if (state.selected.length) {
           renderSelection();
           render();
@@ -2211,7 +2327,7 @@
       const need = { W: 0, U: 0, B: 0, R: 0, G: 0 };
       let multi = 0, colorless = 0;
       for (const e of entries) {
-        const cols = e.card.colors || [];
+        const cols = frontFaceColors(e.card);
         if (cols.length > 1) multi += e.qty;
         else if (!cols.length) colorless += e.qty;
         else need[cols[0]] += e.qty;
@@ -2256,6 +2372,7 @@
 
     function openModal(entry) {
       const c = entry.card;
+      const mColors = frontFaceColors(c);
       let costHtml = '<span></span>';
       const cost = manaTokens(c.mana_cost);
       if (cost.length) {
@@ -2290,7 +2407,7 @@
           '<div class="m-oracle">' + oracleText(c) + '</div>' +
           '<div class="m-extras">' +
             (c.power ? '<span class="m-tag">Power / Toughness <b>' + c.power + ' / ' + c.toughness + '</b></span>' : '') +
-            (c.colors && c.colors.length ? '<span class="m-tag">Color identity <b>' + c.colors.join('') + '</b></span>' : '') +
+            (mColors.length ? '<span class="m-tag">Color identity <b>' + mColors.join('') + '</b></span>' : '') +
             (c.artist ? '<span class="m-tag">Art <b>' + c.artist + '</b></span>' : '') +
             (c.released_at ? '<span class="m-tag">Printed <b>' + c.released_at + '</b></span>' : '') +
             (c.userFuzzy ? '<span class="m-tag" style="color:#e8a86a;">Loaded as <b>“' + norm(c.name) + '”</b></span>' : '') +
@@ -2673,6 +2790,11 @@
         state.group = els.sortSel.value;
         saveState();
         render();
+      });
+
+      els.pickLands.addEventListener('click', ev => {
+        const b = ev.target.closest('.color-chip');
+        if (b) addBasicLand(b.dataset.color);
       });
 
       const CARD_SIZES = { small: '90px', normal: '150px', large: '300px' };
