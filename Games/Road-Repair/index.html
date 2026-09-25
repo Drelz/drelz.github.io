@@ -228,6 +228,8 @@
   var HEIGHT = 620;
   var TRUCK_RADIUS = 23;
   var INTERACT_RADIUS = 62;
+  var BASE_SPEED = 215;
+  var OBJECT_SPEED_FACTOR = 0.5;
   var ROAD = { left: 28, right: 1322, top: 235, bottom: 385, center: 310 };
   var SIDE_ROAD = { left: 1030, right: 1150, top: ROAD.center, bottom: HEIGHT - 20, center: 1090 };
   var PAVEMENT = { left: 140, right: 600, top: 402, bottom: 442 };
@@ -617,7 +619,8 @@
 
     if (isNearby) drawFocusRing(material.x, material.y, 39, time);
 
-    if (material.taken) {
+    var needed = hasPendingRepair(material.id);
+    if (material.taken || !needed) {
       ctx.save();
       ctx.setLineDash([6, 5]);
       ctx.strokeStyle = "rgba(68,76,53,.45)";
@@ -626,7 +629,8 @@
       ctx.arc(material.x, material.y, 27, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
-      drawLabel(material.x, material.y + 49, material.name, "EMPTY", material.tint, material.accent, material.accent);
+      var pileStatus = material.taken ? "EMPTY" : "NOT NEEDED";
+      drawLabel(material.x, material.y + 49, material.name, pileStatus, material.tint, material.accent, material.accent);
       return;
     }
 
@@ -848,6 +852,15 @@
     return x >= 27 && x <= WIDTH - 27 && y >= 27 && y <= HEIGHT - 27 && !insideRiver(x, y);
   }
 
+  function isNearInteractionObject() {
+    var candidates = state.cargo ? state.repairs : state.materials;
+    return candidates.some(function (item) {
+      if (state.cargo && item.done) return false;
+      if (!state.cargo && (item.taken || !hasPendingRepair(item.id))) return false;
+      return Math.hypot(item.x - state.truck.x, item.y - state.truck.y) < INTERACT_RADIUS;
+    });
+  }
+
   function moveTruck(dt) {
     var truck = state.truck;
     if (state.won) {
@@ -862,7 +875,7 @@
     if (!length) return;
     horizontal /= length;
     vertical /= length;
-    var speed = 215;
+    var speed = BASE_SPEED * (isNearInteractionObject() ? OBJECT_SPEED_FACTOR : 1);
     var nextX = truck.x + horizontal * speed * dt;
     var nextY = truck.y + vertical * speed * dt;
 
@@ -883,7 +896,8 @@
     var closest = null;
     var closestDistance = INTERACT_RADIUS;
     candidates.forEach(function (item) {
-      if (state.cargo ? item.done : item.taken) return;
+      if (state.cargo && item.done) return;
+      if (!state.cargo && (item.taken || !hasPendingRepair(item.id))) return;
       var distance = Math.hypot(item.x - state.truck.x, item.y - state.truck.y);
       if (distance < closestDistance) {
         closest = item;
@@ -891,6 +905,26 @@
       }
     });
     state.nearby = closest;
+  }
+
+  function hasPendingRepair(materialId) {
+    return state.repairs.some(function (repair) {
+      return repair.id === materialId && !repair.done;
+    });
+  }
+
+  function findUnavailableMaterial() {
+    var closest = null;
+    var closestDistance = INTERACT_RADIUS;
+    state.materials.forEach(function (material) {
+      if (material.taken || hasPendingRepair(material.id)) return;
+      var distance = Math.hypot(material.x - state.truck.x, material.y - state.truck.y);
+      if (distance < closestDistance) {
+        closest = material;
+        closestDistance = distance;
+      }
+    });
+    return closest;
   }
 
   function findRepair(kind) {
@@ -906,11 +940,24 @@
     updateNearby();
     var nearby = state.nearby;
     if (!nearby) {
+      if (!state.cargo) {
+        var unavailableMaterial = findUnavailableMaterial();
+        if (unavailableMaterial) {
+          setPrompt("No more " + unavailableMaterial.name + " needed", unavailableMaterial.id);
+          tone(180, 0, 0.12, "triangle", 0.08);
+          return;
+        }
+      }
       setPrompt(state.cargo ? "Find the matching damaged section" : "Drive to a material pile", state.cargo);
       return;
     }
 
     if (!state.cargo) {
+      if (!hasPendingRepair(nearby.id)) {
+        setPrompt("No more " + nearby.name + " needed", nearby.id);
+        tone(180, 0, 0.12, "triangle", 0.08);
+        return;
+      }
       nearby.taken = true;
       state.cargo = nearby.id;
       playPickup();
@@ -1011,6 +1058,13 @@
   function updatePrompt() {
     if (state.won) return;
     var nearby = state.nearby;
+    if (!state.cargo && !nearby) {
+      var unavailableMaterial = findUnavailableMaterial();
+      if (unavailableMaterial) {
+        setPrompt("No more " + unavailableMaterial.name + " needed", unavailableMaterial.id);
+        return;
+      }
+    }
     if (!state.cargo && nearby) {
       setPrompt("Press SPACE to pick up " + nearby.name, nearby.id);
     } else if (state.cargo && nearby && nearby.id === state.cargo) {
