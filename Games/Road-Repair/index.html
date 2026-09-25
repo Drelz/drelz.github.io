@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road Rescue</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: #49351f;
+    background: linear-gradient(160deg, #ccefff 0%, #dff3c7 52%, #b7dea1 100%);
+    overflow: hidden;
+    user-select: none;
+  }
+  .app {
+    width: min(1450px, 100%);
+    height: 100%;
+    margin: 0 auto;
+    padding: clamp(8px, 1.7vw, 18px);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: clamp(7px, 1.2vw, 12px);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .back-button {
+    font: inherit;
+    font-size: clamp(11px, 1.4vw, 14px);
+    font-weight: 800;
+    border: none;
+    border-radius: 12px;
+    padding: 9px 12px;
+    background: #7a5c43;
+    color: #fff8e7;
+    box-shadow: 0 3px 0 #5c4430;
+    cursor: pointer;
+    transition: transform .06s ease, box-shadow .06s ease, background .15s ease;
+  }
+  .back-button:hover { background: #684a34; }
+  .back-button:active { transform: translateY(3px); box-shadow: 0 0 0 #5c4430; }
+  .back-button:focus-visible { outline: 3px solid #267b9a; outline-offset: 3px; }
+  h1 {
+    font-size: clamp(21px, 3.2vw, 32px);
+    line-height: 1;
+    color: #4b351d;
+    text-shadow: 0 2px 0 rgba(255,255,255,.65);
+  }
+  .subtitle {
+    margin-top: 4px;
+    font-size: clamp(11px, 1.5vw, 14px);
+    font-weight: 700;
+    color: #6f674f;
+  }
+  .status {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .status-pill {
+    min-width: 112px;
+    padding: 7px 11px;
+    border: 2px solid rgba(92,67,38,.18);
+    border-radius: 12px;
+    background: rgba(255,248,231,.92);
+    box-shadow: 0 3px 0 rgba(92,67,38,.12);
+    font-size: clamp(11px, 1.4vw, 14px);
+    font-weight: 800;
+    text-align: center;
+  }
+  .stage {
+    min-height: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border: 4px solid #765436;
+    border-radius: 22px;
+    background: #77b95a;
+    box-shadow: 0 7px 0 #5d412a, 0 14px 30px rgba(49,67,35,.25);
+  }
+  .prompt {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - 30px);
+    padding: 8px 15px;
+    border: 2px solid rgba(79,53,29,.2);
+    border-radius: 999px;
+    background: rgba(255,248,231,.94);
+    color: #513a24;
+    box-shadow: 0 4px 0 rgba(79,53,29,.14);
+    font-size: clamp(12px, 1.7vw, 15px);
+    font-weight: 800;
+    text-align: center;
+    pointer-events: none;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(8px, 2vw, 22px);
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    border: 2px solid rgba(92,67,38,.14);
+    border-radius: 15px;
+    background: rgba(255,248,231,.78);
+    box-shadow: 0 4px 0 rgba(92,67,38,.1);
+  }
+  .control {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    font-size: clamp(11px, 1.35vw, 14px);
+    font-weight: 750;
+  }
+  kbd {
+    min-width: 27px;
+    padding: 4px 7px;
+    border: 1px solid #a88a63;
+    border-bottom-width: 3px;
+    border-radius: 7px;
+    background: #fffdf7;
+    color: #533a22;
+    font: inherit;
+    font-size: .92em;
+    font-weight: 850;
+    text-align: center;
+    box-shadow: 0 1px 0 rgba(255,255,255,.7);
+  }
+  .win {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(54,39,24,.4);
+    border-radius: 22px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .22s ease, visibility .22s ease;
+  }
+  .win.show { opacity: 1; visibility: visible; }
+  .win-card {
+    max-width: 430px;
+    padding: clamp(20px, 4vw, 34px) clamp(24px, 5vw, 48px);
+    border: 4px solid #a0784f;
+    border-radius: 24px;
+    background: #fff8e7;
+    box-shadow: 0 10px 0 rgba(74,48,25,.2), 0 20px 50px rgba(38,29,18,.28);
+    text-align: center;
+    transform: translateY(10px) scale(.96);
+    transition: transform .22s ease;
+  }
+  .win.show .win-card { transform: translateY(0) scale(1); }
+  .win-icon { font-size: clamp(48px, 8vw, 76px); line-height: 1; }
+  .win h2 { margin-top: 8px; font-size: clamp(30px, 5vw, 48px); color: #4f7f39; }
+  .win p { margin-top: 7px; font-size: clamp(15px, 2vw, 19px); font-weight: 700; }
+  .win .keys { margin-top: 14px; color: #765d40; font-size: clamp(12px, 1.7vw, 15px); }
+  [hidden] { display: none !important; }
+  @media (max-height: 600px) {
+    .subtitle { display: none; }
+    .controls { padding: 5px 10px; }
+    .prompt { bottom: 9px; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <button class="back-button" id="backBtn" type="button" aria-label="Back to games">◀ Games</button>
+    <div class="title-block">
+      <h1>🚧 Road Rescue</h1>
+      <div class="subtitle">Load up. Drive over. Fix the road.</div>
+    </div>
+    <div class="status" aria-live="polite">
+      <div class="status-pill" id="cargoStatus">Truck: Empty</div>
+      <div class="status-pill" id="repairStatus">Level 1 · 0 / 2 repaired</div>
+    </div>
+  </header>
+
+  <section class="stage" aria-label="Road repair game">
+    <canvas id="gameCanvas" width="1350" height="620" aria-label="Top-down road construction site. Drive the repair truck with the keyboard.">
+      Your browser needs canvas support to play Road Rescue.
+    </canvas>
+    <div class="prompt" id="prompt" aria-live="polite">Drive to a material pile</div>
+    <div class="win" id="winOverlay" aria-hidden="true">
+      <div class="win-card" role="status" aria-live="assertive">
+        <div class="win-icon">🚧</div>
+        <h2>Level Complete!</h2>
+        <p>Every damaged section is fixed.</p>
+        <div class="keys"><kbd>Enter</kbd> new level &nbsp; <kbd>Esc</kbd> games</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="controls" aria-label="Keyboard controls">
+    <div class="control"><span><kbd>WASD</kbd> <kbd>Arrows</kbd></span><span>Drive</span></div>
+    <div class="control"><kbd>Space</kbd><span>Pick up / drop</span></div>
+    <div class="control"><kbd>Enter</kbd><span>New level</span></div>
+    <div class="control"><kbd>M</kbd><span id="soundText">Sound on</span></div>
+    <div class="control"><kbd>Esc</kbd><span>Games</span></div>
+  </footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var WIDTH = 1350;
+  var HEIGHT = 620;
+  var TRUCK_RADIUS = 23;
+  var INTERACT_RADIUS = 62;
+  var ROAD = { left: 28, right: 1322, top: 235, bottom: 385, center: 310 };
+  var SIDE_ROAD = { left: 1030, right: 1150, top: ROAD.center, bottom: HEIGHT - 20, center: 1090 };
+  var PAVEMENT = { left: 140, right: 600, top: 402, bottom: 442 };
+  var RIVER = { left: 650, right: 790 };
+  var BRIDGE = { left: 620, right: 820, top: 220, bottom: 400 };
+  var EXTRA_REPAIR_SLOTS = [
+    { id: "asphalt", x: 150, y: ROAD.center },
+    { id: "asphalt", x: 900, y: ROAD.center },
+    { id: "asphalt", x: 1250, y: ROAD.center },
+    { id: "asphalt", x: SIDE_ROAD.center, y: 510 },
+    { id: "concrete", x: 220, y: 422 },
+    { id: "concrete", x: 410, y: 422 },
+    { id: "concrete", x: 550, y: 422 }
+  ];
+  var keys = {};
+  var lastTime = 0;
+  var lastFrame = 0;
+  var muted = false;
+  var audioContext = null;
+  var canvas = document.getElementById("gameCanvas");
+  var ctx = canvas.getContext("2d");
+  var promptEl = document.getElementById("prompt");
+  var cargoStatusEl = document.getElementById("cargoStatus");
+  var repairStatusEl = document.getElementById("repairStatus");
+  var soundTextEl = document.getElementById("soundText");
+  var winOverlayEl = document.getElementById("winOverlay");
+  var backBtn = document.getElementById("backBtn");
+
+  var state = makeInitialState();
+
+  var grassMarks = [
+    [35,35],[78,72],[120,32],[205,62],[245,27],[290,90],[350,40],[410,82],[470,28],[535,70],[590,25],[840,40],[900,72],[958,28],
+    [42,188],[105,170],[220,150],[278,195],[365,145],[430,190],[515,155],[590,188],[858,170],[935,150],
+    [35,455],[92,580],[210,450],[270,570],[345,465],[420,590],[510,455],[555,585],[835,470],[865,590],[950,460],
+    [48,540],[245,520],[465,535],[835,545],[950,555],[1010,90],[1110,55],[1210,100],[1280,180],[1010,500],[1160,520],[1260,580]
+  ];
+
+  var trees = [
+    { x: 88, y: 210, r: 27 }, { x: 45, y: 480, r: 25 }, { x: 370, y: 75, r: 23 },
+    { x: 520, y: 470, r: 29 }, { x: 930, y: 455, r: 27 }, { x: 920, y: 250, r: 23 },
+    { x: 1230, y: 90, r: 24 }, { x: 1280, y: 520, r: 25 }
+  ];
+
+  function makeInitialState(level) {
+    return {
+      level: level || 1,
+      truck: { x: 92, y: 518, angle: -Math.PI / 2, moving: false },
+      cargo: null,
+      completed: 0,
+      won: false,
+      nearby: null,
+      particles: [],
+      materials: [
+        { id: "concrete", name: "Concrete", x: 110, y: 112, color: "#aeb4b6", accent: "#267b9a", tint: "#dff3f7", taken: false },
+        { id: "asphalt", name: "Asphalt", x: 205, y: 112, color: "#4e5558", accent: "#5b3d82", tint: "#eee3f7", taken: false },
+        { id: "wood", name: "Wood", x: 300, y: 112, color: "#9b6437", accent: "#9b551e", tint: "#f8e3c6", taken: false }
+      ],
+      repairs: generateRepairs()
+    };
+  }
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function shuffle(items) {
+    for (var index = items.length - 1; index > 0; index -= 1) {
+      var swapIndex = Math.floor(Math.random() * (index + 1));
+      var value = items[index];
+      items[index] = items[swapIndex];
+      items[swapIndex] = value;
+    }
+    return items;
+  }
+
+  function generateRepairs() {
+    var count = randomInt(2, 5);
+    var repairs = [
+      { id: "wood", name: "Bridge", kind: "bridge", x: 720, y: ROAD.center, done: false }
+    ];
+    var slots = shuffle(EXTRA_REPAIR_SLOTS.slice());
+    for (var index = 0; index < count - 1; index += 1) {
+      var slot = slots[index];
+      repairs.push({
+        id: slot.id,
+        name: slot.id === "concrete" ? "Pavement" : "Pothole",
+        kind: slot.id,
+        x: slot.x,
+        y: slot.y,
+        done: false
+      });
+    }
+    return repairs;
+  }
+
+  function roundedPath(x, y, width, height, radius) {
+    var r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function fillRound(x, y, width, height, radius, color) {
+    roundedPath(x, y, width, height, radius);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function ensureAudio() {
+    if (!audioContext) {
+      try { audioContext = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { audioContext = null; }
+    }
+    if (audioContext && audioContext.state === "suspended") audioContext.resume().catch(function () {});
+  }
+
+  function tone(frequency, delay, duration, type, volume) {
+    if (muted || !audioContext) return;
+    var start = audioContext.currentTime + delay;
+    var oscillator = audioContext.createOscillator();
+    var gain = audioContext.createGain();
+    oscillator.type = type || "sine";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.linearRampToValueAtTime(volume || 0.12, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.03);
+  }
+
+  function playPickup() {
+    tone(420, 0, 0.09, "sine", 0.12);
+    tone(620, 0.08, 0.11, "sine", 0.1);
+  }
+
+  function playRepair() {
+    tone(480, 0, 0.12, "triangle", 0.13);
+    tone(720, 0.1, 0.15, "triangle", 0.11);
+  }
+
+  function playWin() {
+    [523, 659, 784, 1046].forEach(function (frequency, index) {
+      tone(frequency, index * 0.13, 0.24, "sine", 0.13);
+    });
+  }
+
+  function drawGrass(time) {
+    var gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    gradient.addColorStop(0, "#88c967");
+    gradient.addColorStop(1, "#68aa4e");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    ctx.strokeStyle = "rgba(42,112,44,.28)";
+    ctx.lineWidth = 2;
+    grassMarks.forEach(function (mark, index) {
+      var sway = Math.sin(time * 0.0015 + index) * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(mark[0] - 4, mark[1] + 4);
+      ctx.lineTo(mark[0] + sway, mark[1] - 5);
+      ctx.moveTo(mark[0], mark[1] + 5);
+      ctx.lineTo(mark[0] + 4 + sway, mark[1] - 3);
+      ctx.stroke();
+    });
+
+    trees.forEach(function (tree) {
+      drawTree(tree.x, tree.y, tree.r);
+    });
+  }
+
+  function drawTree(x, y, radius) {
+    ctx.fillStyle = "rgba(37,75,34,.2)";
+    ctx.beginPath();
+    ctx.ellipse(x + 6, y + 14, radius * 0.85, radius * 0.46, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#82522e";
+    ctx.fillRect(x - 5, y + 3, 10, 22);
+    ctx.fillStyle = "#2f793d";
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#3d914b";
+    ctx.beginPath();
+    ctx.arc(x - 7, y - 7, radius * 0.62, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.14)";
+    ctx.beginPath();
+    ctx.arc(x - 12, y - 13, radius * 0.23, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawRiver(time) {
+    var riverGradient = ctx.createLinearGradient(RIVER.left, 0, RIVER.right, 0);
+    riverGradient.addColorStop(0, "#2e9fc0");
+    riverGradient.addColorStop(.5, "#52bdd4");
+    riverGradient.addColorStop(1, "#258caf");
+    ctx.fillStyle = riverGradient;
+    ctx.fillRect(RIVER.left, 0, RIVER.right - RIVER.left, HEIGHT);
+
+    ctx.strokeStyle = "rgba(225,250,255,.55)";
+    ctx.lineWidth = 3;
+    for (var y = 32; y < HEIGHT; y += 45) {
+      var shift = Math.sin(time * 0.002 + y) * 8;
+      ctx.beginPath();
+      ctx.moveTo(RIVER.left + 22 + shift, y);
+      ctx.quadraticCurveTo(RIVER.left + 50 + shift, y - 7, RIVER.left + 78 + shift, y);
+      ctx.moveTo(RIVER.left + 85 - shift, y + 18);
+      ctx.quadraticCurveTo(RIVER.left + 108 - shift, y + 11, RIVER.left + 126 - shift, y + 18);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#d2b98c";
+    ctx.fillRect(RIVER.left - 8, 0, 8, HEIGHT);
+    ctx.fillRect(RIVER.right, 0, 8, HEIGHT);
+  }
+
+  function drawRoadSegment(left, right) {
+    fillRound(left - 8, ROAD.top - 12, right - left + 16, ROAD.bottom - ROAD.top + 24, 16, "#b89767");
+    fillRound(left, ROAD.top, right - left, ROAD.bottom - ROAD.top, 10, "#535a5c");
+    fillRound(left + 8, ROAD.top + 7, right - left - 16, 5, 3, "rgba(255,255,255,.52)");
+    fillRound(left + 8, ROAD.bottom - 12, right - left - 16, 5, 3, "rgba(255,255,255,.52)");
+
+    ctx.save();
+    ctx.setLineDash([25, 20]);
+    ctx.strokeStyle = "rgba(255,210,78,.92)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(left + 10, ROAD.center);
+    ctx.lineTo(right - 10, ROAD.center);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSideRoad() {
+    var width = SIDE_ROAD.right - SIDE_ROAD.left;
+    var height = SIDE_ROAD.bottom - SIDE_ROAD.top;
+    fillRound(SIDE_ROAD.left - 8, SIDE_ROAD.top - 8, width + 16, height + 16, 16, "#b89767");
+    fillRound(SIDE_ROAD.left, SIDE_ROAD.top, width, height, 10, "#535a5c");
+    fillRound(SIDE_ROAD.left + 7, SIDE_ROAD.top + 8, 5, height - 16, 3, "rgba(255,255,255,.52)");
+    fillRound(SIDE_ROAD.right - 12, SIDE_ROAD.top + 8, 5, height - 16, 3, "rgba(255,255,255,.52)");
+
+    ctx.save();
+    ctx.setLineDash([25, 20]);
+    ctx.strokeStyle = "rgba(255,210,78,.92)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(SIDE_ROAD.center, SIDE_ROAD.top + 12);
+    ctx.lineTo(SIDE_ROAD.center, SIDE_ROAD.bottom - 12);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawIntersectionMarkings() {
+    ctx.fillStyle = "rgba(255,255,255,.45)";
+    for (var x = SIDE_ROAD.left + 12; x < SIDE_ROAD.right - 8; x += 18) {
+      ctx.fillRect(x, ROAD.top + 14, 9, 24);
+      ctx.fillRect(x, ROAD.bottom - 38, 9, 24);
+    }
+  }
+
+  function drawRoad() {
+    drawSideRoad();
+    drawRoadSegment(ROAD.left, RIVER.left);
+    drawRoadSegment(RIVER.right, ROAD.right);
+    drawIntersectionMarkings();
+  }
+
+  function drawPavement() {
+    var width = PAVEMENT.right - PAVEMENT.left;
+    var height = PAVEMENT.bottom - PAVEMENT.top;
+    fillRound(PAVEMENT.left - 5, PAVEMENT.top - 5, width + 10, height + 10, 8, "#8d8478");
+    fillRound(PAVEMENT.left, PAVEMENT.top, width, height, 4, "#c4c2b9");
+    for (var x = PAVEMENT.left; x < PAVEMENT.right; x += 52) {
+      var slabWidth = Math.min(52, PAVEMENT.right - x);
+      fillRound(x + 2, PAVEMENT.top + 3, slabWidth - 4, height - 6, 3, (x / 52) % 2 ? "#d0cec5" : "#bfbdb4");
+    }
+    ctx.save();
+    roundedPath(PAVEMENT.left, PAVEMENT.top, width, height, 4);
+    ctx.clip();
+    ctx.strokeStyle = "rgba(92,87,77,.48)";
+    ctx.lineWidth = 2;
+    for (var seam = PAVEMENT.left + 52; seam < PAVEMENT.right; seam += 52) {
+      ctx.beginPath();
+      ctx.moveTo(seam, PAVEMENT.top);
+      ctx.lineTo(seam, PAVEMENT.bottom);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.fillStyle = "rgba(255,255,255,.32)";
+    ctx.fillRect(PAVEMENT.left + 4, PAVEMENT.top + 2, width - 8, 3);
+  }
+
+  function drawBridge() {
+    var bridge = findRepair("bridge");
+    fillRound(BRIDGE.left + 7, BRIDGE.top + 7, BRIDGE.right - BRIDGE.left, BRIDGE.bottom - BRIDGE.top, 12, "rgba(46,34,22,.28)");
+    fillRound(BRIDGE.left, BRIDGE.top, BRIDGE.right - BRIDGE.left, BRIDGE.bottom - BRIDGE.top, 11, "#6f4529");
+
+    for (var y = BRIDGE.top + 8; y < BRIDGE.bottom - 5; y += 20) {
+      if (!bridge.done && y > 285 && y < 325) continue;
+      fillRound(BRIDGE.left + 6, y, BRIDGE.right - BRIDGE.left - 12, 15, 4, y % 40 < 20 ? "#b87b45" : "#a66b3b");
+      ctx.fillStyle = "rgba(70,35,18,.24)";
+      ctx.fillRect(BRIDGE.left + 10, y + 12, BRIDGE.right - BRIDGE.left - 20, 2);
+    }
+
+    ctx.fillStyle = bridge.done ? "#f0d36d" : "#f3efe1";
+    ctx.fillRect(BRIDGE.left + 8, ROAD.top + 3, BRIDGE.right - BRIDGE.left - 16, 6);
+    ctx.fillRect(BRIDGE.left + 8, ROAD.bottom - 9, BRIDGE.right - BRIDGE.left - 16, 6);
+
+    ctx.strokeStyle = "#5d3a25";
+    ctx.lineWidth = 6;
+    [BRIDGE.left, BRIDGE.left + 50, BRIDGE.right - 50, BRIDGE.right].forEach(function (x) {
+      ctx.beginPath();
+      ctx.moveTo(x, BRIDGE.top);
+      ctx.lineTo(x, BRIDGE.top - 14);
+      ctx.moveTo(x, BRIDGE.bottom);
+      ctx.lineTo(x, BRIDGE.bottom + 14);
+      ctx.stroke();
+    });
+
+    if (!bridge.done) {
+      drawBarrier(675, 202, 90);
+      drawBarrier(675, 403, 90);
+    } else {
+      drawCompletion(bridge.x, ROAD.top - 25);
+    }
+  }
+
+  function drawBarrier(x, y, width) {
+    fillRound(x - 4, y - 6, width + 8, 15, 5, "#fff5dd");
+    ctx.save();
+    roundedPath(x - 4, y - 6, width + 8, 15, 5);
+    ctx.clip();
+    ctx.strokeStyle = "#d95245";
+    ctx.lineWidth = 9;
+    for (var px = x - 18; px < x + width + 18; px += 22) {
+      ctx.beginPath();
+      ctx.moveTo(px, y + 12);
+      ctx.lineTo(px + 14, y - 10);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawMaterialYard() {
+    fillRound(42, 50, 326, 158, 22, "rgba(49,64,31,.22)");
+    fillRound(48, 40, 312, 158, 20, "#c8a36b");
+    ctx.save();
+    ctx.setLineDash([10, 7]);
+    ctx.strokeStyle = "rgba(255,248,231,.72)";
+    ctx.lineWidth = 3;
+    roundedPath(61, 53, 286, 132, 14);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = "rgba(91,64,35,.18)";
+    [[78,83],[132,72],[255,168],[329,88],[73,169],[334,164]].forEach(function (speck) {
+      ctx.beginPath();
+      ctx.arc(speck[0], speck[1], 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    fillRound(68, 24, 170, 36, 10, "#ef9f25");
+    fillRound(75, 30, 156, 4, 2, "rgba(255,255,255,.48)");
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#5b3b20";
+    ctx.font = "900 16px 'Segoe UI', sans-serif";
+    ctx.fillText("MATERIAL SITE", 153, 44);
+  }
+
+  function drawMaterial(material, time) {
+    var isNearby = state.nearby === material;
+    ctx.fillStyle = "rgba(40,62,29,.2)";
+    ctx.beginPath();
+    ctx.ellipse(material.x + 4, material.y + 20, 34, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (isNearby) drawFocusRing(material.x, material.y, 39, time);
+
+    if (material.taken) {
+      ctx.save();
+      ctx.setLineDash([6, 5]);
+      ctx.strokeStyle = "rgba(68,76,53,.45)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(material.x, material.y, 27, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      drawLabel(material.x, material.y + 49, material.name, "EMPTY", material.tint, material.accent, material.accent);
+      return;
+    }
+
+    if (material.id === "concrete") {
+      fillRound(material.x - 27, material.y - 7, 24, 18, 3, "#c9cdcf");
+      fillRound(material.x + 3, material.y - 7, 24, 18, 3, "#9fa5a8");
+      fillRound(material.x - 12, material.y - 23, 25, 17, 3, "#b9bec0");
+    } else if (material.id === "asphalt") {
+      ctx.fillStyle = "#303638";
+      ctx.beginPath();
+      ctx.arc(material.x, material.y, 27, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#596164";
+      [[-12,-6],[5,-11],[15,2],[-3,10]].forEach(function (rock) {
+        ctx.beginPath();
+        ctx.arc(material.x + rock[0], material.y + rock[1], 7, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    } else {
+      for (var plank = 0; plank < 3; plank++) {
+        fillRound(material.x - 29 + plank * 3, material.y - 19 + plank * 13, 55 - plank * 5, 10, 3, plank % 2 ? "#b9783f" : "#9b5f30");
+      }
+    }
+
+    drawLabel(material.x, material.y + 49, material.name, "PICK UP", "#fff8e7", material.accent, material.accent);
+  }
+
+  function drawRepair(repair, time) {
+    var isNearby = state.nearby === repair;
+    if (isNearby) drawFocusRing(repair.x, repair.y, 39, time);
+
+    if (repair.id === "concrete") {
+      if (!repair.done) {
+        fillRound(repair.x - 42, repair.y - 18, 84, 36, 6, "#8f8a80");
+        ctx.fillStyle = "#514c44";
+        ctx.beginPath();
+        ctx.moveTo(repair.x - 38, repair.y - 10);
+        ctx.lineTo(repair.x - 22, repair.y - 16);
+        ctx.lineTo(repair.x - 10, repair.y - 3);
+        ctx.lineTo(repair.x + 4, repair.y - 9);
+        ctx.lineTo(repair.x + 18, repair.y + 2);
+        ctx.lineTo(repair.x + 37, repair.y - 4);
+        ctx.lineTo(repair.x + 31, repair.y + 14);
+        ctx.lineTo(repair.x + 8, repair.y + 11);
+        ctx.lineTo(repair.x - 10, repair.y + 17);
+        ctx.lineTo(repair.x - 27, repair.y + 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#38352f";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(repair.x - 37, repair.y - 9);
+        ctx.lineTo(repair.x - 19, repair.y - 3);
+        ctx.lineTo(repair.x - 8, repair.y + 11);
+        ctx.moveTo(repair.x - 8, repair.y + 11);
+        ctx.lineTo(repair.x + 9, repair.y + 4);
+        ctx.lineTo(repair.x + 25, repair.y + 13);
+        ctx.stroke();
+      } else {
+        fillRound(repair.x - 42, repair.y - 18, 84, 36, 6, "#d0cec5");
+        ctx.strokeStyle = "rgba(92,87,77,.48)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(repair.x - 6, repair.y - 16);
+        ctx.lineTo(repair.x - 6, repair.y + 16);
+        ctx.moveTo(repair.x + 30, repair.y - 16);
+        ctx.lineTo(repair.x + 30, repair.y + 16);
+        ctx.stroke();
+        drawCompletion(repair.x, repair.y - 31);
+      }
+    } else if (repair.id === "asphalt") {
+      if (!repair.done) {
+        ctx.fillStyle = "#1e2223";
+        ctx.beginPath();
+        ctx.ellipse(repair.x, repair.y + 2, 35, 25, -0.12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#70787a";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      } else {
+        fillRound(repair.x - 42, repair.y - 31, 84, 62, 12, "#303536");
+        ctx.strokeStyle = "#5d6567";
+        ctx.lineWidth = 4;
+        roundedPath(repair.x - 39, repair.y - 28, 78, 56, 10);
+        ctx.stroke();
+        drawCompletion(repair.x, repair.y - 42);
+      }
+    }
+
+    var material = findMaterial(repair.id);
+    var subtext = repair.done ? "FIXED" : repair.id.toUpperCase();
+    var accent = repair.done ? "#4e8b3b" : material.accent;
+    var background = repair.done ? "#dff1ce" : "#fff8e7";
+    drawLabel(repair.x, repair.y + 52, repair.name, subtext, background, accent, accent);
+  }
+
+  function drawCompletion(x, y) {
+    ctx.fillStyle = "#4e8b3b";
+    ctx.beginPath();
+    ctx.arc(x, y, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - 7, y);
+    ctx.lineTo(x - 2, y + 6);
+    ctx.lineTo(x + 8, y - 6);
+    ctx.stroke();
+  }
+
+  function drawLabel(x, y, title, subtitle, background, color, accent) {
+    ctx.font = "800 13px 'Segoe UI', sans-serif";
+    var titleWidth = ctx.measureText(title).width;
+    ctx.font = "800 10px 'Segoe UI', sans-serif";
+    var subtitleWidth = ctx.measureText(subtitle).width;
+    var width = Math.max(titleWidth, subtitleWidth) + 22;
+    fillRound(x - width / 2, y - 13, width, 34, 10, background);
+    if (accent) {
+      ctx.fillStyle = accent;
+      ctx.fillRect(x - subtitleWidth / 2 - 6, y + 19, subtitleWidth + 12, 2);
+    }
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = accent || color;
+    ctx.font = "800 13px 'Segoe UI', sans-serif";
+    ctx.fillText(title, x, y - 3);
+    ctx.fillStyle = accent || color;
+    ctx.font = "800 10px 'Segoe UI', sans-serif";
+    ctx.fillText(subtitle, x, y + 12);
+  }
+
+  function drawFocusRing(x, y, radius, time) {
+    var pulse = 1 + Math.sin(time * 0.006) * 0.06;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,248,231,.95)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(x, y, radius * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(74,52,31,.48)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawRoadSign() {
+    fillRound(70, 405, 9, 56, 4, "#7c5838");
+    fillRound(35, 390, 78, 37, 9, "#fff5d8");
+    ctx.fillStyle = "#d0a430";
+    ctx.beginPath();
+    ctx.moveTo(50, 408);
+    ctx.lineTo(70, 390);
+    ctx.lineTo(90, 408);
+    ctx.lineTo(81, 408);
+    ctx.lineTo(81, 418);
+    ctx.lineTo(59, 418);
+    ctx.lineTo(59, 408);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawTruck() {
+    var truck = state.truck;
+    var bounce = truck.moving ? Math.sin(lastTime * 0.025) * 0.8 : 0;
+    ctx.save();
+    ctx.translate(truck.x, truck.y + bounce);
+    ctx.rotate(truck.angle);
+
+    ctx.fillStyle = "rgba(40,32,22,.25)";
+    roundedPath(-34 + 5, -15 + 6, 68, 30, 8);
+    ctx.fill();
+
+    fillRound(-17, -18, 9, 10, 3, "#242728");
+    fillRound(8, -18, 9, 10, 3, "#242728");
+    fillRound(-17, 8, 9, 10, 3, "#242728");
+    fillRound(8, 8, 9, 10, 3, "#242728");
+
+    fillRound(-34, -15, 43, 30, 7, "#ef9f25");
+    fillRound(-30, -11, 35, 22, 5, "#d97c18");
+    fillRound(9, -16, 26, 32, 8, "#ffc43d");
+    fillRound(18, -11, 12, 12, 3, "#91cbe0");
+    fillRound(18, 1, 12, 10, 3, "#78b7d0");
+    fillRound(32, -11, 4, 10, 2, "#ffe28a");
+    fillRound(32, 1, 4, 10, 2, "#ffe28a");
+
+    if (state.cargo === "concrete") {
+      fillRound(-28, -9, 16, 7, 2, "#d6d9da");
+      fillRound(-9, -8, 14, 7, 2, "#aeb4b6");
+    } else if (state.cargo === "asphalt") {
+      fillRound(-28, -8, 23, 16, 6, "#303638");
+    } else if (state.cargo === "wood") {
+      fillRound(-28, -8, 25, 7, 2, "#b9783f");
+      fillRound(-24, 1, 20, 7, 2, "#9b5f30");
+    }
+
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    state.particles.forEach(function (particle) {
+      ctx.globalAlpha = Math.max(0, particle.life);
+      ctx.fillStyle = particle.color;
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function insideRiver(x, y) {
+    var nearRiver = x > RIVER.left - TRUCK_RADIUS && x < RIVER.right + TRUCK_RADIUS;
+    var outsideBridge = y < ROAD.top + 5 || y > ROAD.bottom - 5;
+    return nearRiver && outsideBridge;
+  }
+
+  function canMoveTo(x, y) {
+    return x >= 27 && x <= WIDTH - 27 && y >= 27 && y <= HEIGHT - 27 && !insideRiver(x, y);
+  }
+
+  function moveTruck(dt) {
+    var truck = state.truck;
+    if (state.won) {
+      truck.moving = false;
+      return;
+    }
+    var horizontal = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    var vertical = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+    var length = Math.sqrt(horizontal * horizontal + vertical * vertical);
+    truck.moving = length > 0;
+
+    if (!length) return;
+    horizontal /= length;
+    vertical /= length;
+    var speed = 215;
+    var nextX = truck.x + horizontal * speed * dt;
+    var nextY = truck.y + vertical * speed * dt;
+
+    if (canMoveTo(nextX, truck.y)) truck.x = nextX;
+    if (canMoveTo(truck.x, nextY)) truck.y = nextY;
+
+    var targetAngle = Math.atan2(vertical, horizontal);
+    var difference = Math.atan2(Math.sin(targetAngle - truck.angle), Math.cos(targetAngle - truck.angle));
+    truck.angle += difference * Math.min(1, dt * 13);
+  }
+
+  function updateNearby() {
+    if (state.won) {
+      state.nearby = null;
+      return;
+    }
+    var candidates = state.cargo ? state.repairs : state.materials;
+    var closest = null;
+    var closestDistance = INTERACT_RADIUS;
+    candidates.forEach(function (item) {
+      if (state.cargo ? item.done : item.taken) return;
+      var distance = Math.hypot(item.x - state.truck.x, item.y - state.truck.y);
+      if (distance < closestDistance) {
+        closest = item;
+        closestDistance = distance;
+      }
+    });
+    state.nearby = closest;
+  }
+
+  function findRepair(kind) {
+    return state.repairs.filter(function (repair) { return repair.kind === kind; })[0];
+  }
+
+  function findMaterial(id) {
+    return state.materials.filter(function (material) { return material.id === id; })[0];
+  }
+
+  function interact() {
+    if (state.won) return;
+    updateNearby();
+    var nearby = state.nearby;
+    if (!nearby) {
+      setPrompt(state.cargo ? "Find the matching damaged section" : "Drive to a material pile", state.cargo);
+      return;
+    }
+
+    if (!state.cargo) {
+      nearby.taken = true;
+      state.cargo = nearby.id;
+      playPickup();
+      burst(nearby.x, nearby.y, materialColor(nearby.id), 12);
+      setPrompt(nearby.name + " loaded — drive to the matching damage", nearby.id);
+    } else {
+      if (nearby.id !== state.cargo) {
+        var needed = findMaterial(nearby.id);
+        setPrompt("This damage needs " + needed.name, nearby.id);
+        tone(180, 0, 0.12, "triangle", 0.08);
+        return;
+      }
+      var deliveredMaterial = findMaterial(nearby.id);
+      nearby.done = true;
+      deliveredMaterial.taken = false;
+      state.completed += 1;
+      state.cargo = null;
+      playRepair();
+      burst(nearby.x, nearby.y, "#ffe16d", 22);
+      updateStatus();
+      if (state.completed === state.repairs.length) {
+        state.won = true;
+        playWin();
+        celebrate();
+        winOverlayEl.classList.add("show");
+        winOverlayEl.setAttribute("aria-hidden", "false");
+      } else {
+        setPrompt(nearby.name + " repaired — find the next pile", nearby.id);
+      }
+    }
+    updateNearby();
+    updateStatus();
+  }
+
+  function materialColor(id) {
+    return findMaterial(id).color;
+  }
+
+  function burst(x, y, color, count) {
+    for (var index = 0; index < count; index++) {
+      var angle = Math.random() * Math.PI * 2;
+      var speed = 35 + Math.random() * 85;
+      state.particles.push({
+        x: x,
+        y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1,
+        size: 3 + Math.random() * 4,
+        color: index % 3 === 0 ? "#fff8e7" : color
+      });
+    }
+  }
+
+  function celebrate() {
+    var colors = ["#ffcb45", "#6ed47a", "#64bce8", "#f18b69", "#f7f1d5"];
+    for (var index = 0; index < 45; index++) {
+      state.particles.push({
+        x: 70 + Math.random() * (WIDTH - 140),
+        y: 25 + Math.random() * 120,
+        vx: -20 + Math.random() * 40,
+        vy: 35 + Math.random() * 75,
+        life: 1.4 + Math.random() * 1.2,
+        size: 4 + Math.random() * 5,
+        color: colors[index % colors.length]
+      });
+    }
+  }
+
+  function updateParticles(dt) {
+    state.particles.forEach(function (particle) {
+      particle.x += particle.vx * dt;
+      particle.y += particle.vy * dt;
+      particle.vy += 28 * dt;
+      particle.life -= dt;
+    });
+    state.particles = state.particles.filter(function (particle) { return particle.life > 0; });
+  }
+
+  function setPrompt(text, materialId) {
+    var material = materialId ? findMaterial(materialId) : null;
+    var signature = text + "|" + (materialId || "");
+    if (promptEl.dataset.prompt !== signature) {
+      promptEl.textContent = text;
+      promptEl.dataset.prompt = signature;
+    }
+    if (material) {
+      promptEl.style.color = material.accent;
+      promptEl.style.background = material.tint;
+      promptEl.style.borderColor = material.accent;
+    } else {
+      promptEl.style.removeProperty("color");
+      promptEl.style.removeProperty("background");
+      promptEl.style.removeProperty("border-color");
+    }
+  }
+
+  function updatePrompt() {
+    if (state.won) return;
+    var nearby = state.nearby;
+    if (!state.cargo && nearby) {
+      setPrompt("Press SPACE to pick up " + nearby.name, nearby.id);
+    } else if (state.cargo && nearby && nearby.id === state.cargo) {
+      setPrompt("Press SPACE to repair the " + nearby.name.toLowerCase(), state.cargo);
+    } else if (state.cargo && nearby) {
+      setPrompt("This damage needs " + findMaterial(nearby.id).name, nearby.id);
+    } else if (state.cargo) {
+      setPrompt("Carrying " + findMaterial(state.cargo).name + " — find the matching damage", state.cargo);
+    } else {
+      setPrompt("Drive to a material pile");
+    }
+  }
+
+  function updateStatus() {
+    var cargo = state.cargo ? findMaterial(state.cargo) : null;
+    cargoStatusEl.textContent = cargo ? "Truck: " + cargo.name : "Truck: Empty";
+    cargoStatusEl.style.color = cargo ? cargo.accent : "#49351f";
+    cargoStatusEl.style.background = cargo ? cargo.tint : "rgba(255,248,231,.92)";
+    cargoStatusEl.style.borderColor = cargo ? cargo.accent : "rgba(92,67,38,.18)";
+    repairStatusEl.textContent = "Level " + state.level + " · " + state.completed + " / " + state.repairs.length + " repaired";
+  }
+
+  function draw(time) {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    drawGrass(time);
+    drawRiver(time);
+    drawRoad();
+    drawPavement();
+    drawBridge();
+    drawRoadSign();
+    drawMaterialYard();
+    state.materials.forEach(function (material) { drawMaterial(material, time); });
+    state.repairs.forEach(function (repair) { drawRepair(repair, time); });
+    drawTruck();
+    drawParticles();
+  }
+
+  function loop(time) {
+    if (!lastTime) lastTime = time;
+    var dt = Math.min((time - lastTime) / 1000, 0.04);
+    lastTime = time;
+    lastFrame = time;
+    moveTruck(dt);
+    updateParticles(dt);
+    updateNearby();
+    updatePrompt();
+    draw(time);
+    requestAnimationFrame(loop);
+  }
+
+  function resizeCanvas() {
+    var ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(WIDTH * ratio);
+    canvas.height = Math.round(HEIGHT * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    draw(lastFrame);
+  }
+
+  function resetGame() {
+    state = makeInitialState(state.level + 1);
+    keys = {};
+    winOverlayEl.classList.remove("show");
+    winOverlayEl.setAttribute("aria-hidden", "true");
+    updateStatus();
+    setPrompt("Drive to a material pile");
+  }
+
+  function goBack() {
+    window.location.href = "../index.html";
+  }
+
+  backBtn.addEventListener("click", goBack);
+
+  function keyName(event) {
+    if (event.key && event.key.length === 1) return event.key.toLowerCase();
+    return event.key;
+  }
+
+  window.addEventListener("keydown", function (event) {
+    if (event.ctrlKey || event.altKey || event.metaKey) return;
+    var key = keyName(event);
+    var directions = {
+      ArrowUp: "up", w: "up",
+      ArrowRight: "right", d: "right",
+      ArrowDown: "down", s: "down",
+      ArrowLeft: "left", a: "left"
+    };
+
+    if (key === "Escape") {
+      event.preventDefault();
+      window.location.href = "../index.html";
+      return;
+    }
+    if (key === "Enter") {
+      event.preventDefault();
+      if (event.target === backBtn) {
+        goBack();
+        return;
+      }
+      if (!event.repeat) resetGame();
+      return;
+    }
+    if (key === "m") {
+      event.preventDefault();
+      if (!event.repeat) {
+        muted = !muted;
+        soundTextEl.textContent = muted ? "Sound off" : "Sound on";
+        if (!muted) {
+          ensureAudio();
+          tone(520, 0, 0.08, "sine", 0.1);
+        }
+      }
+      return;
+    }
+    if (key === " " || key === "Spacebar") {
+      event.preventDefault();
+      if (!event.repeat) {
+        ensureAudio();
+        interact();
+      }
+      return;
+    }
+    if (directions[key]) {
+      event.preventDefault();
+      ensureAudio();
+      keys[directions[key]] = true;
+    }
+  });
+
+  window.addEventListener("keyup", function (event) {
+    var key = keyName(event);
+    var directions = {
+      ArrowUp: "up", w: "up",
+      ArrowRight: "right", d: "right",
+      ArrowDown: "down", s: "down",
+      ArrowLeft: "left", a: "left"
+    };
+    if (directions[key]) {
+      event.preventDefault();
+      keys[directions[key]] = false;
+    }
+  });
+
+  window.addEventListener("blur", function () { keys = {}; });
+  document.addEventListener("visibilitychange", function () { if (document.hidden) keys = {}; });
+  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("load", function () {
+    resizeCanvas();
+    updateStatus();
+    requestAnimationFrame(loop);
+  });
+})();
+</script>
+</body>
+</html>
