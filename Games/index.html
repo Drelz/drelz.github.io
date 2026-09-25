@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>My Games</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(#cdeffd 0%, #b6e3c8 60%, #a5d8a0 100%);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px 16px;
+  }
+  .home-bar {
+    width: 100%;
+    max-width: 640px;
+    margin-bottom: 16px;
+  }
+  .home-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 16px;
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px;
+    background: rgba(45,35,20,.84);
+    color: #fff8e7;
+    font-size: .85rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2);
+    transition: transform .1s ease, background .15s ease;
+  }
+  .home-button:hover { background: rgba(45,35,20,.94); transform: translateY(-1px); }
+  .home-button:active { transform: translateY(1px); }
+  .home-button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(14px, 3vw, 28px);
+    width: 100%;
+    max-width: 640px;
+  }
+  .card {
+    position: relative;
+    border: none;
+    border-radius: 24px;
+    cursor: pointer;
+    padding: clamp(18px, 4vw, 30px);
+    aspect-ratio: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    font-family: inherit;
+    color: #fff;
+    box-shadow: 0 8px 0 rgba(0,0,0,.18), inset 0 0 0 3px rgba(255,255,255,.28), 0 10px 24px rgba(0,0,0,.12);
+    transition: transform .1s ease, box-shadow .1s ease, filter .15s ease;
+    background: var(--bg);
+  }
+  .card:active, .card.pressed {
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 rgba(0,0,0,.18), inset 0 0 0 3px rgba(255,255,255,.28);
+  }
+  .card:hover:not(.soon) { transform: translateY(-3px); filter: brightness(1.05); }
+  .card:hover:not(.soon):active { transform: translateY(3px); filter: brightness(1); }
+  .card.soon { cursor: default; filter: saturate(.85); }
+  .icon {
+    font-size: clamp(56px, 16vw, 130px);
+    line-height: 1;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.22));
+  }
+  .soon .icon { filter: none; opacity: .95; }
+  .name {
+    position: absolute;
+    bottom: 14px;
+    left: 0; right: 0;
+    font-size: clamp(12px, 2.6vw, 16px);
+    font-weight: 700;
+    letter-spacing: .5px;
+    color: rgba(255,255,255,.95);
+    text-shadow: 0 1px 2px rgba(0,0,0,.3);
+    background: rgba(0,0,0,.16);
+    padding: 4px 10px;
+    border-radius: 999px;
+    width: max-content;
+    max-width: 86%;
+    margin: 0 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(.7);
+    background: rgba(45, 35, 20, .92);
+    color: #fff8e7;
+    font-weight: 700;
+    font-size: clamp(16px, 4vw, 22px);
+    padding: 14px 30px;
+    border-radius: 16px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s ease, transform .2s ease;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+</style>
+</head>
+<body>
+  <div class="home-bar">
+    <a class="home-button" href="../index.html" aria-label="Return to Drelz home">Home</a>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="toast" id="toast">Coming Soon</div>
+
+<script>
+(function () {
+  "use strict";
+  var games = [
+    { icon: "🦔", name: "Maze", url: "Maze/index.html", bg: "linear-gradient(#86cf50, #4e8a30)" },
+    { icon: "🧠", name: "Memory", url: "Memory/index.html", bg: "linear-gradient(#ffb36b, #e07b3f)" },
+    { icon: "🔤", name: "Spelling", url: "Spelling/index.html", bg: "linear-gradient(#7ec8e3, #3f7db5)" },
+    { icon: "?", name: "Coming Soon", bg: "linear-gradient(#9aa9ba, #717f92)" }
+  ];
+  var gridEl = document.getElementById("grid");
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+
+  games.forEach(function (game) {
+    var btn = document.createElement("button");
+    btn.className = "card" + (game.url ? "" : " soon");
+    btn.style.setProperty("--bg", game.bg);
+
+    if (game.url) btn.setAttribute("aria-label", "Play " + game.name);
+
+    var icon = document.createElement("div");
+    icon.className = "icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = game.icon;
+    btn.appendChild(icon);
+
+    var name = document.createElement("div");
+    name.className = "name";
+    name.textContent = game.name;
+    btn.appendChild(name);
+
+    btn.addEventListener("click", function () {
+      if (game.url) { window.location.href = game.url; return; }
+      clearTimeout(toastTimer);
+      toastEl.classList.add("show");
+      toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1500);
+    });
+
+    gridEl.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

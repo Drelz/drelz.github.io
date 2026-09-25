@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Memory</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(#cdeffd 0%, #b6e3c8 60%, #a5d8a0 100%);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 10px; min-height: 100vh; overflow: hidden;
+  }
+  .wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+
+  .header-row { display: flex; align-items: center; justify-content: center; position: relative; gap: 10px; width: 100%; }
+  #backBtn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); font-size: 15px; padding: 8px 12px; }
+  h1 { font-size: clamp(20px, 4.5vw, 28px); color: #4a3520; letter-spacing: 1px; }
+  button {
+    font-family: inherit; font-size: 15px; font-weight: 700;
+    border: none; border-radius: 14px; cursor: pointer;
+    background: #7a5c43; color: #fff8e7; padding: 8px 14px;
+    box-shadow: 0 3px 0 #5c4430;
+    transition: transform .06s ease, box-shadow .06s ease;
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 0 0 #5c4430; }
+  button.active { background: #e08a3c; box-shadow: 0 3px 0 #a85f1f; }
+
+  .controls {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    flex-wrap: wrap; width: 100%;
+  }
+  .star-pill {
+    background: #e8c360; color: #6b4a21; font-weight: 800; font-size: 17px;
+    padding: 7px 12px; border-radius: 12px; text-align: center;
+    box-shadow: inset 0 0 0 2px #d4ae45;
+  }
+  .star-pill .num { min-width: 1.4em; display: inline-block; text-align: center; }
+
+  .board-holder { display: flex; justify-content: center; }
+  .grid {
+    display: grid; gap: 8px;
+    padding: 8px;
+    background: #3d6b28; border-radius: 14px;
+    box-shadow: inset 0 0 0 3px #2c4d1b, 0 8px 22px rgba(30, 60, 20, .25);
+  }
+  .card {
+    perspective: 600px; cursor: pointer; border: none; background: none; padding: 0;
+    border-radius: 10px;
+  }
+  .card:disabled { cursor: default; }
+  .inner {
+    position: relative; width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    transition: transform .35s ease;
+    border-radius: 10px;
+  }
+  .card.flipped .inner { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: calc(var(--cell) * .5); line-height: 1;
+  }
+  .face.back { transform: rotateY(180deg); background: linear-gradient(#fff3d6, #f1dca6); box-shadow: inset 0 0 0 3px #d9c48f; }
+  .face.front {
+    background: linear-gradient(#6aa043, #4c7e2c);
+    box-shadow: inset 0 0 0 3px #33581e;
+    color: rgba(255, 255, 255, .85);
+  }
+  .face.front::after {
+    content: "❓"; font-size: calc(var(--cell) * .42);
+  }
+  .back .pic { filter: drop-shadow(0 2px 2px rgba(80,60,20,.25)); }
+  .card.matched { pointer-events: none; }
+  .card.matched .face.back { background: linear-gradient(#ebe6d8, #d8d2c2); box-shadow: inset 0 0 0 3px #b5ae9a; }
+  .card.matched .pic { opacity: .4; filter: grayscale(1); }
+  .card.matched .inner { animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: rotateY(180deg) scale(1); } 45% { transform: rotateY(180deg) scale(1.15); } 100% { transform: rotateY(180deg) scale(1); } }
+
+  [hidden] { display: none !important; }
+  .card.shown { pointer-events: none; cursor: default; }
+  .card.shown .face.back { box-shadow: inset 0 0 0 3px #f0c050; }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(60, 40, 20, .55);
+    display: none; align-items: center; justify-content: center; z-index: 50; opacity: 0;
+    transition: opacity .25s ease;
+  }
+  .overlay.show { display: flex; opacity: 1; }
+  .cardm {
+    background: #fff8e7; border-radius: 22px; padding: 38px 52px; text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,.35); border: 3px solid #8d6e63;
+    transform: scale(.8); transition: transform .25s ease; max-width: 92vw;
+  }
+  .overlay.show .cardm { transform: scale(1); }
+  .cardm h2 { font-size: clamp(38px, 10vw, 58px); color: #7a5c43; margin-bottom: 10px; }
+  .cardm .score { font-size: 27px; color: #4a3520; font-weight: 800; margin: 10px 0 22px; line-height: 1.5; }
+  .cardm .btn-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .cardm .btn-row button { font-size: 18px; padding: 12px 20px; }
+
+  .confetti { position: fixed; top: -20px; width: 10px; height: 16px; z-index: 60; pointer-events: none; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="header-row">
+    <button id="backBtn" aria-label="Back to games">◀</button>
+    <h1>🧠 Memory</h1>
+  </header>
+
+  <div class="controls">
+    <span class="star-pill">🎯 Moves: <span class="num" id="moves">0</span></span>
+    <button data-pairs="4">Small</button>
+    <button data-pairs="8">Normal</button>
+    <button data-pairs="16">Large</button>
+    <button id="easyBtn">🤗 Easy</button>
+    <button id="newBtn">🔄 New Game</button>
+    <button id="soundBtn">🔊</button>
+  </div>
+
+  <div class="board-holder" id="holder">
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="overlay" id="winOverlay">
+  <div class="cardm">
+    <h2>YAY! 🎉</h2>
+    <div class="score">You matched them all!<br>in <span id="finalMoves">0</span> moves</div>
+    <div class="btn-row">
+      <button id="againBtn">🔄 New Game</button>
+      <button id="stayBtn">Keep Playing</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var GAP = 8;
+  var SIZES = { "4": [2, 4], "8": [4, 4], "16": [8, 4] };
+  var POOL = ["🐶","🐱","🦊","🐻","🐼","🐸","🦁","🐮","🐷","🐔","🐧","🦉","🐰","🐭","🐨","🚗","🚕","🚌","🚓","🏎️","🏠","⏰","🎈","🔑","📚","🍎"];
+
+  var state = { pairs: 4, cols: 2, rows: 4, cell: 0, moves: 0, first: null, lock: false, matched: 0, easy: false, easyHints: [], easyI1: 0, easyI2: 1 };
+  var muted = false;
+  var audioCtx = null;
+
+  var gridEl = document.getElementById("grid");
+  var holderEl = document.getElementById("holder");
+  var movesEl = document.getElementById("moves");
+  var winOverlay = document.getElementById("winOverlay");
+  var finalMovesEl = document.getElementById("finalMoves");
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(function () {});
+  }
+
+  function beep(freq, delay, dur, type, vol) {
+    if (muted || !audioCtx) return;
+    var t0 = audioCtx.currentTime + delay;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(vol || 0.25, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+
+  function sFlip() { beep(420, 0, .05, "sine", .12); }
+  function sMatch() { beep(880, 0, .09, "sine", .22); beep(1318, .1, .14, "sine", .22); }
+  function sMiss() { beep(220, 0, .18, "triangle", .14); }
+  function sWin() { [523, 659, 784, 1046].forEach(function (f, i) { beep(f, i * 0.14, .22, "sine", .22); }); }
+  function sClick() { beep(500, 0, .05, "sine", .12); }
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  function buildDeck() {
+    var pool = shuffle(POOL.slice()).slice(0, state.pairs);
+    var cards = [];
+    var pair = 0;
+    pool.forEach(function (emoji) {
+      cards.push({ pair: pair, emoji: emoji });
+      cards.push({ pair: pair, emoji: emoji });
+      pair++;
+    });
+    return shuffle(cards);
+  }
+
+  function computeCell() {
+    var MAX_COLS = 8, MAX_ROWS = 4;
+    var availW = window.innerWidth - 24;
+    var availH = window.innerHeight - 150;
+    var innerW = availW - 2 * 8 - (MAX_COLS - 1) * GAP;
+    var innerH = availH - 2 * 8 - (MAX_ROWS - 1) * GAP;
+    var cell = Math.floor(Math.min(innerW / MAX_COLS, innerH / MAX_ROWS));
+    if (cell < 22) cell = 22;
+    return cell;
+  }
+
+  function applyLayout() {
+    var cell = state.cell = computeCell();
+    var w = state.cols * cell + (state.cols - 1) * GAP + 16;
+    var h = state.rows * cell + (state.rows - 1) * GAP + 16;
+    gridEl.style.gridTemplateColumns = "repeat(" + state.cols + ", " + cell + "px)";
+    gridEl.style.gridTemplateRows = "repeat(" + state.rows + ", " + cell + "px)";
+    holderEl.style.width = w + "px";
+    holderEl.style.height = h + "px";
+    holderEl.style.setProperty("--cell", cell + "px");
+  }
+
+  function clearBoard() {
+    var cards = gridEl.querySelectorAll(".card");
+    for (var i = 0; i < cards.length; i++) cards[i].remove();
+  }
+
+  function buildBoard() {
+    clearBoard();
+    state.moves = 0;
+    movesEl.textContent = "0";
+    state.first = null;
+    state.lock = false;
+    state.matched = 0;
+    state.easyHints = [];
+    winOverlay.classList.remove("show");
+    holderEl.style.flexDirection = "";
+
+    var deck = buildDeck();
+    if (state.easy) prepEasyDeck(deck);
+    applyLayout();
+
+    deck.forEach(function (data, i) {
+      var card = document.createElement("button");
+      card.className = "card";
+      card.type = "button";
+      card.dataset.pair = data.pair;
+      card.setAttribute("aria-label", "Card");
+
+      var inner = document.createElement("div");
+      inner.className = "inner";
+
+      var front = document.createElement("div");
+      front.className = "face front";
+      inner.appendChild(front);
+
+      var back = document.createElement("div");
+      back.className = "face back";
+      var pic = document.createElement("span");
+      pic.className = "pic";
+      pic.textContent = data.emoji;
+      back.appendChild(pic);
+      inner.appendChild(back);
+
+      card.appendChild(inner);
+      card.addEventListener("click", function () { onFlip(card); });
+      if (state.easy && (i === state.easyI1 || i === state.easyI2)) {
+        card.classList.add("flipped", "shown");
+      }
+      gridEl.appendChild(card);
+    });
+
+    if (state.easy) {
+      state.easyHints.push(gridEl.children[state.easyI1]);
+      state.easyHints.push(gridEl.children[state.easyI2]);
+    }
+  }
+
+  function prepEasyDeck(deck) {
+    var cols = state.cols;
+    state.easyI1 = Math.floor((cols - 1) / 2);
+    state.easyI2 = Math.ceil(cols / 2);
+    if (deck[state.easyI1].pair === deck[state.easyI2].pair) {
+      for (var j = 0; j < deck.length; j++) {
+        if (j !== state.easyI1 && deck[j].pair !== deck[state.easyI1].pair) {
+          var t = deck[state.easyI2];
+          deck[state.easyI2] = deck[j];
+          deck[j] = t;
+          break;
+        }
+      }
+    }
+  }
+
+  function onFlip(card) {
+    if (state.lock || card.classList.contains("flipped") || card.classList.contains("matched") || card.classList.contains("shown")) return;
+    ensureAudio();
+    card.classList.add("flipped");
+    sFlip();
+
+    if (state.easy) {
+      for (var k = 0; k < state.easyHints.length; k++) {
+        if (card.dataset.pair === state.easyHints[k].dataset.pair) { easyMatch(card, state.easyHints[k]); return; }
+      }
+    }
+
+    if (!state.first) {
+      state.first = card;
+      return;
+    }
+
+    state.moves++;
+    movesEl.textContent = state.moves;
+    state.lock = true;
+
+    var a = state.first;
+    var b = card;
+    state.first = null;
+
+    if (a.dataset.pair === b.dataset.pair) {
+      a.classList.add("matched");
+      b.classList.add("matched");
+      state.matched++;
+      sMatch();
+      state.lock = false;
+      if (state.matched === state.pairs) {
+        setTimeout(win, 450);
+      }
+    } else {
+      sMiss();
+      setTimeout(function () {
+        a.classList.remove("flipped");
+        b.classList.remove("flipped");
+        state.lock = false;
+      }, 800);
+    }
+  }
+
+  function easyMatch(card, hint) {
+    state.moves++;
+    movesEl.textContent = state.moves;
+    state.first = null;
+    state.lock = true;
+    card.classList.add("matched");
+    hint.classList.add("matched");
+    var idx = state.easyHints.indexOf(hint);
+    if (idx >= 0) state.easyHints.splice(idx, 1);
+    state.matched++;
+    sMatch();
+    setTimeout(function () {
+      state.lock = false;
+      if (state.matched === state.pairs) { win(); return; }
+      replenishHints();
+    }, 450);
+  }
+
+  function replenishHints() {
+    while (state.easyHints.length < 2) {
+      var hintPics = [];
+      for (var h = 0; h < state.easyHints.length; h++) hintPics.push(state.easyHints[h].dataset.pair);
+      var cs = gridEl.querySelectorAll(".card");
+      var found = null;
+      for (var i = 0; i < cs.length; i++) {
+        var c = cs[i];
+        if (c.classList.contains("flipped") || c.classList.contains("matched") || c.classList.contains("shown")) continue;
+        if (hintPics.indexOf(c.dataset.pair) >= 0) continue;
+        found = c;
+        break;
+      }
+      if (!found) break;
+      found.classList.add("flipped", "shown");
+      state.easyHints.push(found);
+    }
+  }
+
+  function win() {
+    finalMovesEl.textContent = state.moves;
+    sWin();
+    winOverlay.classList.add("show");
+    setTimeout(confetti, 200);
+  }
+
+  function confetti() {
+    var colors = ["#ff8fa3", "#ffd166", "#06d6a0", "#8ecae6", "#c77dff", "#ffb703", "#ef476f"];
+    for (var i = 0; i < 90; i++) {
+      var el = document.createElement("div");
+      el.className = "confetti";
+      el.style.left = (Math.random() * 100) + "vw";
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.animation = "fall " + (2 + Math.random() * 3) + "s " + (Math.random() * 1.5) + "s ease-in forwards";
+      document.body.appendChild(el);
+      (function (e) { setTimeout(function () { e.remove(); }, 6000); })(el);
+    }
+  }
+
+  function setSize(pairs) {
+    var dims = SIZES[pairs];
+    state.pairs = pairs;
+    state.cols = dims[0];
+    state.rows = dims[1];
+    document.querySelectorAll(".controls button[data-pairs]").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.pairs === pairs);
+    });
+    buildBoard();
+  }
+
+  var keyStyle = document.createElement("style");
+  keyStyle.textContent = "@keyframes fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(115vh) rotate(760deg); opacity: .2; } }";
+  document.head.appendChild(keyStyle);
+
+  document.getElementById("backBtn").addEventListener("click", function () { sClick(); window.location.href = "../index.html"; });
+  document.getElementById("newBtn").addEventListener("click", function () { sClick(); buildBoard(); });
+  document.getElementById("againBtn").addEventListener("click", function () { winOverlay.classList.remove("show"); sClick(); buildBoard(); });
+  document.getElementById("stayBtn").addEventListener("click", function () { winOverlay.classList.remove("show"); sClick(); });
+
+  document.getElementById("soundBtn").addEventListener("click", function () {
+    ensureAudio();
+    muted = !muted;
+    this.textContent = muted ? "🔇" : "🔊";
+    if (!muted) sClick();
+  });
+
+  document.getElementById("easyBtn").addEventListener("click", function () {
+    ensureAudio();
+    state.easy = !state.easy;
+    this.classList.toggle("active", state.easy);
+    sClick();
+    buildBoard();
+  });
+
+  document.querySelectorAll(".controls button[data-pairs]").forEach(function (btn) {
+    btn.addEventListener("click", function () { sClick(); setSize(parseInt(btn.dataset.pairs, 10)); });
+  });
+
+  window.addEventListener("resize", function () {
+    if (gridEl.children.length) applyLayout();
+  });
+  window.addEventListener("load", function () { buildBoard(); });
+})();
+</script>
+</body>
+</html>

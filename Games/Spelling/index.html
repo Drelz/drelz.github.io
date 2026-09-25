@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spelling Game</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(160deg, #7ec8e3, #5b9bd5);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+  h1 { color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 6px; }
+  #backBtn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    background: #7a5c43;
+    color: #fff8e7;
+    padding: 8px 12px;
+    box-shadow: 0 3px 0 #5c4430;
+    transition: transform .06s ease, box-shadow .06s ease;
+    z-index: 20;
+  }
+  #backBtn:active { transform: translateY(3px); box-shadow: 0 0 0 #5c4430; }
+  #langToggle { display: flex; gap: 10px; margin-bottom: 14px; }
+  .langbtn {
+    font-size: 1.05rem;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.35);
+    color: #1a3a5c;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .langbtn.active { background: #1a3a5c; color: #fff; }
+  .langbtn:hover:not(.active) { background: rgba(255,255,255,0.6); }
+  #score { color: #fff; font-size: 1.6rem; margin-bottom: 20px; font-weight: bold; }
+  #score span { font-size: 2.2rem; }
+  #letters {
+    font-size: 4.5rem;
+    font-weight: bold;
+    color: #1a3a5c;
+    letter-spacing: 0.6em;
+    text-indent: 0.6em;
+    background: rgba(255,255,255,0.9);
+    padding: 12px 24px;
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    margin-bottom: 30px;
+    line-height: 1.2;
+  }
+  #cards {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    width: 100%;
+  }
+  .card {
+    width: 300px;
+    padding: 24px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .card .emoji {
+    font-size: 14rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 14rem;
+    margin-bottom: 10px;
+  }
+  .card .keyhint {
+    display: inline-block;
+    font-size: 1.1rem;
+    background: #2f6f9f;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 8px;
+  }
+  .card.correct { background: #b6f0b1; box-shadow: 0 0 0 5px #2e9e47; }
+  .card.wrong { background: #ffd1d1; box-shadow: 0 0 0 5px #d9534f; }
+  #hint {
+    color: #fff;
+    font-size: 1.1rem;
+    margin-top: 26px;
+    opacity: 0.95;
+  }
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  #overlay.show { display: flex; }
+  #overlay .box {
+    background: #fff;
+    border-radius: 18px;
+    padding: 36px 48px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  #overlay .box h2 { color: #1a3a5c; margin-bottom: 10px; }
+  #overlay .box p { font-size: 1.5rem; margin-bottom: 24px; color: #444; }
+  #overlay .box button {
+    font-size: 1.3rem;
+    padding: 12px 36px;
+    border: none;
+    border-radius: 10px;
+    background: #2e9e47;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+  #overlay .box button:hover { background: #26813b; }
+</style>
+</head>
+<body>
+  <button id="backBtn" aria-label="Back to games">◀</button>
+  <h1 id="title">Spelling Game</h1>
+  <div id="langToggle">
+    <button id="langEn" class="langbtn active" data-lang="en">English</button>
+    <button id="langDa" class="langbtn" data-lang="da">Dansk</button>
+  </div>
+  <div id="score"><span id="scoreLabel">Score:</span> <span id="scoreVal">0</span></div>
+  <div id="letters"></div>
+  <div id="cards"></div>
+  <div id="hint">Press the arrow key below each picture: &#8592; &#8595; &#8594;</div>
+
+  <div id="overlay">
+    <div class="box">
+      <h2 id="gameOverLabel">Game Over</h2>
+      <p><span id="finalScoreLabel">Final score:</span> <span id="finalScore">0</span></p>
+      <button id="restartBtn">Play again</button>
+    </div>
+  </div>
+
+<script>
+  const LANGS = {
+    en: {
+      code: "en-US",
+      title: "Spelling Game",
+      score: "Score:",
+      hint: "Press the arrow key below each picture: \u2190 \u2193 \u2192",
+      gameOver: "Game Over",
+      finalScore: "Final score:",
+      playAgain: "Play again",
+      words: [
+        { name: "car", emoji: "🚗" },
+        { name: "bike", emoji: "🚲" },
+        { name: "house", emoji: "🏠" },
+        { name: "dog", emoji: "🐶" },
+        { name: "cat", emoji: "🐱" },
+        { name: "sun", emoji: "☀️" },
+        { name: "hat", emoji: "🎩" },
+        { name: "cup", emoji: "☕" },
+        { name: "bus", emoji: "🚌" },
+        { name: "duck", emoji: "🦆" }
+      ]
+    },
+    da: {
+      code: "da-DK",
+      title: "Stave Leg",
+      score: "Point:",
+      hint: "Tryk på piletasten under billedet: \u2190 \u2193 \u2192",
+      gameOver: "Spillet er slut",
+      finalScore: "Endelige point:",
+      playAgain: "Spil igen",
+      words: [
+        { name: "bil", emoji: "🚗" },
+        { name: "cykel", emoji: "🚲" },
+        { name: "bus", emoji: "🚌" },
+        { name: "hus", emoji: "🏠" },
+        { name: "hund", emoji: "🐶" },
+        { name: "kat", emoji: "🐱" },
+        { name: "sol", emoji: "☀️" },
+        { name: "hat", emoji: "🎩" },
+        { name: "kop", emoji: "☕" },
+        { name: "and", emoji: "🦆" },
+        { name: "æg", emoji: "🥚" },
+        { name: "æble", emoji: "🍎" },
+        { name: "øje", emoji: "👁️" },
+        { name: "ørn", emoji: "🦅" },
+        { name: "bål", emoji: "🔥" },
+        { name: "tå", emoji: "🦶" }
+      ]
+    }
+  };
+  let currentLang = "en";
+  let score = 0;
+  let locked = false;
+  const lettersEl = document.getElementById("letters");
+  const cardsEl = document.getElementById("cards");
+  const scoreVal = document.getElementById("scoreVal");
+  const overlay = document.getElementById("overlay");
+  const finalScore = document.getElementById("finalScore");
+  const restartBtn = document.getElementById("restartBtn");
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function speakLetters(word) {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const letters = word.name.toUpperCase().split("");
+    letters.forEach((letter) => {
+      const u = new SpeechSynthesisUtterance(letter);
+      u.lang = LANGS[currentLang].code;
+      u.volume = 1.0;
+      u.rate = 1.25;
+      u.pitch = 1.1;
+      window.speechSynthesis.speak(u);
+    });
+  }
+
+  function speakWord(word) {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word.name);
+    u.lang = LANGS[currentLang].code;
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  }
+
+  function newRound() {
+    locked = false;
+    const list = LANGS[currentLang].words;
+    const idols = shuffle(list);
+    const correct = idols[Math.floor(Math.random() * idols.length)];
+    const others = shuffle(list.filter(w => w.name !== correct.name)).slice(0, 2);
+    const round = shuffle([correct, ...others]);
+
+    lettersEl.textContent = correct.name.toUpperCase().split("").join("  ");
+    cardsEl.innerHTML = "";
+
+    round.forEach((w, i) => {
+      const hints = ["\u2190", "\u2193", "\u2192"];
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.index = i;
+      card.dataset.name = w.name;
+      card.innerHTML = '<span class="emoji">' + w.emoji + '</span><span class="keyhint">' + hints[i] + "</span>";
+      cardsEl.appendChild(card);
+    });
+
+    speakLetters(correct);
+  }
+
+  function revealCard(name, correct) {
+    document.querySelectorAll(".card").forEach(card => {
+      if (card.dataset.name === name) {
+        card.classList.add(correct ? "correct" : "wrong");
+      }
+    });
+  }
+
+  function select(index) {
+    if (locked) return;
+    const cards = document.querySelectorAll(".card");
+    if (!cards[index]) return;
+    locked = true;
+    const selected = cards[index];
+    const target = lettersEl.textContent.replace(/\s/g, "");
+    if (selected.dataset.name.toUpperCase() === target) {
+      score++;
+      scoreVal.textContent = score;
+      selected.classList.add("correct");
+      speakWord(LANGS[currentLang].words.find(w => w.name.toUpperCase() === target));
+      setTimeout(newRound, 1400);
+    } else {
+      revealCard(target, true);
+      selected.classList.add("wrong");
+      setTimeout(() => {
+        overlay.classList.add("show");
+        finalScore.textContent = score;
+      }, 1000);
+    }
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") select(0);
+    else if (e.key === "ArrowDown") select(1);
+    else if (e.key === "ArrowRight") select(2);
+  });
+
+  cardsEl.addEventListener("click", (e) => {
+    const card = e.target.closest(".card");
+    if (card) select(Number(card.dataset.index));
+  });
+
+  function applyLang() {
+    const ui = LANGS[currentLang];
+    document.getElementById("title").textContent = ui.title;
+    document.getElementById("scoreLabel").textContent = ui.score;
+    document.getElementById("hint").textContent = ui.hint;
+    document.getElementById("gameOverLabel").textContent = ui.gameOver;
+    document.getElementById("finalScoreLabel").textContent = ui.finalScore;
+    document.getElementById("restartBtn").textContent = ui.playAgain;
+    document.querySelectorAll(".langbtn").forEach(btn =>
+      btn.classList.toggle("active", btn.dataset.lang === currentLang)
+    );
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    score = 0;
+    scoreVal.textContent = 0;
+    overlay.classList.remove("show");
+    applyLang();
+    newRound();
+  }
+
+  document.getElementById("backBtn").addEventListener("click", () => { window.location.href = "../index.html"; });
+  document.getElementById("langEn").addEventListener("click", () => setLang("en"));
+  document.getElementById("langDa").addEventListener("click", () => setLang("da"));
+
+  restartBtn.addEventListener("click", () => {
+    overlay.classList.remove("show");
+    score = 0;
+    scoreVal.textContent = 0;
+    newRound();
+  });
+
+  applyLang();
+  newRound();
+</script>
+</body>
+</html>

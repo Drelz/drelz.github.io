@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTG Apps | Drelz</title>
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(200,155,60,.10), transparent 70%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:40px 20px 32px;
+  }
+  header{
+    width:100%;
+    max-width:900px;
+    margin-bottom:32px;
+  }
+  .back-link{
+    display:inline-block;
+    margin-bottom:22px;
+    color:var(--accent);
+    font-size:.85rem;
+    font-weight:600;
+    letter-spacing:.5px;
+    text-decoration:none;
+  }
+  .back-link:hover{text-decoration:underline}
+  h1{
+    margin:0;
+    font-size:clamp(2rem,5vw,2.75rem);
+    font-weight:700;
+    letter-spacing:8px;
+    text-transform:uppercase;
+  }
+  .apps{
+    width:100%;
+    max-width:900px;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+  }
+  .app-card{
+    min-height:180px;
+    padding:24px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    color:var(--text);
+    text-decoration:none;
+    transition:border-color .15s,box-shadow .15s,transform .15s,background .15s;
+  }
+  .app-card:hover{
+    transform:translateY(-2px);
+    border-color:var(--accent);
+    background:var(--surface2);
+    box-shadow:0 8px 24px rgba(0,0,0,.45);
+  }
+  .app-card:focus-visible{
+    outline:3px solid var(--accent);
+    outline-offset:3px;
+  }
+  .app-mark{
+    width:46px;
+    height:46px;
+    margin-bottom:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:var(--surface2);
+    color:var(--accent);
+    font-size:1.45rem;
+    line-height:1;
+  }
+  .app-card h2{
+    margin:0 0 8px;
+    font-size:1.05rem;
+    font-weight:600;
+    letter-spacing:.5px;
+  }
+  .app-card p{
+    color:var(--muted);
+    font-size:.9rem;
+    line-height:1.55;
+  }
+  footer{
+    margin-top:auto;
+    padding-top:48px;
+    color:var(--muted);
+    font-size:.78rem;
+    text-align:center;
+  }
+  @media(max-width:640px){
+    body{padding-top:28px}
+    header{margin-bottom:26px}
+    .apps{grid-template-columns:1fr}
+    h1{letter-spacing:5px}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <a class="back-link" href="../index.html">&larr; Home</a>
+    <h1>MTG Apps</h1>
+  </header>
+
+  <main class="apps">
+    <a class="app-card" href="../Grand-Sealed-Magic/">
+      <span class="app-mark" aria-hidden="true">🔮</span>
+      <h2>Grand Sealed Magic</h2>
+      <p>Visualize a limited pool. Paste a card list and group it by color, mana value, set, type, or rarity.</p>
+    </a>
+
+    <a class="app-card" href="../Mtg-Deck-Stats/">
+      <span class="app-mark" aria-hidden="true">📊</span>
+      <h2>MTG Deck Stats</h2>
+      <p>Paste a decklist as CardName,SetCode and get mana curve, color needs, creatures, roles, and more.</p>
+    </a>
+
+    <a class="app-card" href="../Mtg-Image-Retriever/">
+      <span class="app-mark" aria-hidden="true">🖼️</span>
+      <h2>MTG Image Retriever</h2>
+      <p>Paste a list of cards, one per line, name and set code and pull their full PNG images from Scryfall.</p>
+    </a>
+
+    <a class="app-card" href="../Mtg-Shadowboxing/">
+      <span class="app-mark" aria-hidden="true">⚔️</span>
+      <h2>MTG Shadowboxing</h2>
+      <p>Solo goldfish and deck-testing tool. Paste a decklist, then draw, mulligan, and play-test your game plan.</p>
+    </a>
+  </main>
+
+  <footer>Drowsybeaver since forever...</footer>
+</body>
+</html>

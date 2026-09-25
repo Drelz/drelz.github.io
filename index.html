@@ -17,99 +17,96 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:64px 20px 40px;
+    padding:56px 20px 32px;
   }
   h1{
-    font-size:2.5rem;
+    margin:0 0 40px;
+    font-size:clamp(2rem,6vw,3rem);
     font-weight:700;
-    letter-spacing:14px;
+    letter-spacing:12px;
     text-transform:uppercase;
-    margin:0 0 48px -14px;
-    color:var(--text);
   }
-  .apps{
+  .selector{
     width:100%;
-    max-width:560px;
-    display:flex;
-    flex-direction:column;
-    gap:16px;
+    max-width:900px;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:24px;
   }
-  .app-card{
-    display:flex;
-    align-items:center;
-    gap:18px;
-    padding:20px 22px;
-    background:var(--surface);
+  .choice{
+    overflow:hidden;
     border:1px solid var(--border);
-    border-radius:14px;
-    text-decoration:none;
+    border-radius:18px;
+    background:var(--surface);
     color:var(--text);
-    transition:border-color .15s, box-shadow .15s, transform .15s, background .15s;
+    text-decoration:none;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    transition:transform .15s,border-color .15s,box-shadow .15s;
   }
-  .app-card:hover{
+  .choice:hover{
+    transform:translateY(-4px);
     border-color:var(--accent);
-    background:var(--surface2);
-    box-shadow:0 0 0 1px rgba(200,155,60,.35), 0 8px 24px rgba(0,0,0,.45);
-    transform:translateY(-2px);
+    box-shadow:0 14px 38px rgba(0,0,0,.4),0 0 0 1px var(--accent-glow);
   }
-  .app-em{
-    font-size:1.7rem;
-    line-height:1;
-    flex-shrink:0;
-    width:46px;
-    height:46px;
+  .choice:focus-visible{
+    outline:3px solid var(--accent);
+    outline-offset:4px;
+  }
+  .image-frame{
+    aspect-ratio:1;
     display:flex;
     align-items:center;
     justify-content:center;
-    background:var(--surface2);
-    border:1px solid var(--border);
-    border-radius:10px;
+    padding:clamp(20px,5vw,48px);
+    background:
+      radial-gradient(circle at 50% 35%,rgba(200,155,60,.12),transparent 65%),
+      var(--surface2);
   }
-  .app-body{flex:1;min-width:0}
-  .app-body h2{font-size:1.05rem;font-weight:600;letter-spacing:.5px;margin-bottom:4px}
-  .app-body p{font-size:.83rem;color:var(--muted);line-height:1.5}
-  .app-link{
-    display:inline-block;
-    margin-top:8px;
-    font-size:.85rem;
-    font-weight:600;
-    color:var(--accent);
-    letter-spacing:.5px;
+  .choice img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
   }
-  footer{margin-top:auto;padding-top:56px;font-size:.78rem;color:var(--muted);text-align:center;line-height:1.6}
+  .choice-label{
+    display:block;
+    padding:16px 20px 18px;
+    border-top:1px solid var(--border);
+    font-size:1rem;
+    font-weight:700;
+    letter-spacing:1px;
+    text-align:center;
+    text-transform:uppercase;
+  }
+  footer{
+    margin-top:auto;
+    padding-top:48px;
+    font-size:.78rem;
+    color:var(--muted);
+    text-align:center;
+  }
+  @media(max-width:640px){
+    body{padding-top:40px}
+    .selector{grid-template-columns:1fr;gap:20px}
+    h1{margin-bottom:30px;letter-spacing:8px}
+  }
 </style>
 </head>
 <body>
   <h1>Drelz</h1>
 
-  <main class="apps">
-    <a class="app-card" href="https://drelz.github.io/Grand-Sealed-Magic/" >
-      <div class="app-em" aria-hidden="true">🔮</div>
-      <div class="app-body">
-        <h2>Grand Sealed Magic</h2>
-        <p>Visualize a limited pool. Paste a card list and group it by color, mana value, set, type, or rarity.</p>
+  <main class="selector">
+    <a class="choice" href="Games/index.html" aria-label="Open games">
+      <div class="image-frame">
+        <img src="Games/cat.jpg" alt="">
       </div>
+      <span class="choice-label">Games</span>
     </a>
-    <a class="app-card" href="https://drelz.github.io/Mtg-Deck-Stats/" >
-      <div class="app-em" aria-hidden="true">📊</div>
-      <div class="app-body">
-        <h2>MTG Deck Stats</h2>
-        <p>Paste a decklist as CardName,SetCode and get mana curve, color needs, creatures, roles, and more.</p>
+
+    <a class="choice" href="Mtg-Apps/index.html" aria-label="Open Magic: The Gathering apps">
+      <div class="image-frame">
+        <img src="mtg.png" alt="">
       </div>
-    </a>
-    <a class="app-card" href="https://drelz.github.io/Mtg-Image-Retriever/" >
-      <div class="app-em" aria-hidden="true">🖼️</div>
-      <div class="app-body">
-        <h2>MTG Image Retriever</h2>
-        <p>Paste a list of cards, one per line, name and set code and pull their full PNG images from Scryfall.</p>
-      </div>
-    </a>
-    <a class="app-card" href="https://drelz.github.io/Mtg-Shadowboxing/" >
-      <div class="app-em" aria-hidden="true">⚔️</div>
-      <div class="app-body">
-        <h2>MTG Shadowboxing</h2>
-        <p>Solo goldfish &amp; deck-testing tool. Paste a decklist, then draw, mulligan, and play-test your game plan.</p>
-      </div>
+      <span class="choice-label">MTG Apps</span>
     </a>
   </main>
 
