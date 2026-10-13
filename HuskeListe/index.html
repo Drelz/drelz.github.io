@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>HuskeListe</title>
+  <meta name="description" content="HuskeListe — en tag-baseret huskeliste med frister, ansvarlige og søgning." />
+  <meta name="theme-color" content="#0c0e17" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="../shared/style.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="drelz-logo" href="../" title="Front Page"><img src="../drelz-logo.png" alt="Drelz"></a>
+    <h1>HuskeListe</h1>
+    <div class="top-actions">
+      <input id="search" class="search" type="search" placeholder="Søg…" aria-label="Søg i ting" />
+      <button id="sortBtn" class="chip-btn" type="button" title="Skift sortering">⇅ <span id="sortLabel">Frist</span></button>
+      <button id="manageBtn" class="chip-btn" type="button">Tags &amp; folk</button>
+      <button id="repeatBtn" class="chip-btn" type="button">🔁 Gentagelser <span id="repeatCount" class="pill">0</span></button>
+      <button id="doneBtn" class="chip-btn" type="button">✔ Færdige <span id="doneCount" class="pill">0</span></button>
+      <details class="menu" id="menu">
+        <summary class="chip-btn" aria-label="Mere">⋯</summary>
+        <div class="menu-pop">
+          <button type="button" id="exportBtn">Eksportér</button>
+          <button type="button" id="importBtn">Importér</button>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <div class="quick-add">
+    <form class="add-row" id="addForm" autocomplete="off">
+      <input id="newItem" type="text" placeholder="Tilføj en ting…" maxlength="200" aria-label="Ny ting" />
+      <select id="addTag" class="tag-select" aria-label="Vælg tag"></select>
+      <button class="btn-accent" type="submit">Tilføj</button>
+    </form>
+    <button id="detailAddBtn" class="ghost" type="button" title="Tilføj med detaljer">＋ Detaljeret</button>
+  </div>
+
+  <main class="board" id="board" aria-label="Tags"></main>
+
+  <input type="file" id="importFile" accept="application/json,.json" hidden />
+  <div class="toast" id="toast"></div>
+
+  <!-- Item editor -->
+  <div class="overlay" id="editorOverlay">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+      <div class="sheet-head">
+        <h2 id="editorTitle">Redigér</h2>
+        <button class="icon-btn" id="editorClose" type="button" aria-label="Luk">✕</button>
+      </div>
+      <form id="editorForm" class="sheet-body">
+        <label class="field"><span>Tekst</span><input id="edText" type="text" maxlength="200" /></label>
+        <label class="field"><span>Beskrivelse</span><textarea id="edDesc" rows="3"></textarea></label>
+        <div class="field"><span>Tags</span><div class="chip-row" id="edTags"></div></div>
+        <div class="field-row">
+          <label class="field"><span>Frist</span><input id="edDeadline" type="date" /></label>
+          <label class="field"><span>Hvem</span><select id="edAssignee"></select></label>
+        </div>
+        <div class="field-row">
+          <label class="field"><span>Gentagelse</span>
+            <select id="edRepeat">
+              <option value="">Ingen</option>
+              <option value="daily">Dagligt</option>
+              <option value="weekly">Ugentligt</option>
+              <option value="monthly">Månedligt</option>
+              <option value="quarterly">Hvert kvartal</option>
+              <option value="yearly">Årligt</option>
+            </select>
+          </label>
+          <label class="field" id="edWeekdayWrap" hidden><span>Ugedag</span>
+            <select id="edWeekday"></select>
+          </label>
+        </div>
+        <p class="field-hint" id="edRepeatHint" hidden></p>
+        <div class="toggles">
+          <label class="check"><input type="checkbox" id="edUrgent" /> <span>Vigtig (vis øverst)</span></label>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn-accent" type="submit">Gem</button>
+          <button class="ghost" type="button" id="edComplete">✔ Færdig</button>
+          <button class="ghost danger" type="button" id="edDelete">Slet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage tags & people -->
+  <div class="overlay" id="manageOverlay">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="manageTitle">
+      <div class="sheet-head">
+        <h2 id="manageTitle">Tags &amp; personer</h2>
+        <button class="icon-btn" id="manageClose" type="button" aria-label="Luk">✕</button>
+      </div>
+      <div class="sheet-body">
+        <h3 class="sheet-sub">Tags</h3>
+        <div id="tagList" class="manage-list"></div>
+        <div class="manage-add">
+          <input id="newTag" type="text" placeholder="Nyt tag…" maxlength="40" />
+          <button class="btn-accent" id="addTagBtn" type="button">Tilføj</button>
+        </div>
+
+        <h3 class="sheet-sub">Personer</h3>
+        <div id="peopleList" class="manage-list"></div>
+        <div class="manage-add">
+          <input id="newPerson" type="text" placeholder="Ny person…" maxlength="40" />
+          <button class="btn-accent" id="addPersonBtn" type="button">Tilføj</button>
+        </div>
+
+        <p class="hint-text">Flyt rækkefølgen med ◀ ▶. «General» kan omdøbes, men ikke slettes.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recurring tracker -->
+  <div class="overlay" id="repeatOverlay">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="repeatTitle">
+      <div class="sheet-head">
+        <h2 id="repeatTitle">Gentagelser</h2>
+        <button class="icon-btn" id="repeatClose" type="button" aria-label="Luk">✕</button>
+      </div>
+      <div class="sheet-body">
+        <label class="check show-done"><input type="checkbox" id="repeatShowDone" /> <span>Vis færdige</span></label>
+        <div id="repeatList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done archive -->
+  <div class="overlay" id="doneOverlay">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+      <div class="sheet-head">
+        <h2 id="doneTitle">Færdige</h2>
+        <button class="icon-btn" id="doneClose" type="button" aria-label="Luk">✕</button>
+      </div>
+      <div class="sheet-body">
+        <div id="doneList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
